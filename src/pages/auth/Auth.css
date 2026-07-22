@@ -40,7 +40,8 @@
 }
 
 .main-logo {
-  width: 700px;
+  width: 560px;
+  max-width: 100%;
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.1));
@@ -133,6 +134,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -529,6 +539,127 @@
 
   .small-logo {
     width: 50px;
+  }
+}
+
+/* ===== DESKTOP / LAPTOP — fit in viewport without scrolling ===== */
+@media (min-width: 1025px) {
+  .login-container,
+  .signup-container {
+    padding: 10px 40px;
+    height: 100vh;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Branding column */
+  .branding-section {
+    padding-top: 0;
+    justify-content: center;
+  }
+
+  .main-logo {
+    width: 400px;
+  }
+
+  .divider-line {
+    margin: 12px 0;
+  }
+
+  .motto {
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  .motto-main {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+
+  .motto-secondary {
+    font-size: 20px;
+  }
+
+  /* Auth card — fade only (no downward slide) so the entrance never
+     forces a transient scrollbar when the card nearly fills the viewport */
+  .auth-card {
+    padding: 28px 36px;
+    animation-name: fadeIn;
+  }
+
+  .signup-card {
+    padding: 14px 36px;
+  }
+
+  .signup-form .auth-form {
+    gap: 8px;
+  }
+
+  .signup-form .form-input {
+    padding: 9px 16px;
+  }
+
+  /* Hide the username hint on desktop to save a line (limit still enforced) */
+  .signup-form .helper-text {
+    display: none;
+  }
+
+  .auth-header {
+    margin-bottom: 14px;
+  }
+
+  .auth-header h1 {
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+
+  .auth-header p {
+    font-size: 14px;
+  }
+
+  .auth-form {
+    gap: 12px;
+  }
+
+  .form-group {
+    gap: 3px;
+  }
+
+  .form-input {
+    padding: 10px 16px;
+  }
+
+  .char-count {
+    font-size: 11px;
+  }
+
+  .helper-text {
+    margin-top: 0;
+  }
+
+  .forgot-password {
+    margin-top: -6px;
+  }
+
+  .terms-group {
+    margin: 4px 0;
+  }
+
+  .terms-group label {
+    font-size: 13px;
+  }
+
+  .divider {
+    margin: 10px 0;
+  }
+
+  .auth-button {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+
+  .auth-link {
+    margin-top: 8px;
   }
 }
 

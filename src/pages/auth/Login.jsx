@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import kookaLogo from '../../assets/kooka-logo-clean.png';
+import kookaLogoFull from '../../assets/kooka-logo-full.png';
 import foodBackground from '../../assets/food-background.png';
 import './Auth.css';
 
@@ -8,7 +9,6 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
   const EMAIL_MAX = 50;
   const PASSWORD_MAX = 50;
@@ -25,11 +25,9 @@ export default function Login() {
         {/* Left Section - Kooka Branding */}
         <div className="branding-section">
           <div className="logo-wrapper">
-            <img src={kookaLogo} alt="Kooka Logo" className="main-logo" />
+            <img src={kookaLogoFull} alt="Kooka Logo" className="main-logo" />
           </div>
-          
-          <h2 className="brand-name">KOOKA</h2>
-          
+
           <div className="divider-line">
             <div className="line"></div>
             <img src={kookaLogo} alt="Small Logo" className="small-logo" />
