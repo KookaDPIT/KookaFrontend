@@ -1,0 +1,165 @@
+/* ==========================================================================
+   APP SHELL — sidebar (desktop) / bottom tab bar (mobile) + page area
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: #f8ecd4;
+  color: #18181b;
+}
+
+/* ===== NAV — desktop sidebar ==========================================  */
+.app-nav {
+  flex-shrink: 0;
+  width: 244px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 26px 18px;
+  background: #ffffff;
+  border-right: 1px solid #eaddc2;
+}
+
+.app-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 26px;
+  color: #ff6b35;
+}
+
+.app-nav__brand img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.app-nav__links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #6b5d43;
+  text-decoration: none;
+  font-family: var(--font-important);
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.app-nav__link:hover {
+  background: #f8ecd4;
+  color: #18181b;
+}
+
+.app-nav__link.active {
+  background: rgba(255, 107, 53, 0.12);
+  color: #ff6b35;
+}
+
+.app-nav__icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.app-nav__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ===== MAIN — page area ===============================================  */
+.app-main {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+/* Placeholder pages (intentionally empty — just show which page is active) */
+.page-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.page-placeholder h1 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 64px;
+  color: #b7a17a;
+}
+
+/* ==========================================================================
+   MOBILE — nav becomes a fixed bottom tab bar
+   ========================================================================== */
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    width: auto;
+    flex-direction: row;
+    gap: 0;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-right: none;
+    border-top: 1px solid #eaddc2;
+  }
+
+  .app-nav__brand {
+    display: none;
+  }
+
+  .app-nav__links {
+    flex-direction: row;
+    flex: 1;
+    gap: 2px;
+  }
+
+  .app-nav__link {
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .app-nav__link:hover {
+    background: transparent;
+  }
+
+  .app-nav__icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .app-main {
+    /* leave room for the fixed bottom bar */
+    padding-bottom: 78px;
+  }
+
+  .page-placeholder h1 {
+    font-size: 48px;
+  }
+}

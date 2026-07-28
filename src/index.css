@@ -1,4 +1,68 @@
+/* ===== FONTS ===== */
+/* Caveat — section/heading titles */
+@font-face {
+  font-family: 'Caveat';
+  src: url('./assets/fonts/Caveat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Caveat';
+  src: url('./assets/fonts/Caveat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Manrope — important / emphasized text */
+@font-face {
+  font-family: 'Manrope';
+  src: url('./assets/fonts/Manrope-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Baloo 2 — brand wordmark (matches the logo) */
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('./assets/fonts/Baloo2-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Vegur — regular body text */
+@font-face {
+  font-family: 'Vegur';
+  src: url('./assets/fonts/Vegur-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vegur';
+  src: url('./assets/fonts/Vegur-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vegur';
+  src: url('./assets/fonts/Vegur-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* Brand typography roles */
+  --font-title: 'Caveat', cursive;
+  --font-important: 'Manrope', sans-serif;
+  --font-body: 'Vegur', sans-serif;
+  --font-brand: 'Baloo 2', var(--font-important);
+
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -11,8 +75,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: var(--font-body);
+  --heading: var(--font-title);
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
