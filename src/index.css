@@ -116,6 +116,8 @@
 
 body {
   margin: 0;
+  /* matches the loading splash so there's no white flash before React mounts */
+  background: #f4ede1;
 }
 
 #root {

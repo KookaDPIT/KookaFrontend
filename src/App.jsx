@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
@@ -7,11 +8,43 @@ import Chat from './pages/app/Chat'
 import Learn from './pages/app/Learn'
 import Forum from './pages/app/Forum'
 import Profile from './pages/app/Profile'
+import KookaSplash from './pages/loading/KookaSplash'
 import './App.css'
 
+// How long the splash stays up at minimum, so the gold-fill animation
+// has time to play through even when the page loads instantly.
+const SPLASH_MIN_MS = 1800
+const SPLASH_FADE_MS = 550
+
 function App() {
+  const [booting, setBooting] = useState(true)
+  const [fadeOut, setFadeOut] = useState(false)
+
+  useEffect(() => {
+    const start = performance.now()
+    let finished = false
+
+    const finish = () => {
+      if (finished) return
+      finished = true
+      const wait = Math.max(0, SPLASH_MIN_MS - (performance.now() - start))
+      window.setTimeout(() => {
+        setFadeOut(true)
+        window.setTimeout(() => setBooting(false), SPLASH_FADE_MS)
+      }, wait)
+    }
+
+    // Wait until the page's resources are loaded, then honour the minimum.
+    if (document.readyState === 'complete') finish()
+    else window.addEventListener('load', finish, { once: true })
+
+    return () => window.removeEventListener('load', finish)
+  }, [])
+
   return (
     <BrowserRouter>
+      {booting && <KookaSplash hide={fadeOut} />}
+
       <Routes>
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
