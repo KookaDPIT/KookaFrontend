@@ -5,7 +5,6 @@
 
 .auth-page {
   display: flex;
-  min-height: 100vh;
   min-height: 100svh;
   background: #f8ecd4;
   color: #18181b;
@@ -48,7 +47,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: var(--font-brand);
+  font-family: var(--font-brand), sans-serif;
   font-weight: 700;
   font-size: 28px;
   letter-spacing: 0.2px;
@@ -69,7 +68,7 @@
   display: flex;
   flex-direction: column;
   margin: 0 0 20px;
-  font-family: var(--font-title);
+  font-family: var(--font-title), cursive;
   font-weight: 700;
   font-size: 64px;
   line-height: 1.02;
@@ -82,7 +81,7 @@
 .auth-hero__text {
   margin: 0;
   max-width: 440px;
-  font-family: var(--font-body);
+  font-family: var(--font-body), sans-serif;
   font-size: 17px;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.82);
@@ -109,7 +108,7 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 28px;
-  font-family: var(--font-brand);
+  font-family: var(--font-brand), sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #ff6b35;
@@ -134,7 +133,7 @@
 .auth-toggle a {
   padding: 10px 26px;
   border-radius: 999px;
-  font-family: var(--font-important);
+  font-family: var(--font-important), sans-serif;
   font-weight: 600;
   font-size: 15px;
   color: #6b7280;
@@ -196,7 +195,7 @@
 
 .auth-heading {
   margin: 0 0 6px;
-  font-family: var(--font-title);
+  font-family: var(--font-title), cursive;
   font-weight: 700;
   font-size: 48px;
   line-height: 1.05;
@@ -205,7 +204,7 @@
 
 .auth-subtitle {
   margin: 0;
-  font-family: var(--font-important);
+  font-family: var(--font-important), sans-serif;
   font-size: 15px;
   color: #71717a;
 }
@@ -224,7 +223,7 @@
 }
 
 .field label {
-  font-family: var(--font-important);
+  font-family: var(--font-important), sans-serif;
   font-weight: 600;
   font-size: 14px;
   color: #3f3f46;
@@ -234,7 +233,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 14px 16px;
-  font-family: var(--font-body);
+  font-family: var(--font-body), sans-serif;
   font-size: 15px;
   color: #18181b;
   background: #fdf7ec;
@@ -260,7 +259,7 @@
   box-sizing: border-box;
   margin-top: 6px;
   padding: 15px 20px;
-  font-family: var(--font-important);
+  font-family: var(--font-important), sans-serif;
   font-weight: 700;
   font-size: 16px;
   color: #ffffff;
@@ -286,12 +285,29 @@
   outline-offset: 2px;
 }
 
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== ERROR MESSAGE ================================================== */
+.auth-error {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #b42318;
+  background: rgba(217, 45, 32, 0.08);
+  border: 1px solid rgba(217, 45, 32, 0.25);
+  border-radius: 10px;
+}
+
 /* ===== TERMS (signup) ================================================= */
 .auth-terms {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-family: var(--font-body);
+  font-family: var(--font-body), sans-serif;
   font-size: 13.5px;
   line-height: 1.5;
   color: #52525b;

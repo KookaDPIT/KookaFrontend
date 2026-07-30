@@ -4,7 +4,6 @@
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
   min-height: 100svh;
   background: #f8ecd4;
   color: #18181b;
@@ -27,7 +26,7 @@
   align-items: center;
   gap: 10px;
   padding: 0 8px;
-  font-family: var(--font-brand);
+  font-family: var(--font-brand), sans-serif;
   font-weight: 700;
   font-size: 26px;
   color: #ff6b35;
@@ -53,7 +52,7 @@
   border-radius: 12px;
   color: #6b5d43;
   text-decoration: none;
-  font-family: var(--font-important);
+  font-family: var(--font-important), sans-serif;
   font-weight: 600;
   font-size: 15px;
   transition: background 0.2s ease, color 0.2s ease;
@@ -97,7 +96,7 @@
 
 .page-placeholder h1 {
   margin: 0;
-  font-family: var(--font-title);
+  font-family: var(--font-title), cursive;
   font-weight: 700;
   font-size: 64px;
   color: #b7a17a;

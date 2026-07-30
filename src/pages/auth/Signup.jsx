@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../../api';
 import AuthLayout from './AuthLayout';
 
 export default function Signup() {
@@ -12,6 +13,8 @@ export default function Signup() {
     confirmPassword: '',
     agreeTerms: false,
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const CHAR_LIMITS = {
     fullName: 50,
@@ -35,22 +38,46 @@ export default function Signup() {
     });
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (!formData.agreeTerms) {
-      alert('Trebuie să accepți termenii și condițiile!');
+      setError('Trebuie să accepți termenii și condițiile!');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Parolele nu se potrivesc!');
+      setError('Parolele nu se potrivesc!');
       return;
     }
 
-    console.log('Signup:', formData);
-    // TODO: Add registration logic here
-    navigate('/home');
+    setLoading(true);
+    try {
+      const { data } = await api.post('/register', {
+        full_name: formData.fullName,
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+        password_confirm: formData.confirmPassword,
+      });
+
+      // If the backend logs the user in on signup, keep the token/user around.
+      const token = data?.access_token || data?.token;
+      if (token) localStorage.setItem('kooka_token', token);
+      if (data?.user) localStorage.setItem('kooka_user', JSON.stringify(data.user));
+
+      navigate('/home');
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      setError(
+        typeof detail === 'string'
+          ? detail
+          : 'Crearea contului a eșuat. Încearcă din nou.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,8 +170,10 @@ export default function Signup() {
           </span>
         </label>
 
-        <button type="submit" className="btn-primary">
-          Creează cont
+        {error && <p className="auth-error">{error}</p>}
+
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? 'Se creează contul…' : 'Creează cont'}
         </button>
       </form>
     </AuthLayout>
