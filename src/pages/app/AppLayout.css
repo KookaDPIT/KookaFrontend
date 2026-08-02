@@ -9,52 +9,69 @@
   color: #18181b;
 }
 
-/* ===== NAV — desktop sidebar ==========================================  */
+/* ===== NAV — desktop rail (narrow, icon-over-label) ==================== */
 .app-nav {
   flex-shrink: 0;
-  width: 244px;
+  width: 88px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding: 26px 18px;
+  align-items: center;
+  gap: 22px;
+  padding: 18px 10px;
   background: #ffffff;
   border-right: 1px solid #eaddc2;
+  /* stay pinned while the page scrolls */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100svh;
 }
 
+/* logo box at the top of the rail */
 .app-nav__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 8px;
-  font-family: var(--font-brand), sans-serif;
-  font-weight: 700;
-  font-size: 26px;
-  color: #ff6b35;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #f8ecd4;
+  border: 1px solid #eaddc2;
 }
 
 .app-nav__brand img {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
+}
+
+/* wordmark hidden in the narrow rail — the logo box carries the brand */
+.app-nav__brand span {
+  display: none;
 }
 
 .app-nav__links {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .app-nav__link {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 13px;
-  padding: 12px 14px;
-  border-radius: 12px;
+  gap: 6px;
+  width: 100%;
+  padding: 11px 4px;
+  border-radius: 14px;
   color: #6b5d43;
   text-decoration: none;
   font-family: var(--font-important), sans-serif;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 11px;
+  text-align: center;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -74,8 +91,8 @@
 }
 
 .app-nav__icon svg {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 /* ===== MAIN — page area ===============================================  */
@@ -112,9 +129,13 @@
 
   .app-nav {
     position: fixed;
+    /* reset the desktop sticky-rail sizing so the bar hugs the bottom */
+    top: auto;
     bottom: 0;
     left: 0;
     right: 0;
+    height: auto;
+    align-self: auto;
     z-index: 20;
     width: auto;
     flex-direction: row;
