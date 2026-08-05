@@ -1,0 +1,375 @@
+/* ==========================================================================
+   RECIPE — ingredients + method
+   ========================================================================== */
+.recipe {
+  flex: 1;
+  min-width: 0;
+  background: #f8ecd4;
+  font-family: var(--font-body), sans-serif;
+  color: #2a2016;
+}
+
+.ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(-45deg, #ece3d0 0 12px, #e4d9c1 12px 24px);
+  color: #b3a380;
+  font-size: 13px;
+  border-radius: 16px;
+}
+
+/* ===== HERO ===== */
+.recipe__hero {
+  padding: 22px 40px 34px;
+  background: radial-gradient(120% 140% at 85% 0%, #3a2519 0%, #24170f 60%, #170d08 100%);
+  color: #fff8ef;
+}
+
+.recipe__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  margin-bottom: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff8ef;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.recipe__back:hover { background: rgba(255, 255, 255, 0.16); }
+.recipe__back-icon { width: 18px; height: 18px; }
+
+.recipe__hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 30px;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.recipe__eyebrow {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ff9f70;
+}
+
+.recipe__title {
+  margin: 8px 0 6px;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff8ef;
+}
+
+.recipe__tagline {
+  font-size: 16px;
+  color: rgba(255, 248, 239, 0.7);
+}
+
+.recipe__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 20px 0 26px;
+  padding: 0;
+  list-style: none;
+}
+
+.recipe__meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: rgba(255, 248, 239, 0.85);
+}
+
+.recipe__meta li:not(:last-child)::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  margin-left: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.recipe__meta-icon { width: 16px; height: 16px; color: #ff9f70; }
+
+.recipe__cook {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 12px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(255, 107, 53, 0.36);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.recipe__cook:hover { background: #f2591f; }
+.recipe__cook:active { transform: translateY(1px); }
+
+.recipe__photo {
+  aspect-ratio: 4 / 3;
+  background:
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.06) 0 14px, rgba(255,255,255,0.02) 14px 28px),
+    #2c1d13;
+  color: rgba(255, 248, 239, 0.4);
+}
+
+/* ===== NUTRITION DASHBOARD + ALLERGENS ===== */
+.recipe__dash {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 40px 0;
+}
+
+.recipe__dash-card {
+  background: #fffdf9;
+  border: 1px solid #efe3ca;
+  border-radius: 20px;
+  padding: 22px 24px;
+}
+
+.recipe__panel-title {
+  margin: 0 0 18px;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  color: #2a2016;
+}
+
+.recipe__panel-title span {
+  font-family: var(--font-body), sans-serif;
+  font-size: 14px;
+  color: #94805c;
+}
+
+.recipe__gauges {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+/* ---- gauge ---- */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px 8px;
+  border-radius: 14px;
+  background: #fdf6ea;
+  border: 1px solid #f0e6d0;
+}
+
+.gauge__svg { width: 100%; height: auto; overflow: visible; }
+
+.gauge__track {
+  fill: none;
+  stroke: #ece0c6;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.gauge__zone {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: butt;
+}
+
+.gauge__zone--green { stroke: #3fae6f; }
+.gauge__zone--amber { stroke: #ef9f3c; }
+.gauge__zone--red { stroke: #e5533a; }
+
+.gauge__tick { stroke: #c9b892; stroke-width: 1.4; stroke-linecap: round; }
+
+.gauge__needle {
+  stroke: #2a2016;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.gauge__hub { fill: #2a2016; }
+
+.gauge__readout {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: -4px;
+}
+
+.gauge__readout b {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.gauge__readout small { font-size: 11px; color: #94805c; }
+
+.gauge__label {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #6b5d43;
+  text-align: center;
+}
+
+/* ---- allergens ---- */
+.recipe__aller-label {
+  margin: 0 0 8px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #b3a380;
+}
+
+.recipe__aller-label:not(:first-of-type) { margin-top: 16px; }
+
+.recipe__aller-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.aller {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.aller::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.aller--in {
+  background: rgba(229, 83, 58, 0.12);
+  border: 1px solid rgba(229, 83, 58, 0.35);
+  color: #c33f28;
+}
+.aller--in::before { background: #e5533a; }
+
+.aller--free {
+  background: rgba(63, 174, 111, 0.12);
+  border: 1px solid rgba(63, 174, 111, 0.35);
+  color: #2e8858;
+}
+.aller--free::before { background: #3fae6f; }
+
+.recipe__dash-note {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #94805c;
+}
+
+/* ===== BODY ===== */
+.recipe__body {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 40px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+.recipe__col-title {
+  margin: 0 0 20px;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 1;
+  color: #1f6f66;
+}
+
+.recipe__ingredients {
+  list-style: none;
+  margin: 0;
+  padding: 22px 24px;
+  background: #fffdf9;
+  border: 1px solid #efe3ca;
+  border-radius: 20px;
+}
+
+.recipe__ingredients li {
+  padding: 14px 0;
+  font-size: 16px;
+  color: #3a3226;
+  border-top: 1px solid #f0e6d0;
+}
+
+.recipe__ingredients li:first-child { border-top: none; padding-top: 4px; }
+.recipe__ingredients li:last-child { padding-bottom: 4px; }
+
+.recipe__method {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  counter-reset: step;
+}
+
+.recipe__method li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.recipe__step-no {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 107, 53, 0.14);
+  color: #d64f10;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.recipe__method p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #3a3226;
+}
+
+.recipe__cook--wide { width: 100%; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .recipe__hero { padding: 18px 20px 28px; }
+  .recipe__hero-inner { grid-template-columns: 1fr; }
+  .recipe__photo { order: -1; }
+  .recipe__title { font-size: 40px; }
+  .recipe__dash { grid-template-columns: 1fr; padding: 28px 20px 0; }
+  .recipe__gauges { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .recipe__body { grid-template-columns: 1fr; gap: 28px; padding: 28px 20px; }
+  .recipe__col-title { font-size: 32px; }
+}
+
+@media (max-width: 460px) {
+  .recipe__gauges { grid-template-columns: repeat(2, 1fr); }
+}

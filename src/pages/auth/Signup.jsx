@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import AuthLayout from './AuthLayout';
 
 export default function Signup() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -43,12 +45,12 @@ export default function Signup() {
     setError('');
 
     if (!formData.agreeTerms) {
-      setError('Trebuie să accepți termenii și condițiile!');
+      setError(t('auth.signup.errTerms'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Parolele nu se potrivesc!');
+      setError(t('auth.signup.errMismatch'));
       return;
     }
 
@@ -70,11 +72,7 @@ export default function Signup() {
       navigate('/home');
     } catch (err) {
       const detail = err.response?.data?.detail;
-      setError(
-        typeof detail === 'string'
-          ? detail
-          : 'Crearea contului a eșuat. Încearcă din nou.'
-      );
+      setError(typeof detail === 'string' ? detail : t('auth.signup.errFailed'));
     } finally {
       setLoading(false);
     }
@@ -83,17 +81,17 @@ export default function Signup() {
   return (
     <AuthLayout
       active="signup"
-      title="Creează cont"
-      subtitle="Alătură-te provocării KOOKA și gătește alături de noi."
+      title={t('auth.signup.title')}
+      subtitle={t('auth.signup.subtitle')}
     >
       <form onSubmit={handleSignup} className="auth-form">
         <div className="field">
-          <label htmlFor="signup-name">Nume complet</label>
+          <label htmlFor="signup-name">{t('auth.signup.fullName')}</label>
           <input
             id="signup-name"
             type="text"
             name="fullName"
-            placeholder="Ion Popescu"
+            placeholder={t('auth.signup.fullNamePh')}
             value={formData.fullName}
             onChange={handleInputChange}
             maxLength={CHAR_LIMITS.fullName}
@@ -102,12 +100,12 @@ export default function Signup() {
         </div>
 
         <div className="field">
-          <label htmlFor="signup-email">Email</label>
+          <label htmlFor="signup-email">{t('auth.signup.email')}</label>
           <input
             id="signup-email"
             type="email"
             name="email"
-            placeholder="nume@exemplu.ro"
+            placeholder={t('auth.emailPh')}
             value={formData.email}
             onChange={handleInputChange}
             maxLength={CHAR_LIMITS.email}
@@ -116,12 +114,12 @@ export default function Signup() {
         </div>
 
         <div className="field">
-          <label htmlFor="signup-username">Nume de utilizator</label>
+          <label htmlFor="signup-username">{t('auth.signup.username')}</label>
           <input
             id="signup-username"
             type="text"
             name="username"
-            placeholder="ion_bucatarul"
+            placeholder={t('auth.signup.usernamePh')}
             value={formData.username}
             onChange={handleInputChange}
             maxLength={CHAR_LIMITS.username}
@@ -130,7 +128,7 @@ export default function Signup() {
         </div>
 
         <div className="field">
-          <label htmlFor="signup-password">Parolă</label>
+          <label htmlFor="signup-password">{t('auth.signup.password')}</label>
           <input
             id="signup-password"
             type="password"
@@ -144,7 +142,7 @@ export default function Signup() {
         </div>
 
         <div className="field">
-          <label htmlFor="signup-confirm">Confirmă parola</label>
+          <label htmlFor="signup-confirm">{t('auth.signup.confirm')}</label>
           <input
             id="signup-confirm"
             type="password"
@@ -165,15 +163,17 @@ export default function Signup() {
             onChange={handleInputChange}
           />
           <span>
-            Sunt de acord cu <Link to="/terms">Termenii și Condițiile</Link> și{' '}
-            <Link to="/privacy">Politica de Confidențialitate</Link>
+            {t('auth.signup.agreePre')}{' '}
+            <Link to="/terms">{t('auth.signup.terms')}</Link>{' '}
+            {t('auth.signup.and')}{' '}
+            <Link to="/privacy">{t('auth.signup.privacy')}</Link>
           </span>
         </label>
 
         {error && <p className="auth-error">{error}</p>}
 
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Se creează contul…' : 'Creează cont'}
+          {loading ? t('auth.signup.submitting') : t('auth.signup.submit')}
         </button>
       </form>
     </AuthLayout>

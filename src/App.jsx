@@ -5,9 +5,12 @@ import Signup from './pages/auth/Signup'
 import AppLayout from './pages/app/AppLayout'
 import Home from './pages/app/Home'
 import Chat from './pages/app/Chat'
+import Recipe from './pages/app/Recipe'
+import Cook from './pages/app/Cook'
 import Learn from './pages/app/Learn'
 import Forum from './pages/app/Forum'
 import Profile from './pages/app/Profile'
+import Settings from './pages/app/Settings'
 import KookaSplash from './pages/loading/KookaSplash'
 import './App.css'
 
@@ -54,9 +57,12 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/home" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/recipe/:id" element={<Recipe />} />
+          <Route path="/recipe/:id/cook" element={<Cook />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
 
         {/* Redirect root to login */}

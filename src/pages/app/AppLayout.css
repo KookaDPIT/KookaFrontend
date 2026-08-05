@@ -85,6 +85,28 @@
   color: #ff6b35;
 }
 
+/* language switcher — pinned to the bottom of the desktop rail */
+.app-nav__lang {
+  margin-top: auto;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: #f8ecd4;
+  color: #6b5d43;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.app-nav__lang:hover {
+  background: rgba(255, 107, 53, 0.14);
+  color: #ff6b35;
+}
+
 .app-nav__icon {
   display: flex;
   flex-shrink: 0;
@@ -172,6 +194,16 @@
   .app-nav__icon svg {
     width: 24px;
     height: 24px;
+  }
+
+  .app-nav__lang {
+    margin-top: 0;
+    align-self: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 12px;
   }
 
   .app-main {

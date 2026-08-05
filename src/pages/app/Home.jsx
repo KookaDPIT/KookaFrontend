@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './Home.css';
 
 /* Reusable skeleton block — stands in for any data the backend will supply.
@@ -9,15 +10,10 @@ function Skeleton({ className = '', style }) {
 }
 
 /* Static UI copy — these are part of the design, not backend data. */
-const FILTERS = [
-  'Recomandat pentru tine',
-  'Sub 30 min',
-  'Cu ce am în frigider',
-  'Fără alergenii mei',
-  'Top recenzii',
-];
+const FILTER_KEYS = ['recommended', 'under30', 'fridge', 'allergyFree', 'topRated'];
 
 export default function Home() {
+  const { t } = useTranslation();
   // Client-side interactivity only — no backend calls yet, just UI state.
   const [activeFilter, setActiveFilter] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -56,8 +52,8 @@ export default function Home() {
               </svg>
               <input
                 type="search"
-                placeholder="Caută · ingredient, țară, timp"
-                aria-label="Caută rețete"
+                placeholder={t('home.searchPh')}
+                aria-label={t('home.searchAria')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -68,7 +64,7 @@ export default function Home() {
               <button
                 type="button"
                 className="home-avatar"
-                aria-label="Profilul tău"
+                aria-label={t('home.yourProfile')}
               />
             </div>
           </div>
@@ -76,7 +72,7 @@ export default function Home() {
           {/* daily dish */}
           <div className="home-daily">
             <span className="home-daily__badge">
-              Daily Global Dish
+              {t('home.dailyDish')}
               <span className="home-daily__dot" />
               <Skeleton className="skl--time" />
             </span>
@@ -95,7 +91,7 @@ export default function Home() {
                 aria-pressed={cooking}
                 onClick={() => setCooking((v) => !v)}
               >
-                {cooking ? 'Se gătește…' : 'Începe gătitul'}
+                {cooking ? t('home.cooking') : t('home.startCooking')}
               </button>
               <button
                 type="button"
@@ -103,7 +99,7 @@ export default function Home() {
                 aria-pressed={saved}
                 onClick={() => setSaved((v) => !v)}
               >
-                {saved ? 'Salvat în colecție ✓' : 'Salvează în colecție'}
+                {saved ? t('home.saved') : t('home.save')}
               </button>
             </div>
           </div>
@@ -113,17 +109,17 @@ export default function Home() {
       {/* ===== BODY SHEET ============================================== */}
       <div className="home-sheet">
         {/* filter chips */}
-        <div className="home-filters" role="tablist" aria-label="Filtre feed">
-          {FILTERS.map((label, i) => (
+        <div className="home-filters" role="tablist" aria-label={t('home.feedTitle')}>
+          {FILTER_KEYS.map((key, i) => (
             <button
-              key={label}
+              key={key}
               type="button"
               role="tab"
               aria-selected={i === activeFilter}
               className={`home-chip ${i === activeFilter ? 'is-active' : ''}`}
               onClick={() => setActiveFilter(i)}
             >
-              {label}
+              {t(`home.filters.${key}`)}
             </button>
           ))}
         </div>
@@ -131,10 +127,8 @@ export default function Home() {
         {/* ===== FEED ================================================= */}
         <section className="home-section">
           <div className="home-section__head">
-            <h2 className="home-section__title">Feed-ul tău</h2>
-            <p className="home-section__sub">
-              după istoricul de gătit, preferințe și alergii
-            </p>
+            <h2 className="home-section__title">{t('home.feedTitle')}</h2>
+            <p className="home-section__sub">{t('home.feedSub')}</p>
           </div>
 
           <div className="home-feed">
@@ -159,10 +153,8 @@ export default function Home() {
         <section className="home-panels">
           {/* culinary passport */}
           <article className="home-passport">
-            <h2 className="home-passport__title">Pașaportul tău culinar</h2>
-            <p className="home-passport__sub">
-              Fiecare rețetă nouă îți ștampilează o țară.
-            </p>
+            <h2 className="home-passport__title">{t('home.passportTitle')}</h2>
+            <p className="home-passport__sub">{t('home.passportSub')}</p>
             <div className="home-passport__map" aria-hidden="true" />
             <div className="home-passport__stamps">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -173,7 +165,7 @@ export default function Home() {
 
           {/* fresh reviews */}
           <article className="home-reviews">
-            <h2 className="home-reviews__title">Recenzii proaspete</h2>
+            <h2 className="home-reviews__title">{t('home.reviewsTitle')}</h2>
 
             <div className="home-reviews__avatars">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -197,8 +189,8 @@ export default function Home() {
             >
               <input
                 type="text"
-                placeholder="Adaugă poza rezultatului tău…"
-                aria-label="Adaugă o recenzie"
+                placeholder={t('home.reviewPh')}
+                aria-label={t('home.reviewAria')}
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
               />
@@ -207,7 +199,7 @@ export default function Home() {
                 className="home-btn home-btn--primary"
                 disabled={!review.trim()}
               >
-                Adaugă
+                {t('home.add')}
               </button>
             </form>
           </article>

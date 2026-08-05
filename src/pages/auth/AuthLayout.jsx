@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import kookaSymbol from '../../assets/kooka-icon.png';
 import kookaSymbolWhite from '../../assets/kooka-icon-white.png';
 import heroImage from '../../assets/hero-cooking.jpg';
@@ -15,6 +16,9 @@ import './Auth.css';
  * @param {React.ReactNode} children the form itself
  */
 export default function AuthLayout({ active, title, subtitle, children }) {
+  const { t, i18n } = useTranslation();
+  const other = i18n.language?.startsWith('ro') ? 'en' : 'ro';
+
   return (
     <div className={`auth-page auth-page--${active}`}>
       {/* Left — hero */}
@@ -29,13 +33,10 @@ export default function AuthLayout({ active, title, subtitle, children }) {
 
         <div className="auth-hero__content">
           <h2 className="auth-hero__title">
-            <span>Gătitul se învață.</span>
-            <span className="accent">O rețetă pe rând.</span>
+            <span>{t('auth.heroTitle')}</span>
+            <span className="accent">{t('auth.heroAccent')}</span>
           </h2>
-          <p className="auth-hero__text">
-            Lecții scurte, rețete potrivite nivelului tău și o comunitate
-            care gătește împreună cu tine.
-          </p>
+          <p className="auth-hero__text">{t('auth.heroText')}</p>
         </div>
       </aside>
 
@@ -47,20 +48,30 @@ export default function AuthLayout({ active, title, subtitle, children }) {
             <span>KOOKA</span>
           </div>
 
-          <nav className="auth-toggle">
-            <Link
-              to="/login"
-              className={active === 'login' ? 'is-active' : ''}
+          <div className="auth-switchrow">
+            <nav className="auth-toggle">
+              <Link
+                to="/login"
+                className={active === 'login' ? 'is-active' : ''}
+              >
+                {t('auth.tabLogin')}
+              </Link>
+              <Link
+                to="/signup"
+                className={active === 'signup' ? 'is-active' : ''}
+              >
+                {t('auth.tabSignup')}
+              </Link>
+            </nav>
+            <button
+              type="button"
+              className="auth-lang"
+              onClick={() => i18n.changeLanguage(other)}
+              title={t('lang.switch')}
             >
-              Autentificare
-            </Link>
-            <Link
-              to="/signup"
-              className={active === 'signup' ? 'is-active' : ''}
-            >
-              Cont nou
-            </Link>
-          </nav>
+              {t(`lang.${other}`)}
+            </button>
+          </div>
 
           <div className="auth-head">
             <h1 className="auth-heading">{title}</h1>

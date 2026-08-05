@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import mark from '../../assets/loading-mark.png';
 import ghost from '../../assets/loading-ghost.png';
 import wordmark from '../../assets/loading-wordmark.png';
@@ -14,11 +15,12 @@ const maskStyle = {
  * Pass `hide` to fade it out before it unmounts.
  */
 export default function KookaSplash({ hide = false }) {
+  const { t } = useTranslation();
   return (
     <div
       className={`kl-splash${hide ? ' kl-splash--hide' : ''}`}
       role="status"
-      aria-label="Se încarcă"
+      aria-label={t('common.loading')}
       aria-hidden={hide}
     >
       <div className="kl-splash__inner">

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import AuthLayout from './AuthLayout';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,7 +20,7 @@ export default function Login() {
     setError('');
 
     if (!email || !password) {
-      setError('Completează emailul și parola.');
+      setError(t('auth.login.errFields'));
       return;
     }
 
@@ -35,11 +37,7 @@ export default function Login() {
       navigate('/home');
     } catch (err) {
       const detail = err.response?.data?.detail;
-      setError(
-        typeof detail === 'string'
-          ? detail
-          : 'Autentificare eșuată. Verifică datele și încearcă din nou.'
-      );
+      setError(typeof detail === 'string' ? detail : t('auth.login.errFailed'));
     } finally {
       setLoading(false);
     }
@@ -48,16 +46,16 @@ export default function Login() {
   return (
     <AuthLayout
       active="login"
-      title="Bine ai revenit."
-      subtitle="Continuă de unde ai rămas — tigaia te așteaptă."
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
     >
       <form onSubmit={handleLogin} className="auth-form">
         <div className="field">
-          <label htmlFor="login-email">Email</label>
+          <label htmlFor="login-email">{t('auth.login.email')}</label>
           <input
             id="login-email"
             type="email"
-            placeholder="nume@exemplu.ro"
+            placeholder={t('auth.emailPh')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             maxLength={EMAIL_MAX}
@@ -66,7 +64,7 @@ export default function Login() {
         </div>
 
         <div className="field">
-          <label htmlFor="login-password">Parolă</label>
+          <label htmlFor="login-password">{t('auth.login.password')}</label>
           <input
             id="login-password"
             type="password"
@@ -81,7 +79,7 @@ export default function Login() {
         {error && <p className="auth-error">{error}</p>}
 
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Se autentifică…' : 'Autentificare'}
+          {loading ? t('auth.login.submitting') : t('auth.login.submit')}
         </button>
       </form>
     </AuthLayout>

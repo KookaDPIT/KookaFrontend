@@ -121,13 +121,40 @@
 }
 
 /* ===== TAB SWITCHER ===================================================== */
+.auth-switchrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 34px;
+}
+
 .auth-toggle {
   display: inline-flex;
   gap: 4px;
   padding: 5px;
-  margin-bottom: 34px;
   background: rgba(120, 80, 30, 0.1);
   border-radius: 999px;
+}
+
+.auth-lang {
+  flex-shrink: 0;
+  padding: 9px 15px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(120, 80, 30, 0.08);
+  color: #6b5d43;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.auth-lang:hover {
+  background: rgba(255, 107, 53, 0.14);
+  color: #ff6b35;
 }
 
 .auth-toggle a {
@@ -345,7 +372,7 @@
     padding-bottom: 24px;
   }
 
-  .auth-toggle {
+  .auth-switchrow {
     margin-bottom: 24px;
   }
 
@@ -401,10 +428,13 @@
     margin-bottom: 16px;
   }
 
+  .auth-switchrow {
+    margin-bottom: 18px;
+  }
+
   .auth-toggle {
     display: flex;
-    width: 100%;
-    margin-bottom: 18px;
+    flex: 1;
   }
 
   .auth-toggle a {
@@ -462,7 +492,7 @@
     height: 40px;
   }
 
-  .auth-toggle {
+  .auth-switchrow {
     margin-bottom: 14px;
   }
 

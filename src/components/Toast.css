@@ -1,0 +1,30 @@
+/* ==========================================================================
+   Toast — fixed bottom-center pill, slides up when shown.
+   ========================================================================== */
+.ktoast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  z-index: 120;
+  transform: translate(-50%, 24px);
+  padding: 13px 22px;
+  border-radius: 999px;
+  background: #24170f;
+  color: #fff8ef;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 12px 30px rgba(24, 14, 8, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ktoast.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ktoast { transition: opacity 0.22s ease; transform: translate(-50%, 0); }
+}

@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useSettings, applyTheme } from '../../settings';
 import kookaIcon from '../../assets/kooka-icon.png';
 import './AppLayout.css';
 
@@ -42,14 +45,23 @@ const ICONS = {
 };
 
 const NAV = [
-  { to: '/home', label: 'Acasă', icon: ICONS.home },
-  { to: '/chat', label: 'Chat AI', icon: ICONS.chat },
-  { to: '/learn', label: 'Învață', icon: ICONS.learn },
-  { to: '/forum', label: 'Forum', icon: ICONS.forum },
-  { to: '/profile', label: 'Profil', icon: ICONS.profile },
+  { to: '/home', key: 'home', icon: ICONS.home },
+  { to: '/chat', key: 'chat', icon: ICONS.chat },
+  { to: '/learn', key: 'learn', icon: ICONS.learn },
+  { to: '/forum', key: 'forum', icon: ICONS.forum },
+  { to: '/profile', key: 'profile', icon: ICONS.profile },
 ];
 
 export default function AppLayout() {
+  const { t, i18n } = useTranslation();
+  const [settings] = useSettings();
+  const other = i18n.language?.startsWith('ro') ? 'en' : 'ro';
+
+  // apply the saved theme whenever it changes (and on first mount)
+  useEffect(() => {
+    applyTheme(settings.theme);
+  }, [settings.theme]);
+
   return (
     <div className="app-shell">
       <aside className="app-nav">
@@ -62,10 +74,20 @@ export default function AppLayout() {
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} className="app-nav__link">
               <span className="app-nav__icon">{item.icon}</span>
-              <span className="app-nav__label">{item.label}</span>
+              <span className="app-nav__label">{t(`nav.${item.key}`)}</span>
             </NavLink>
           ))}
         </nav>
+
+        <button
+          type="button"
+          className="app-nav__lang"
+          onClick={() => i18n.changeLanguage(other)}
+          title={t('lang.switch')}
+          aria-label={t('lang.switch')}
+        >
+          {t(`lang.${other}`)}
+        </button>
       </aside>
 
       <main className="app-main">

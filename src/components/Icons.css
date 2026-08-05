@@ -1,0 +1,26 @@
+/* Kooka AI avatar badge */
+.kooka-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 30%;
+  background: linear-gradient(150deg, #ff8a4c, #ff6b35);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.28);
+}
+
+.kooka-avatar__mark {
+  width: 62%;
+  height: 62%;
+}
+
+.kooka-avatar--sm { width: 30px; height: 30px; }
+.kooka-avatar--md { width: 36px; height: 36px; }
+.kooka-avatar--lg { width: 44px; height: 44px; }
+
+/* on dark surfaces (cook-along) keep the same badge — it reads fine */
+.kooka-avatar--ghost {
+  background: rgba(255, 107, 53, 0.16);
+  color: #ff6b35;
+  box-shadow: none;
+}
