@@ -54,13 +54,24 @@ const NAV = [
 
 export default function AppLayout() {
   const { t, i18n } = useTranslation();
-  const [settings] = useSettings();
+  const [settings, updateSettings] = useSettings();
   const other = i18n.language?.startsWith('ro') ? 'en' : 'ro';
 
   // apply the saved theme whenever it changes (and on first mount)
   useEffect(() => {
     applyTheme(settings.theme);
   }, [settings.theme]);
+
+  const toggleTheme = () => {
+    const currentTheme = settings.theme;
+    let newTheme = 'system';
+    if (currentTheme === 'system' || currentTheme === 'light') {
+      newTheme = 'dark';
+    } else {
+      newTheme = 'light';
+    }
+    updateSettings({ theme: newTheme });
+  };
 
   return (
     <div className="app-shell">
@@ -79,15 +90,27 @@ export default function AppLayout() {
           ))}
         </nav>
 
-        <button
-          type="button"
-          className="app-nav__lang"
-          onClick={() => i18n.changeLanguage(other)}
-          title={t('lang.switch')}
-          aria-label={t('lang.switch')}
-        >
-          {t(`lang.${other}`)}
-        </button>
+        <div className="app-nav__bottom">
+          <button
+            type="button"
+            className="app-nav__theme"
+            onClick={toggleTheme}
+            title={t('theme.toggle') || 'Toggle dark mode'}
+            aria-label={t('theme.toggle') || 'Toggle dark mode'}
+          >
+            {settings.theme === 'dark' ? '☀' : '🌙'}
+          </button>
+
+          <button
+            type="button"
+            className="app-nav__lang"
+            onClick={() => i18n.changeLanguage(other)}
+            title={t('lang.switch')}
+            aria-label={t('lang.switch')}
+          >
+            {t(`lang.${other}`)}
+          </button>
+        </div>
       </aside>
 
       <main className="app-main">

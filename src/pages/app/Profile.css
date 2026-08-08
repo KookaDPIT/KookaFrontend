@@ -434,3 +434,91 @@
   .pf-badges { grid-template-columns: repeat(2, 1fr); }
   .pf-card { min-width: 100%; }
 }
+
+/* ==========================================================================
+    DARK MODE
+    ========================================================================== */
+[data-theme="dark"] .profile {
+  background: #2a2016;
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .profile-header {
+  background: linear-gradient(135deg, #2a2016 0%, #1a1410 100%);
+}
+
+[data-theme="dark"] .profile-header__title {
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .profile-info {
+  background: #3a3228;
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-info__name {
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .profile-info__bio {
+  color: #b8b0a0;
+}
+
+[data-theme="dark"] .profile-stats {
+  background: transparent;
+}
+
+[data-theme="dark"] .profile-stat {
+  background: #3a3228;
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-stat__label {
+  color: #a89968;
+}
+
+[data-theme="dark"] .profile-stat__value {
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .profile-section {
+  background: #3a3228;
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-section__title {
+  color: #f5f5f0;
+  border-bottom-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-item {
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-item__title {
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .profile-item__desc {
+  color: #b8b0a0;
+}
+
+[data-theme="dark"] .profile-btn {
+  background: #c8551f;
+}
+
+[data-theme="dark"] .profile-btn:hover {
+  background: #e0691f;
+}
+
+[data-theme="dark"] .profile-edit-form input,
+[data-theme="dark"] .profile-edit-form textarea {
+  background: #2a2016;
+  color: #f5f5f0;
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .profile-edit-form input::placeholder,
+[data-theme="dark"] .profile-edit-form textarea::placeholder {
+  color: #a89968;
+}
