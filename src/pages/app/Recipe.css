@@ -405,103 +405,48 @@
 [data-theme="dark"] .recipe {
   background: #2a2016;
   color: #f5f5f0;
+  --k-bg: #2a2016;
+  --k-surface: #3a3228;
+  --k-input-bg: #2a2016;
+  --k-border: #4a4238;
+  --k-border-strong: #5b5145;
+  --k-input-border: #4a4238;
+  --k-text: #f5f5f0;
+  --k-muted: #c9bea7;
+  --k-muted-2: #a89968;
+  --k-faint: #8f826d;
+  --k-accent-soft: rgba(255, 107, 53, 0.18);
 }
 
-[data-theme="dark"] .recipe-header {
-  background: linear-gradient(135deg, rgba(42, 32, 22, 0.8) 0%, rgba(26, 20, 16, 0.8) 100%);
-}
-
-[data-theme="dark"] .recipe-header__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .recipe-header__meta {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .recipe-content {
-  background: #2a2016;
-}
-
-[data-theme="dark"] .recipe-section {
+[data-theme="dark"] .recipe__dash-card,
+[data-theme="dark"] .recipe__ingredients {
   background: #3a3228;
   border-color: #4a4238;
 }
 
-[data-theme="dark"] .recipe-section__title {
-  color: #f5f5f0;
-  border-bottom-color: #4a4238;
-}
+[data-theme="dark"] .recipe__panel-title { color: #f5f5f0; }
+[data-theme="dark"] .recipe__panel-title span,
+[data-theme="dark"] .recipe__aller-label,
+[data-theme="dark"] .recipe__dash-note { color: #c9bea7; }
 
-[data-theme="dark"] .recipe-item {
-  color: #b8b0a0;
+[data-theme="dark"] .gauge {
+  background: #32291f;
   border-color: #4a4238;
 }
 
-[data-theme="dark"] .recipe-item__label {
-  color: #a89968;
-}
+[data-theme="dark"] .gauge__track { stroke: #5b5145; }
+[data-theme="dark"] .gauge__tick { stroke: #a89968; }
+[data-theme="dark"] .gauge__needle { stroke: #f5f5f0; }
+[data-theme="dark"] .gauge__hub { fill: #f5f5f0; }
+[data-theme="dark"] .gauge__readout small,
+[data-theme="dark"] .gauge__label { color: #c9bea7; }
 
-[data-theme="dark"] .recipe-step {
-  background: #3a3228;
-  border-color: #4a4238;
-}
+[data-theme="dark"] .recipe__col-title { color: #62b8ad; }
+[data-theme="dark"] .recipe__ingredients li,
+[data-theme="dark"] .recipe__method p { color: #f5f5f0; }
+[data-theme="dark"] .recipe__ingredients li { border-color: #4a4238; }
 
-[data-theme="dark"] .recipe-step__number {
-  background: #c8551f;
-  color: #fff;
-}
-
-[data-theme="dark"] .recipe-step__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .recipe-step__desc {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .recipe-nutrition {
-  background: #3a3228;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .recipe-nutrition__label {
-  color: #a89968;
-}
-
-[data-theme="dark"] .recipe-nutrition__value {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .recipe-btn {
-  background: #c8551f;
-}
-
-[data-theme="dark"] .recipe-btn:hover {
-  background: #e0691f;
-}
-
-[data-theme="dark"] .recipe-rating {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .recipe-rating__stars {
-  color: #a89968;
-}
-
-[data-theme="dark"] .recipe-comment {
-  background: #3a3228;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .recipe-comment__author {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .recipe-comment__text {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .recipe-comment__time {
-  color: #a89968;
+[data-theme="dark"] .recipe__step-no {
+  background: rgba(255, 107, 53, 0.2);
+  color: #ff9a70;
 }

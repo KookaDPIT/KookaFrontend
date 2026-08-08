@@ -5,16 +5,22 @@
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1fr 0fr;
   grid-template-rows: 1fr auto;
-  min-height: 100svh;
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
   font-family: var(--font-body), sans-serif;
+  transition: grid-template-columns 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.cook--assistant-open { grid-template-columns: 1.6fr 1fr; }
 
 /* ===== STAGE ===== */
 .cook__stage {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   padding: 22px 30px 26px;
   background: radial-gradient(120% 130% at 20% 0%, #3a2519 0%, #211510 100%);
   color: #fff8ef;
@@ -131,10 +137,23 @@
 .cook__side {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
+  box-sizing: border-box;
   padding: 22px 22px 0;
   background: #2a1c12;
   color: #fff8ef;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(48px);
+  transition: opacity 180ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cook--assistant-open .cook__side {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
 .cook__side-head {
@@ -154,6 +173,21 @@
 }
 
 .cook__side-head span { font-size: 12px; color: rgba(255, 248, 239, 0.55); }
+
+.cook__side-close {
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 248, 239, 0.7);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cook__side-close:hover { background: rgba(255, 255, 255, 0.1); color: #fff8ef; }
 
 .cook__timers { padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
 .cook__timers ul { margin: 0; padding: 0; list-style: none; }
@@ -327,10 +361,18 @@
 @media (max-width: 980px) {
   .cook {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: minmax(0, 1fr) 0fr auto;
+    transition: grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .cook__side { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  .cook--assistant-open { grid-template-rows: minmax(0, 1fr) minmax(300px, 0.7fr) auto; }
+  .cook__side { border-top: 1px solid rgba(255, 255, 255, 0.08); transform: translateY(32px); }
+  .cook--assistant-open .cook__side { transform: translateY(0); }
   .cook__chat { min-height: 180px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cook,
+  .cook__side { transition: none; }
 }
 
 @media (max-width: 560px) {

@@ -83,19 +83,33 @@ export default function Cook() {
   ]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const inputRef = useRef(null);
   const chatRef = useRef(null);
-  const panelRef = useRef(null);
 
   useEffect(() => {
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  const askKooka = () => {
-    // open/focus the inline chat (scroll into view on stacked layouts)
-    panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    inputRef.current?.focus();
+  const openAssistant = () => {
+    setIsAssistantOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isAssistantOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isAssistantOpen]);
+
+  const closeAssistant = () => {
+    setIsAssistantOpen(false);
+  };
+
+  const toggleAssistant = () => {
+    setIsAssistantOpen((open) => !open);
   };
 
   const send = (e) => {
@@ -122,7 +136,7 @@ export default function Cook() {
   if (recipe === null) return <div className="cook cook--state">{t('common.error')}</div>;
 
   return (
-    <div className="cook">
+    <div className={`cook${isAssistantOpen ? ' cook--assistant-open' : ''}`}>
       {/* ===== STAGE (left) ===== */}
       <div className="cook__stage">
         <div className="cook__topline">
@@ -149,21 +163,24 @@ export default function Cook() {
             </div>
           )}
           <div className="cook__voice">
-            <button type="button" className="cook__vchip" onClick={askKooka}>Kooka, repeat the step</button>
-            <button type="button" className="cook__vchip" onClick={askKooka}>How much longer?</button>
-            <button type="button" className="cook__vchip" onClick={askKooka}>Something went wrong</button>
+            <button type="button" className="cook__vchip" onClick={openAssistant}>Kooka, repeat the step</button>
+            <button type="button" className="cook__vchip" onClick={openAssistant}>How much longer?</button>
+            <button type="button" className="cook__vchip" onClick={openAssistant}>Something went wrong</button>
           </div>
         </div>
       </div>
 
       {/* ===== INLINE AI PANEL (right) ===== */}
-      <aside className="cook__side" ref={panelRef}>
+      <aside className="cook__side">
         <div className="cook__side-head">
           <KookaAvatar size="sm" />
           <div>
             <h4>Ask while you cook</h4>
             <span>Kooka answers here, without leaving the recipe</span>
           </div>
+          <button type="button" className="cook__side-close" onClick={closeAssistant} aria-label="Close Ask Kooka">
+            ×
+          </button>
         </div>
 
         <div className="cook__timers">
@@ -208,7 +225,13 @@ export default function Cook() {
         <button type="button" className="cook__btn cook__btn--primary" onClick={goNext}>
           {isLast ? `✓ ${t('cook.finished')}` : 'Next step'}
         </button>
-        <button type="button" className="cook__ai" onClick={askKooka} aria-label="Ask Kooka">
+        <button
+          type="button"
+          className="cook__ai"
+          onClick={toggleAssistant}
+          aria-label="Ask Kooka"
+          aria-expanded={isAssistantOpen}
+        >
           <IconSparkle className="cook__ai-icon" />
           <span>Ask Kooka</span>
         </button>
