@@ -1,0 +1,38 @@
+.wglobe {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wglobe:active {
+  cursor: grabbing;
+}
+
+.wglobe__halo {
+  fill: none;
+  stroke: var(--k-accent);
+  stroke-width: 2;
+  opacity: 0.35;
+}
+
+.wglobe__ocean {
+  fill: #dfeaf0;
+  stroke: rgba(255, 107, 53, 0.25);
+  stroke-width: 0.5;
+}
+
+.wglobe__land {
+  fill: #efe3ca;
+  stroke: #d8c7a2;
+  stroke-width: 0.4;
+  transition: fill 0.2s ease;
+}
+
+.wglobe__land.is-on {
+  fill: var(--k-accent);
+  stroke: var(--k-accent-hover);
+}

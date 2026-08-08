@@ -1,0 +1,31 @@
+.stars {
+  /* default; overridden per-instance via the inline style in Stars.jsx */
+  --star-size: 20px;
+  display: inline-flex;
+  gap: 2px;
+  line-height: 1;
+  font-size: var(--star-size);
+}
+
+.stars__ico,
+.stars__btn {
+  color: var(--k-border-strong);
+}
+
+.stars__ico.is-on,
+.stars__btn.is-on {
+  color: #f5b301;
+}
+
+.stars__btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  transition: transform 0.08s ease;
+}
+
+.stars__btn:hover {
+  transform: scale(1.15);
+}

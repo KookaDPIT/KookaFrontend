@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getRecipe } from '../../data/recipes';
+import { useTranslation } from 'react-i18next';
+import { getRecipe } from '../../services/recipes';
+import { verifyCook } from '../../services/reviews';
+import { refreshUser } from '../../user';
+import Modal from '../../components/Modal';
+import ImageUpload from '../../components/ImageUpload';
 import { KookaAvatar, IconSparkle, IconSend, IconBack } from '../../components/Icons';
 import './Cook.css';
 
@@ -33,12 +38,39 @@ const nextId = () => `c${cid++}`;
 export default function Cook() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const recipe = getRecipe(id);
-  const steps = recipe.steps;
+  const { t } = useTranslation();
+  const [recipe, setRecipe] = useState(undefined);
 
   const [stepIndex, setStepIndex] = useState(0);
-  const step = steps[stepIndex];
-  const isLast = stepIndex === steps.length - 1;
+
+  // "I cooked it" verification flow
+  const [showFinish, setShowFinish] = useState(false);
+  const [cookPhoto, setCookPhoto] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState(null); // {verified, reason}
+
+  useEffect(() => {
+    getRecipe(id).then(setRecipe).catch(() => setRecipe(null));
+  }, [id]);
+
+  const steps = recipe?.steps || [];
+  const step = steps[stepIndex] || { text: '' };
+  const isLast = steps.length === 0 || stepIndex === steps.length - 1;
+
+  const runVerify = async () => {
+    if (!cookPhoto) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const res = await verifyCook(id, cookPhoto);
+      setVerifyResult(res);
+      if (res.verified) refreshUser();
+    } catch {
+      setVerifyResult({ verified: false, reason: t('common.error') });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   // inline AI panel
   const [messages, setMessages] = useState([
@@ -83,8 +115,11 @@ export default function Cook() {
     }, 600);
   };
 
-  const goBack = () => (stepIndex > 0 ? setStepIndex((i) => i - 1) : navigate(`/recipe/${recipe.id}`));
-  const goNext = () => (isLast ? navigate(`/recipe/${recipe.id}`) : setStepIndex((i) => i + 1));
+  const goBack = () => (stepIndex > 0 ? setStepIndex((i) => i - 1) : navigate(`/recipe/${id}`));
+  const goNext = () => (isLast ? setShowFinish(true) : setStepIndex((i) => i + 1));
+
+  if (recipe === undefined) return <div className="cook cook--state">{t('common.loading')}…</div>;
+  if (recipe === null) return <div className="cook cook--state">{t('common.error')}</div>;
 
   return (
     <div className="cook">
@@ -171,13 +206,45 @@ export default function Cook() {
       <div className="cook__foot">
         <button type="button" className="cook__btn cook__btn--dark" onClick={goBack}>Back</button>
         <button type="button" className="cook__btn cook__btn--primary" onClick={goNext}>
-          {isLast ? 'Done · finished' : 'Next step'}
+          {isLast ? `✓ ${t('cook.finished')}` : 'Next step'}
         </button>
         <button type="button" className="cook__ai" onClick={askKooka} aria-label="Ask Kooka">
           <IconSparkle className="cook__ai-icon" />
           <span>Ask Kooka</span>
         </button>
       </div>
+
+      {/* ===== "I cooked it" verification ===== */}
+      <Modal open={showFinish} onClose={() => setShowFinish(false)} title={t('cook.verifyTitle')}>
+        {verifyResult?.verified ? (
+          <div className="cook__verified">
+            <p className="cook__verified-msg">✅ {t('cook.verified')}</p>
+            <button
+              type="button"
+              className="cook__btn cook__btn--primary"
+              onClick={() => navigate(`/recipe/${id}`)}
+            >
+              {t('cook.writeReview')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="cook__verify-hint">{t('cook.verifyHint')}</p>
+            <ImageUpload value={cookPhoto} onChange={setCookPhoto} folder="/cooked" />
+            {verifyResult && !verifyResult.verified && (
+              <p className="cook__verify-err">⚠️ {t('cook.rejected')}</p>
+            )}
+            <button
+              type="button"
+              className="cook__btn cook__btn--primary cook__verify-btn"
+              onClick={runVerify}
+              disabled={!cookPhoto || verifying}
+            >
+              {verifying ? t('cook.verifying') : t('cook.verify')}
+            </button>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getRecipe } from '../../data/recipes';
+import { useTranslation } from 'react-i18next';
+import { getRecipe } from '../../services/recipes';
+import { countryOf } from '../../data/countries';
+import Reviews from '../../components/Reviews';
 import { IconBack, IconClock } from '../../components/Icons';
 import './Recipe.css';
 
@@ -53,26 +57,57 @@ function Gauge({ value, unit, label, pct }) {
 export default function Recipe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const recipe = getRecipe(id);
+  const { t } = useTranslation();
+  const [recipe, setRecipe] = useState(undefined); // undefined = loading
+
+  useEffect(() => {
+    let alive = true;
+    getRecipe(id)
+      .then((r) => alive && setRecipe(r))
+      .catch(() => alive && setRecipe(null));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  if (recipe === undefined) {
+    return <div className="recipe recipe--state">{t('common.loading')}…</div>;
+  }
+  if (recipe === null) {
+    return (
+      <div className="recipe recipe--state">
+        <p>{t('common.error')}</p>
+        <button type="button" className="recipe__cook" onClick={() => navigate('/home')}>
+          {t('common.back')}
+        </button>
+      </div>
+    );
+  }
+
+  const country = recipe.origin ? countryOf(recipe.origin) : null;
+  const method = (recipe.steps || []).map((s) => (typeof s === 'string' ? s : s.text));
+  const allergens = recipe.allergens || { contains: [], free: [] };
 
   return (
     <div className="recipe">
       <header className="recipe__hero">
         <button type="button" className="recipe__back" onClick={() => navigate(-1)}>
-          <IconBack className="recipe__back-icon" /> Back
+          <IconBack className="recipe__back-icon" /> {t('common.back')}
         </button>
 
         <div className="recipe__hero-inner">
           <div className="recipe__hero-text">
-            <span className="recipe__eyebrow">Recipe</span>
+            <span className="recipe__eyebrow">
+              {country ? `${country.flag} ${country.name}` : 'Recipe'}
+            </span>
             <h1 className="recipe__title">{recipe.title}</h1>
-            <p className="recipe__tagline">{recipe.tagline}</p>
+            {recipe.description && <p className="recipe__tagline">{recipe.description}</p>}
 
             <ul className="recipe__meta">
-              <li><IconClock className="recipe__meta-icon" /> {recipe.meta.time}</li>
-              <li>{recipe.meta.servings}</li>
-              <li>{recipe.meta.kcal}</li>
-              <li>difficulty {recipe.meta.level}</li>
+              {recipe.meta?.time && <li><IconClock className="recipe__meta-icon" /> {recipe.meta.time}</li>}
+              {recipe.meta?.servings && <li>{recipe.meta.servings}</li>}
+              {recipe.meta?.kcal && <li>{recipe.meta.kcal}</li>}
+              {recipe.difficulty && <li>difficulty {recipe.difficulty}</li>}
             </ul>
 
             <button
@@ -84,46 +119,54 @@ export default function Recipe() {
             </button>
           </div>
 
-          <div className="recipe__photo ph" aria-hidden="true">recipe photo</div>
+          <div
+            className="recipe__photo ph"
+            aria-hidden="true"
+            style={recipe.image_url ? { backgroundImage: `url(${recipe.image_url})` } : undefined}
+          >
+            {!recipe.image_url && 'recipe photo'}
+          </div>
         </div>
       </header>
 
-      <section className="recipe__dash">
-        <div className="recipe__dash-card recipe__nutri">
-          <h2 className="recipe__panel-title">Nutrition <span>/ serving</span></h2>
-          <div className="recipe__gauges">
-            {recipe.nutrition.map((n) => (
-              <Gauge key={n.key} value={n.value} unit={n.unit} label={n.label} pct={n.value / n.max} />
-            ))}
+      {recipe.nutrition?.length > 0 && (
+        <section className="recipe__dash">
+          <div className="recipe__dash-card recipe__nutri">
+            <h2 className="recipe__panel-title">Nutrition <span>/ serving</span></h2>
+            <div className="recipe__gauges">
+              {recipe.nutrition.map((n) => (
+                <Gauge key={n.key} value={n.value} unit={n.unit} label={n.label} pct={n.value / n.max} />
+              ))}
+            </div>
+            <p className="recipe__dash-note">
+              Estimated by AI. The needle shows how much of your reference daily intake one serving covers.
+            </p>
           </div>
-          <p className="recipe__dash-note">
-            The needle shows how much of your reference daily intake one serving covers.
-          </p>
-        </div>
 
-        <div className="recipe__dash-card recipe__allergens">
-          <h2 className="recipe__panel-title">Allergens</h2>
-          <p className="recipe__aller-label">Contains</p>
-          <div className="recipe__aller-chips">
-            {recipe.allergens.contains.map((a) => (
-              <span className="aller aller--in" key={a}>{a}</span>
-            ))}
+          <div className="recipe__dash-card recipe__allergens">
+            <h2 className="recipe__panel-title">Allergens</h2>
+            <p className="recipe__aller-label">Contains</p>
+            <div className="recipe__aller-chips">
+              {allergens.contains?.length ? allergens.contains.map((a) => (
+                <span className="aller aller--in" key={a}>{a}</span>
+              )) : <span className="aller aller--free">—</span>}
+            </div>
+            <p className="recipe__aller-label">Free from</p>
+            <div className="recipe__aller-chips">
+              {allergens.free?.map((a) => (
+                <span className="aller aller--free" key={a}>{a}</span>
+              ))}
+            </div>
           </div>
-          <p className="recipe__aller-label">Free from</p>
-          <div className="recipe__aller-chips">
-            {recipe.allergens.free.map((a) => (
-              <span className="aller aller--free" key={a}>{a}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <div className="recipe__body">
         <section className="recipe__col recipe__col--ingredients">
           <h2 className="recipe__col-title">Ingredients</h2>
           <ul className="recipe__ingredients">
-            {recipe.ingredients.map((ing) => (
-              <li key={ing}>{ing}</li>
+            {recipe.ingredients?.map((ing, i) => (
+              <li key={i}>{ing}</li>
             ))}
           </ul>
         </section>
@@ -131,7 +174,7 @@ export default function Recipe() {
         <section className="recipe__col recipe__col--method">
           <h2 className="recipe__col-title">Method</h2>
           <ol className="recipe__method">
-            {recipe.method.map((step, i) => (
+            {method.map((step, i) => (
               <li key={i}>
                 <span className="recipe__step-no">{i + 1}</span>
                 <p>{step}</p>
@@ -147,6 +190,10 @@ export default function Recipe() {
             Cook step by step
           </button>
         </section>
+      </div>
+
+      <div className="recipe__reviews">
+        <Reviews recipeId={recipe.id} />
       </div>
     </div>
   );

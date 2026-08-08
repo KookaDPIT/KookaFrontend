@@ -11,8 +11,16 @@ import Learn from './pages/app/Learn'
 import Forum from './pages/app/Forum'
 import Profile from './pages/app/Profile'
 import Settings from './pages/app/Settings'
+import CreateRecipe from './pages/app/CreateRecipe'
+import Search from './pages/app/Search'
 import KookaSplash from './pages/loading/KookaSplash'
+import { isLoggedIn } from './user'
 import './App.css'
+
+/* Gate the app routes: no token → back to login. */
+function ProtectedRoute({ children }) {
+  return isLoggedIn() ? children : <Navigate to="/login" replace />
+}
 
 // How long the splash stays up at minimum, so the gold-fill animation
 // has time to play through even when the page loads instantly.
@@ -53,15 +61,24 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* App Routes (share the nav menu) */}
-        <Route element={<AppLayout />}>
+        {/* App Routes (share the nav menu, require auth) */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/home" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/create" element={<CreateRecipe />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/recipe/:id" element={<Recipe />} />
           <Route path="/recipe/:id/cook" element={<Cook />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:id" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
 

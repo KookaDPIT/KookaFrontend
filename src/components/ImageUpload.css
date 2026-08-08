@@ -1,0 +1,73 @@
+.imgup__label {
+  display: block;
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.8rem;
+  color: var(--k-text);
+  margin-bottom: 6px;
+}
+
+.imgup__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.imgup__thumb {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--k-border-strong);
+}
+
+.imgup__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.imgup__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.imgup__add {
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  border: 1.5px dashed var(--k-accent);
+  background: var(--k-accent-soft);
+  color: var(--k-accent);
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.imgup__add:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.imgup__add:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.imgup__error {
+  color: #e5533a;
+  font-size: 0.8rem;
+  margin: 6px 0 0;
+}

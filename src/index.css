@@ -114,6 +114,32 @@
   }
 }
 
+/* ==========================================================================
+   KOOKA warm palette — shared design tokens used by the app screens
+   (Home, Recipe, Cook) and every newly built page/component so they all
+   look identical. These are intentionally theme-independent: the app shell
+   keeps its warm identity regardless of the light/dark toggle.
+   ========================================================================== */
+:root {
+  --k-bg: #f8ecd4;          /* page background */
+  --k-surface: #fffdf9;     /* cards / inputs surface */
+  --k-input-bg: #fdf7ec;    /* form inputs */
+  --k-border: #efe3ca;      /* soft borders */
+  --k-border-strong: #e6d6b4;
+  --k-input-border: #e7d8b6;
+  --k-text: #2a2016;        /* primary text */
+  --k-muted: #6b5d43;       /* secondary text */
+  --k-muted-2: #94805c;     /* tertiary text */
+  --k-faint: #b3a888;       /* placeholders */
+  --k-accent: #ff6b35;      /* Kooka orange */
+  --k-accent-hover: #f2591f;
+  --k-accent-soft: rgba(255, 107, 53, 0.14);
+  --k-dark: radial-gradient(120% 140% at 20% 0%, #3a2519 0%, #24170f 100%);
+  --k-dark-text: #fff8ef;
+  --k-dark-muted: rgba(255, 248, 239, 0.62);
+  --k-shadow: 0 6px 18px rgba(255, 107, 53, 0.18);
+}
+
 body {
   margin: 0;
   /* matches the loading splash so there's no white flash before React mounts */

@@ -340,3 +340,41 @@
   .cook__ai span { display: none; }
   .cook__ai { padding: 13px 16px; }
 }
+
+/* ===== loading / verify flow ===== */
+.cook--state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: #b3a380;
+  font-size: 1.1rem;
+}
+
+.cook__verify-hint {
+  margin: 0 0 14px;
+  color: var(--k-muted);
+}
+
+.cook__verify-btn,
+.cook__verified .cook__btn {
+  margin-top: 16px;
+}
+
+.cook__verify-err {
+  margin: 12px 0 0;
+  color: #e5533a;
+  font-family: var(--font-important), sans-serif;
+}
+
+.cook__verified {
+  text-align: center;
+}
+
+.cook__verified-msg {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  color: #3fae6f;
+  font-size: 1.05rem;
+  margin: 0;
+}

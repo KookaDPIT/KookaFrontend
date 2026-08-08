@@ -1,0 +1,172 @@
+.search-page {
+  flex: 1;
+  min-width: 0;
+  background: var(--k-bg);
+  font-family: var(--font-body), sans-serif;
+  color: var(--k-text);
+  padding: 28px 24px 80px;
+}
+
+.search-page__inner {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.search-page__title {
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--k-text);
+  margin: 0 0 16px;
+  line-height: 1;
+}
+
+.search-page__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border: 1.5px solid var(--k-input-border);
+  border-radius: 999px;
+  background: var(--k-input-bg);
+  margin-bottom: 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-page__bar:focus-within {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 4px var(--k-accent-soft);
+}
+
+.search-page__bar svg {
+  width: 18px;
+  height: 18px;
+  color: var(--k-muted-2);
+  flex-shrink: 0;
+}
+
+.search-page__bar input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--k-text);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1rem;
+}
+
+.search-page__bar input::placeholder {
+  color: var(--k-faint);
+}
+
+.search-page__hint {
+  color: var(--k-muted-2);
+  text-align: center;
+  padding: 30px 0;
+}
+
+.search-page__section {
+  margin-bottom: 30px;
+}
+
+.search-page__h2 {
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--k-muted-2);
+  margin: 0 0 12px;
+}
+
+.search-page__users {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sresult-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--k-border);
+  border-radius: 14px;
+  background: var(--k-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.sresult-user:hover {
+  border-color: var(--k-accent);
+  transform: translateY(-2px);
+}
+
+.sresult-user__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--k-accent-soft);
+  background-size: cover;
+  background-position: center;
+  color: var(--k-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sresult-user__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sresult-user__name {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  color: var(--k-text);
+}
+
+.sresult-user__handle {
+  font-size: 0.82rem;
+  color: var(--k-muted-2);
+}
+
+.sresult-user__follow {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border: 1.5px solid var(--k-accent);
+  border-radius: 999px;
+  background: var(--k-accent);
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sresult-user__follow:hover:not(:disabled) {
+  background: var(--k-accent-hover);
+}
+
+.sresult-user__follow.is-following {
+  background: transparent;
+  color: var(--k-accent);
+}
+
+.sresult-user__follow:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.search-page__recipes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}

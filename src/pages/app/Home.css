@@ -491,6 +491,132 @@
 
 .home-reviews__add .home-btn { flex-shrink: 0; padding: 12px 20px; }
 
+/* ===== WIRED-UP CONTENT (real data) ==================================== */
+.home-level {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff8ef;
+}
+
+.home-avatar { background-size: cover; background-position: center; }
+
+.home-daily__flag { font-size: 16px; }
+
+.home-daily__h1 {
+  margin: 0 0 14px;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 0.98;
+  color: #fff8ef;
+}
+
+/* create-recipe CTA */
+.home-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 13px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 107, 53, 0.3);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.home-create:hover { background: #f2591f; }
+.home-create:active { transform: translateY(1px); }
+
+.home-create__plus { font-size: 20px; line-height: 1; }
+
+.home-empty {
+  padding: 20px;
+  color: #94805c;
+  font-size: 15px;
+  text-align: center;
+  background: #fffdf9;
+  border: 1px dashed #e6d6b4;
+  border-radius: 16px;
+}
+
+/* passport as a clickable button */
+.home-passport {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.15s ease;
+}
+
+.home-passport:hover { transform: translateY(-2px); }
+
+.home-passport__flag {
+  font-size: 26px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.home-passport__empty { font-size: 40px; opacity: 0.7; }
+
+.home-passport__cta {
+  display: inline-block;
+  margin-top: 18px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #ff6b35;
+}
+
+/* reviews list */
+.home-reviews__list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.home-review {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #efe3ca;
+}
+
+.home-review:last-child { border-bottom: none; padding-bottom: 0; }
+
+.home-review__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.home-review__who {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #2a2016;
+}
+
+.home-review__text {
+  margin: 0;
+  font-size: 14px;
+  color: #6b5d43;
+}
+
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */

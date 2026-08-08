@@ -1,0 +1,239 @@
+.create {
+  flex: 1;
+  min-width: 0;
+  background: var(--k-bg);
+  font-family: var(--font-body), sans-serif;
+  color: var(--k-text);
+}
+
+.create__head,
+.create__form {
+  max-width: 780px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.create__head {
+  padding-top: 28px;
+}
+
+.create__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  color: var(--k-muted);
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+}
+
+.create__back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.create__title {
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--k-text);
+  margin: 0;
+  line-height: 1;
+}
+
+.create__sub {
+  color: var(--k-muted-2);
+  margin: 6px 0 0;
+}
+
+.create__form {
+  margin-top: 24px;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.create__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create__label {
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--k-text);
+}
+
+.create__hint {
+  font-size: 0.78rem;
+  color: var(--k-muted-2);
+}
+
+.create__input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--k-input-border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: var(--k-input-bg);
+  color: var(--k-text);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.create__input::placeholder {
+  color: var(--k-faint);
+}
+
+.create__input:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 4px var(--k-accent-soft);
+}
+
+.create__textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+
+.create__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.create__row .create__field {
+  flex: 1 1 100%;
+}
+
+.create__field--sm {
+  flex: 1 1 100px !important;
+  min-width: 100px;
+}
+
+.create__row .create__field:first-child {
+  flex: 2 1 240px;
+}
+
+.create__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create__listrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.create__steprow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.create__stepno {
+  flex: 0 0 28px;
+  height: 28px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--k-accent);
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create__stepbody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create__timer {
+  max-width: 220px;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+}
+
+.create__del {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  margin-top: 5px;
+  border: 1.5px solid var(--k-input-border);
+  border-radius: 10px;
+  background: var(--k-surface);
+  color: var(--k-muted-2);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.create__del:hover {
+  color: #e5533a;
+  border-color: #e5533a;
+}
+
+.create__addrow {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: none;
+  border: 0;
+  color: var(--k-accent);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.create__error {
+  color: #e5533a;
+  font-size: 0.9rem;
+  margin: 0;
+  font-family: var(--font-important), sans-serif;
+}
+
+.create__submit {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 14px 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--k-accent);
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: var(--k-shadow);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.create__submit:hover:not(:disabled) {
+  background: var(--k-accent-hover);
+}
+
+.create__submit:active {
+  transform: translateY(1px);
+}
+
+.create__submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
