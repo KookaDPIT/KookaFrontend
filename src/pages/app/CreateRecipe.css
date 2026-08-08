@@ -237,3 +237,42 @@
   opacity: 0.7;
   cursor: progress;
 }
+
+/* ==========================================================================
+    DARK MODE
+    ========================================================================== */
+[data-theme="dark"] .create {
+  background: #2a2016;
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .create__back,
+[data-theme="dark"] .create__hint,
+[data-theme="dark"] .create__sub { color: #c9bea7; }
+
+[data-theme="dark"] .create__back:hover { color: #fff8ef; }
+
+[data-theme="dark"] .create__title,
+[data-theme="dark"] .create__label { color: #f5f5f0; }
+
+[data-theme="dark"] .create__input,
+[data-theme="dark"] .create__del {
+  background: #3a3228;
+  color: #f5f5f0;
+  border-color: #4a4238;
+}
+
+[data-theme="dark"] .create__input::placeholder { color: #a89968; }
+
+[data-theme="dark"] .create__del:hover {
+  background: #493029;
+  color: #ff9a70;
+  border-color: #ff9a70;
+}
+
+[data-theme="dark"] .create__submit {
+  background: #c8551f;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="dark"] .create__submit:hover:not(:disabled) { background: #e0691f; }

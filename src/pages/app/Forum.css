@@ -494,3 +494,38 @@
   .fo-post__foot { flex-wrap: wrap; }
   .fo-panel { min-width: 100%; }
 }
+
+/* ==========================================================================
+    DARK MODE
+    ========================================================================== */
+[data-theme="dark"] .fo { background: #2a2016; color: #f5f5f0; }
+[data-theme="dark"] .fo-head__title,
+[data-theme="dark"] .fo-post__community,
+[data-theme="dark"] .fo-post__title,
+[data-theme="dark"] .fo-panel__title,
+[data-theme="dark"] .fo-trend__body b { color: #f5f5f0; }
+[data-theme="dark"] .fo-head__sub,
+[data-theme="dark"] .fo-post__meta,
+[data-theme="dark"] .fo-post__body,
+[data-theme="dark"] .fo-vote__score,
+[data-theme="dark"] .fo-chip,
+[data-theme="dark"] .fo-trend__body small,
+[data-theme="dark"] .fo-rules li { color: #c9bea7; }
+[data-theme="dark"] .fo-composer,
+[data-theme="dark"] .fo-post,
+[data-theme="dark"] .fo-panel,
+[data-theme="dark"] .fo-sort__btn.is-active { background: #3a3228; color: #f5f5f0; }
+[data-theme="dark"] .fo-post--lead { background: linear-gradient(180deg, #483426 0%, #3a3228 60%); }
+[data-theme="dark"] .fo-composer input { color: #f5f5f0; }
+[data-theme="dark"] .fo-composer input::placeholder { color: #a89968; }
+[data-theme="dark"] .fo-composer__pick { color: #c9bea7; }
+[data-theme="dark"] .fo-composer__pick select { background: #2a2016; border-color: #4a4238; color: #f5f5f0; }
+[data-theme="dark"] .fo-sort { background: rgba(255, 255, 255, 0.09); }
+[data-theme="dark"] .fo-sort__btn,
+[data-theme="dark"] .fo-chip { color: #c9bea7; }
+[data-theme="dark"] .fo-vote { background: rgba(255, 255, 255, 0.045); }
+[data-theme="dark"] .fo-vote__btn { color: #c9bea7; }
+[data-theme="dark"] .fo-post__photo { background: repeating-linear-gradient(-45deg, #493b2d 0 12px, #3d3024 12px 24px); color: #c9bea7; }
+[data-theme="dark"] .fo-panel--dark { background: radial-gradient(130% 150% at 15% 0%, #503424 0%, #21150e 100%); }
+[data-theme="dark"] .fo-trend__btn:hover,
+[data-theme="dark"] .fo-chip:hover { background: rgba(255, 255, 255, 0.09); color: #f5f5f0; }
