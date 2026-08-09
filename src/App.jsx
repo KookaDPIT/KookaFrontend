@@ -72,6 +72,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/create" element={<CreateRecipe />} />
+          <Route path="/recipe/:id/edit" element={<CreateRecipe />} />
           <Route path="/search" element={<Search />} />
           <Route path="/recipe/:id" element={<Recipe />} />
           <Route path="/recipe/:id/cook" element={<Cook />} />

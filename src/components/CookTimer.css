@@ -1,0 +1,80 @@
+.ctimer {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.ctimer.is-running {
+  border-color: rgba(255, 107, 53, 0.6);
+  background: rgba(255, 107, 53, 0.12);
+}
+
+.ctimer.is-done {
+  border-color: #3fae6f;
+  background: rgba(63, 174, 111, 0.16);
+}
+
+.ctimer__readout {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.ctimer__readout b {
+  font-family: var(--font-important), sans-serif;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  color: #fff8ef;
+}
+
+.ctimer__readout small {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255, 248, 239, 0.6);
+}
+
+.ctimer__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.ctimer__btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ff6b35;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ctimer__btn:hover:not(:disabled) {
+  background: #f2591f;
+}
+
+.ctimer__btn:active {
+  transform: scale(0.94);
+}
+
+.ctimer__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ctimer__btn--reset {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff8ef;
+  font-size: 18px;
+}
+
+.ctimer__btn--reset:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+}

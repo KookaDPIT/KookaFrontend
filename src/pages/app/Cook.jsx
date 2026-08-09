@@ -5,31 +5,32 @@ import { getRecipe } from '../../services/recipes';
 import { verifyCook } from '../../services/reviews';
 import { refreshUser } from '../../user';
 import Modal from '../../components/Modal';
-import ImageUpload from '../../components/ImageUpload';
+import CookTimer from '../../components/CookTimer';
 import { KookaAvatar, IconSparkle, IconSend, IconBack } from '../../components/Icons';
 import './Cook.css';
 
 /* ==========================================================================
-   COOK — step-by-step cook-along for one recipe (dark "hands dirty" screen).
-   The AI lives INLINE here: the mic button is replaced by an "Ask Kooka"
-   sparkle button that opens the chat in the "Ask while you cook"
-   panel — you talk to the AI without leaving to the full chat page.
+   COOK — step-by-step cook-along for one recipe. The inline "Ask Kooka" panel
+   and its quick suggestions are derived from the actual recipe + current step,
+   not hard-coded demo content.
 
-   BACKEND SEAM: `cookAssistantReply` is a local mock. Replace with a call that
-   also knows the current step/recipe context.
+   BACKEND SEAM: `cookAssistantReply` is still a local heuristic. Swap it for a
+   real call (see the Chat page's fetchAssistantReply) when ready — it already
+   receives the recipe title and current step as context.
    ========================================================================== */
 
-function cookAssistantReply(text) {
+function cookAssistantReply(text, { step, stepNo, title }) {
   const s = text.toLowerCase();
-  if (/salt|salty/.test(s))
-    return "Don't add any more salt — the guanciale and parmesan are already salty. Taste only at the end.";
-  if (/curdl|split|grainy|broke/.test(s))
-    return "It's saveable: take it off the heat, add hot pasta water a spoon at a time and stir vigorously. The emulsion comes back together.";
-  if (/time|minute|timer|set/.test(s))
-    return "I've started a timer. I'll tell you when it's ready — you keep an eye on the pan.";
-  if (/repeat|step|again|didn't (get|understand)/.test(s))
-    return 'I\'ll read the current step back to you and stay on it until you say "next".';
-  return "I'm here while you cook. Tell me which step you're on or what went wrong and I'll guide you.";
+  if (/repeat|step|again|read/.test(s)) return `Step ${stepNo}: ${step.text}`;
+  if (/time|minute|timer|long|how much/.test(s)) {
+    return step.timer
+      ? `This step runs about ${step.timer}. Use the timer on the left — hit play and I'll keep it going.`
+      : 'No fixed timer on this step — go by look and feel rather than the clock.';
+  }
+  if (/wrong|burn|salt|help|stuck|mistake/.test(s)) {
+    return `Take the pan off the heat for a second and breathe. Tell me exactly what happened on step ${stepNo} and I'll walk you back on track.`;
+  }
+  return `I'm right here while you cook ${title}. Ask about the current step, timing, or a fix and I'll help.`;
 }
 
 let cid = 1;
@@ -43,11 +44,14 @@ export default function Cook() {
 
   const [stepIndex, setStepIndex] = useState(0);
 
-  // "I cooked it" verification flow
+  // "I cooked it" verification flow — the photo is sent straight to the AI and
+  // never stored (no ImageKit upload).
   const [showFinish, setShowFinish] = useState(false);
-  const [cookPhoto, setCookPhoto] = useState('');
+  const [cookFile, setCookFile] = useState(null);
+  const [cookPreview, setCookPreview] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [verifyResult, setVerifyResult] = useState(null); // {verified, reason}
+  const [verifyResult, setVerifyResult] = useState(null);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     getRecipe(id).then(setRecipe).catch(() => setRecipe(null));
@@ -56,13 +60,24 @@ export default function Cook() {
   const steps = recipe?.steps || [];
   const step = steps[stepIndex] || { text: '' };
   const isLast = steps.length === 0 || stepIndex === steps.length - 1;
+  const timedSteps = steps
+    .map((s, i) => ({ ...s, no: i + 1 }))
+    .filter((s) => s.timer);
+
+  const pickFile = (f) => {
+    if (!f) return;
+    if (cookPreview) URL.revokeObjectURL(cookPreview);
+    setCookFile(f);
+    setCookPreview(URL.createObjectURL(f));
+    setVerifyResult(null);
+  };
 
   const runVerify = async () => {
-    if (!cookPhoto) return;
+    if (!cookFile) return;
     setVerifying(true);
     setVerifyResult(null);
     try {
-      const res = await verifyCook(id, cookPhoto);
+      const res = await verifyCook(id, cookFile);
       setVerifyResult(res);
       if (res.verified) refreshUser();
     } catch {
@@ -72,15 +87,8 @@ export default function Cook() {
     }
   };
 
-  // inline AI panel
-  const [messages, setMessages] = useState([
-    { id: nextId(), role: 'user', text: 'It curdled a little, can I still save it?' },
-    {
-      id: nextId(),
-      role: 'ai',
-      text: 'Yes. Add 2–3 tablespoons of the hot pasta water and stir constantly, off the heat. The emulsion comes back together in about 20 s.',
-    },
-  ]);
+  // inline AI panel — starts empty; a contextual greeting shows until you ask.
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
@@ -92,41 +100,41 @@ export default function Cook() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  const openAssistant = () => {
+  const openAssistant = (seed) => {
     setIsAssistantOpen(true);
+    if (seed) {
+      setDraft('');
+      askKooka(seed);
+    }
   };
+  const closeAssistant = () => setIsAssistantOpen(false);
+  const toggleAssistant = () => setIsAssistantOpen((open) => !open);
 
   useEffect(() => {
-    if (!isAssistantOpen) return;
-    const frame = window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
+    if (!isAssistantOpen) return undefined;
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [isAssistantOpen]);
 
-  const closeAssistant = () => {
-    setIsAssistantOpen(false);
-  };
-
-  const toggleAssistant = () => {
-    setIsAssistantOpen((open) => !open);
+  const askKooka = (clean) => {
+    if (!clean || busy) return;
+    const user = { id: nextId(), role: 'user', text: clean };
+    const typing = { id: nextId(), role: 'ai', typing: true };
+    setMessages((m) => [...m, user, typing]);
+    setBusy(true);
+    window.setTimeout(() => {
+      const reply = cookAssistantReply(clean, { step, stepNo: stepIndex + 1, title: recipe?.title || '' });
+      setMessages((m) => m.filter((x) => x.id !== typing.id).concat({ id: nextId(), role: 'ai', text: reply }));
+      setBusy(false);
+    }, 550);
   };
 
   const send = (e) => {
     e.preventDefault();
     const clean = draft.trim();
-    if (!clean || busy) return;
-    const user = { id: nextId(), role: 'user', text: clean };
-    const typing = { id: nextId(), role: 'ai', typing: true };
-    setMessages((m) => [...m, user, typing]);
+    if (!clean) return;
     setDraft('');
-    setBusy(true);
-    window.setTimeout(() => {
-      setMessages((m) =>
-        m.filter((x) => x.id !== typing.id).concat({ id: nextId(), role: 'ai', text: cookAssistantReply(clean) })
-      );
-      setBusy(false);
-    }, 600);
+    askKooka(clean);
   };
 
   const goBack = () => (stepIndex > 0 ? setStepIndex((i) => i - 1) : navigate(`/recipe/${id}`));
@@ -143,7 +151,7 @@ export default function Cook() {
           <button type="button" className="cook__exit" onClick={() => navigate(`/recipe/${recipe.id}`)}>
             <IconBack className="cook__exit-icon" /> {recipe.title}
           </button>
-          <span className="cook__count">step {stepIndex + 1} of {steps.length}</span>
+          <span className="cook__count">{t('cook.stepOf', { n: stepIndex + 1, total: steps.length })}</span>
         </div>
 
         <div className="cook__progress">
@@ -152,20 +160,23 @@ export default function Cook() {
           ))}
         </div>
 
-        <div className="cook__step-no">STEP {stepIndex + 1}</div>
+        <div className="cook__step-no">{t('cook.stepLabel', { n: stepIndex + 1 })}</div>
         <p className="cook__step">{step.text}</p>
 
         <div className="cook__timerrow">
           {step.timer && (
-            <div className="cook__timer">
-              <b>{step.timer}</b>
-              {step.label && <small>{step.label}</small>}
-            </div>
+            <CookTimer key={stepIndex} timer={step.timer} label={step.label} />
           )}
           <div className="cook__voice">
-            <button type="button" className="cook__vchip" onClick={openAssistant}>Kooka, repeat the step</button>
-            <button type="button" className="cook__vchip" onClick={openAssistant}>How much longer?</button>
-            <button type="button" className="cook__vchip" onClick={openAssistant}>Something went wrong</button>
+            <button type="button" className="cook__vchip" onClick={() => openAssistant(t('cook.chipRepeat'))}>
+              {t('cook.chipRepeat')}
+            </button>
+            <button type="button" className="cook__vchip" onClick={() => openAssistant(t('cook.chipTime'))}>
+              {t('cook.chipTime')}
+            </button>
+            <button type="button" className="cook__vchip" onClick={() => openAssistant(t('cook.chipWrong'))}>
+              {t('cook.chipWrong')}
+            </button>
           </div>
         </div>
       </div>
@@ -175,31 +186,46 @@ export default function Cook() {
         <div className="cook__side-head">
           <KookaAvatar size="sm" />
           <div>
-            <h4>Ask while you cook</h4>
-            <span>Kooka answers here, without leaving the recipe</span>
+            <h4>{t('cook.askTitle')}</h4>
+            <span>{t('cook.askSub')}</span>
           </div>
-          <button type="button" className="cook__side-close" onClick={closeAssistant} aria-label="Close Ask Kooka">
+          <button type="button" className="cook__side-close" onClick={closeAssistant} aria-label={t('common.close')}>
             ×
           </button>
         </div>
 
         <div className="cook__timers">
-          <ul>
-            <li><span>Pasta al dente</span><span className="done">done</span></li>
-            <li><span>Guanciale rendered</span><span className="run">1:12</span></li>
-          </ul>
+          <span className="cook__timers-title">{t('cook.timersTitle')}</span>
+          {timedSteps.length === 0 ? (
+            <p className="cook__timers-empty">{t('cook.noTimers')}</p>
+          ) : (
+            <ul>
+              {timedSteps.map((s) => (
+                <li key={s.no} className={s.no === stepIndex + 1 ? 'is-current' : ''}>
+                  <span>{t('cook.stepShort', { n: s.no })}{s.label ? ` · ${s.label}` : ''}</span>
+                  <span className="cook__timers-val">{s.timer}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="cook__chat" ref={chatRef}>
-          {messages.map((m) =>
-            m.role === 'user' ? (
-              <div className="cook__msg cook__msg--user" key={m.id}>{m.text}</div>
-            ) : m.typing ? (
-              <div className="cook__msg cook__msg--ai cook__typing" key={m.id}>
-                <span /><span /><span />
-              </div>
-            ) : (
-              <div className="cook__msg cook__msg--ai" key={m.id}>{m.text}</div>
+          {messages.length === 0 ? (
+            <div className="cook__msg cook__msg--ai">
+              {t('cook.greeting', { title: recipe.title })}
+            </div>
+          ) : (
+            messages.map((m) =>
+              m.role === 'user' ? (
+                <div className="cook__msg cook__msg--user" key={m.id}>{m.text}</div>
+              ) : m.typing ? (
+                <div className="cook__msg cook__msg--ai cook__typing" key={m.id}>
+                  <span /><span /><span />
+                </div>
+              ) : (
+                <div className="cook__msg cook__msg--ai" key={m.id}>{m.text}</div>
+              )
             )
           )}
         </div>
@@ -210,10 +236,10 @@ export default function Cook() {
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask Kooka…"
-            aria-label="Ask Kooka"
+            placeholder={t('cook.askPh')}
+            aria-label={t('cook.askTitle')}
           />
-          <button type="submit" className="cook__ask-send" aria-label="Send" disabled={!draft.trim() || busy}>
+          <button type="submit" className="cook__ask-send" aria-label={t('common.post')} disabled={!draft.trim() || busy}>
             <IconSend className="cook__ask-send-icon" />
           </button>
         </form>
@@ -221,23 +247,23 @@ export default function Cook() {
 
       {/* ===== FOOTER ===== */}
       <div className="cook__foot">
-        <button type="button" className="cook__btn cook__btn--dark" onClick={goBack}>Back</button>
+        <button type="button" className="cook__btn cook__btn--dark" onClick={goBack}>{t('cook.back')}</button>
         <button type="button" className="cook__btn cook__btn--primary" onClick={goNext}>
-          {isLast ? `✓ ${t('cook.finished')}` : 'Next step'}
+          {isLast ? `✓ ${t('cook.finished')}` : t('cook.next')}
         </button>
         <button
           type="button"
           className="cook__ai"
           onClick={toggleAssistant}
-          aria-label="Ask Kooka"
+          aria-label={t('cook.askTitle')}
           aria-expanded={isAssistantOpen}
         >
           <IconSparkle className="cook__ai-icon" />
-          <span>Ask Kooka</span>
+          <span>{t('cook.askShort')}</span>
         </button>
       </div>
 
-      {/* ===== "I cooked it" verification ===== */}
+      {/* ===== "I cooked it" verification (photo NOT stored) ===== */}
       <Modal open={showFinish} onClose={() => setShowFinish(false)} title={t('cook.verifyTitle')}>
         {verifyResult?.verified ? (
           <div className="cook__verified">
@@ -253,7 +279,26 @@ export default function Cook() {
         ) : (
           <>
             <p className="cook__verify-hint">{t('cook.verifyHint')}</p>
-            <ImageUpload value={cookPhoto} onChange={setCookPhoto} folder="/cooked" />
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => pickFile(e.target.files?.[0])}
+            />
+
+            {cookPreview ? (
+              <button type="button" className="cook__photo-preview" onClick={() => fileRef.current?.click()}>
+                <img src={cookPreview} alt="" />
+                <span>{t('cook.changePhoto')}</span>
+              </button>
+            ) : (
+              <button type="button" className="cook__photo-pick" onClick={() => fileRef.current?.click()}>
+                📷 {t('cook.selectPhoto')}
+              </button>
+            )}
+
             {verifyResult && !verifyResult.verified && (
               <p className="cook__verify-err">⚠️ {t('cook.rejected')}</p>
             )}
@@ -261,7 +306,7 @@ export default function Cook() {
               type="button"
               className="cook__btn cook__btn--primary cook__verify-btn"
               onClick={runVerify}
-              disabled={!cookPhoto || verifying}
+              disabled={!cookFile || verifying}
             >
               {verifying ? t('cook.verifying') : t('cook.verify')}
             </button>

@@ -36,3 +36,19 @@
   fill: var(--k-accent);
   stroke: var(--k-accent-hover);
 }
+
+/* dark mode */
+[data-theme="dark"] .wglobe__ocean {
+  fill: #1d2b3a;
+  stroke: rgba(255, 107, 53, 0.3);
+}
+
+[data-theme="dark"] .wglobe__land {
+  fill: #3a3d46;
+  stroke: #4a4d57;
+}
+
+[data-theme="dark"] .wglobe__land.is-on {
+  fill: var(--k-accent);
+  stroke: var(--k-accent-hover);
+}

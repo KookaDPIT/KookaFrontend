@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createRecipe } from '../../services/recipes';
+import { createRecipe, updateRecipe, getRecipe } from '../../services/recipes';
 import { refreshUser } from '../../user';
 import CountryPicker from '../../components/CountryPicker';
 import ImageUpload from '../../components/ImageUpload';
@@ -12,6 +12,8 @@ import './CreateRecipe.css';
 export default function CreateRecipe() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +28,33 @@ export default function CreateRecipe() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // edit mode: load the existing recipe once and prefill the form
+  useEffect(() => {
+    if (!isEdit) return;
+    let alive = true;
+    getRecipe(id)
+      .then((r) => {
+        if (!alive || !r) return;
+        setTitle(r.title || '');
+        setDescription(r.description || '');
+        setOrigin(r.origin || '');
+        setServings(r.servings || 1);
+        setDuration(r.duration_min || 0);
+        setDifficulty(r.difficulty || 'easy');
+        setImages(r.images?.length ? r.images : (r.image_url ? [r.image_url] : []));
+        setIngredients(r.ingredients?.length ? r.ingredients : ['']);
+        setSteps(
+          r.steps?.length
+            ? r.steps.map((s) => ({ text: s.text || '', timer: s.timer || '' }))
+            : [{ text: '', timer: '' }],
+        );
+      })
+      .catch(() => alive && setError(t('common.error')));
+    return () => {
+      alive = false;
+    };
+  }, [id, isEdit, t]);
 
   // ---- ingredient rows ----
   const setIngredient = (i, v) => setIngredients((a) => a.map((x, idx) => (idx === i ? v : x)));
@@ -50,22 +79,24 @@ export default function CreateRecipe() {
     if (!cleanIngredients.length) return setError(t('create.errIngredients'));
     if (!cleanSteps.length) return setError(t('create.errSteps'));
 
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      origin,
+      servings: Number(servings) || 1,
+      duration_min: Number(duration) || 0,
+      difficulty,
+      ingredients: cleanIngredients,
+      steps: cleanSteps,
+      image_url: images[0] || '',
+      images,
+    };
+
     setBusy(true);
     try {
-      const recipe = await createRecipe({
-        title: title.trim(),
-        description: description.trim(),
-        origin,
-        servings: Number(servings) || 1,
-        duration_min: Number(duration) || 0,
-        difficulty,
-        ingredients: cleanIngredients,
-        steps: cleanSteps,
-        image_url: images[0] || '',
-        images,
-      });
-      refreshUser(); // XP changed
-      setToast(t('create.successToast'));
+      const recipe = isEdit ? await updateRecipe(id, payload) : await createRecipe(payload);
+      refreshUser(); // XP changed on create
+      setToast(isEdit ? t('create.savedToast') : t('create.successToast'));
       setTimeout(() => navigate(`/recipe/${recipe.id}`), 700);
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -80,8 +111,8 @@ export default function CreateRecipe() {
         <button type="button" className="create__back" onClick={() => navigate(-1)}>
           <IconBack /> {t('common.back')}
         </button>
-        <h1 className="create__title">{t('create.title')}</h1>
-        <p className="create__sub">{t('create.subtitle')}</p>
+        <h1 className="create__title">{isEdit ? t('create.editTitle') : t('create.title')}</h1>
+        <p className="create__sub">{isEdit ? t('create.editSubtitle') : t('create.subtitle')}</p>
       </div>
 
       <form className="create__form" onSubmit={handleSubmit}>
@@ -224,7 +255,11 @@ export default function CreateRecipe() {
         {error && <p className="create__error">{error}</p>}
 
         <button type="submit" className="create__submit" disabled={busy}>
-          {busy ? t('create.publishing') : t('create.publish')}
+          {busy
+            ? t('create.publishing')
+            : isEdit
+              ? t('create.saveChanges')
+              : t('create.publish')}
         </button>
       </form>
 

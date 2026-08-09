@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listRecipes, getDailyDish } from '../../services/recipes';
-import { listReviews } from '../../services/reviews';
+import { recentReviews } from '../../services/reviews';
 import { getPassport } from '../../services/users';
 import { useUser } from '../../user';
 import { countryOf } from '../../data/countries';
@@ -59,12 +59,16 @@ export default function Home() {
     setFeed(null); // show skeletons while the new filter loads
   };
 
-  // fresh reviews = reviews of the daily dish
+  // fresh reviews across all recipes (each carries its recipe)
   useEffect(() => {
-    if (daily?.id) {
-      listReviews(daily.id).then((r) => setReviews(r.items || [])).catch(() => setReviews([]));
-    }
-  }, [daily?.id]);
+    let alive = true;
+    recentReviews(6)
+      .then((r) => alive && setReviews(r))
+      .catch(() => alive && setReviews([]));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // passport (when user id known)
   useEffect(() => {
@@ -79,6 +83,8 @@ export default function Home() {
   };
 
   const dailyCountry = daily?.origin ? countryOf(daily.origin) : null;
+  // the daily dish is featured in the hero, so keep it out of the feed grid
+  const feedItems = feed ? feed.filter((r) => r.id !== daily?.id) : feed;
 
   return (
     <div className="home">
@@ -113,9 +119,15 @@ export default function Home() {
 
             <div className="home-topbar__meta">
               <span className="home-level">Lvl {user?.level ?? 1}</span>
-              <Link to="/profile" className="home-avatar" aria-label={t('home.yourProfile')}
-                style={user?.avatar_url ? { backgroundImage: `url(${user.avatar_url})` } : undefined}
-              />
+              <button
+                type="button"
+                className="home-create-plus"
+                onClick={() => navigate('/create')}
+                aria-label={t('home.createRecipe')}
+                title={t('home.createRecipe')}
+              >
+                +
+              </button>
             </div>
           </div>
 
@@ -170,12 +182,6 @@ export default function Home() {
 
       {/* ===== BODY SHEET ============================================== */}
       <div className="home-sheet">
-        {/* create recipe CTA */}
-        <button type="button" className="home-create" onClick={() => navigate('/create')}>
-          <span className="home-create__plus">+</span>
-          {t('home.createRecipe')}
-        </button>
-
         {/* filter chips */}
         <div className="home-filters" role="tablist" aria-label={t('home.feedTitle')}>
           {FILTERS.map((f, i) => (
@@ -199,7 +205,7 @@ export default function Home() {
             <p className="home-section__sub">{t('home.feedSub')}</p>
           </div>
 
-          {feed === null ? (
+          {feedItems === null ? (
             <div className="home-feed">
               {Array.from({ length: 4 }).map((_, i) => (
                 <article className="home-card" key={i}>
@@ -211,11 +217,11 @@ export default function Home() {
                 </article>
               ))}
             </div>
-          ) : feed.length === 0 ? (
+          ) : feedItems.length === 0 ? (
             <p className="home-empty">{t('home.feedEmpty')}</p>
           ) : (
             <div className="home-feed">
-              {feed.map((r) => (
+              {feedItems.map((r) => (
                 <RecipeCard key={r.id} recipe={r} />
               ))}
             </div>
@@ -256,6 +262,12 @@ export default function Home() {
                       <span className="home-review__who">{rv.user?.full_name || rv.user?.username}</span>
                       <Stars value={rv.rating} size={14} />
                     </div>
+                    {rv.recipe && (
+                      <Link className="home-review__recipe" to={`/recipe/${rv.recipe.id}`}>
+                        {rv.recipe.origin ? `${countryOf(rv.recipe.origin).flag} ` : ''}
+                        {rv.recipe.title}
+                      </Link>
+                    )}
                     {rv.comment && <p className="home-review__text">{rv.comment}</p>}
                   </li>
                 ))}

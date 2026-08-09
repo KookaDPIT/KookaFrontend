@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRecipe } from '../../services/recipes';
 import { countryOf } from '../../data/countries';
+import { useUser } from '../../user';
 import Reviews from '../../components/Reviews';
 import { IconBack, IconClock } from '../../components/Icons';
 import './Recipe.css';
@@ -13,37 +14,44 @@ import './Recipe.css';
    Data is mock (getRecipe by UUID) — no backend yet.
    ========================================================================== */
 
-/* Car-dashboard speedometer for a nutrient. `pct` (0..1+) drives the needle;
-   the arc has green / amber / red zones like a tachometer redline. */
+/* Car-dashboard speedometer for a nutrient. `pct` (0..1) drives the needle over
+   a 180° arc with green / amber / red zones (like a tachometer redline).
+   Geometry is computed with polar math so needle, zones and ticks line up. */
+const G = { cx: 50, cy: 50, r: 40 };
+
+/* point on the arc for fraction f (0 = left, 1 = right), at radius rr */
+function gaugePoint(f, rr = G.r) {
+  const a = Math.PI - f * Math.PI; // PI (left) -> 0 (right), over the top
+  return [G.cx + rr * Math.cos(a), G.cy - rr * Math.sin(a)];
+}
+
+/* arc path between two fractions (each sub-arc is < 180°, so large-arc = 0) */
+function gaugeArc(f0, f1, rr = G.r) {
+  const [x0, y0] = gaugePoint(f0, rr);
+  const [x1, y1] = gaugePoint(f1, rr);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${rr} ${rr} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+
 function Gauge({ value, unit, label, pct }) {
   const p = Math.max(0, Math.min(1, pct));
-  const needle = (p - 0.5) * 180; // deg: -90 (left) .. +90 (right)
   const zone = p < 0.55 ? '#3fae6f' : p < 0.8 ? '#ef9f3c' : '#e5533a';
-
-  // tick marks around the arc (cx 50, cy 50, r 42)
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => {
-    const a = (1 - t) * Math.PI;
-    const cos = Math.cos(a), sin = Math.sin(a);
-    return {
-      x1: 50 + 44 * cos, y1: 50 - 44 * sin,
-      x2: 50 + 37 * cos, y2: 50 - 37 * sin,
-    };
-  });
+  const [nx, ny] = gaugePoint(p, G.r - 7);
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
 
   return (
     <div className="gauge">
-      <svg viewBox="0 0 100 60" className="gauge__svg" aria-hidden="true">
-        <path className="gauge__track" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" />
-        <path className="gauge__zone gauge__zone--green" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" strokeDasharray="55 45" />
-        <path className="gauge__zone gauge__zone--amber" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" strokeDasharray="0 55 25 20" />
-        <path className="gauge__zone gauge__zone--red" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" strokeDasharray="0 80 20 0" />
-        {ticks.map((t, i) => (
-          <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} className="gauge__tick" />
-        ))}
-        <g transform={`rotate(${needle} 50 50)`}>
-          <line x1="50" y1="50" x2="50" y2="15" className="gauge__needle" />
-        </g>
-        <circle cx="50" cy="50" r="4.5" className="gauge__hub" />
+      <svg viewBox="0 0 100 58" className="gauge__svg" aria-hidden="true">
+        <path className="gauge__track" d={gaugeArc(0, 1)} />
+        <path className="gauge__zone gauge__zone--green" d={gaugeArc(0, 0.55)} />
+        <path className="gauge__zone gauge__zone--amber" d={gaugeArc(0.55, 0.8)} />
+        <path className="gauge__zone gauge__zone--red" d={gaugeArc(0.8, 1)} />
+        {ticks.map((f) => {
+          const [x1, y1] = gaugePoint(f, G.r);
+          const [x2, y2] = gaugePoint(f, G.r - 5);
+          return <line key={f} x1={x1} y1={y1} x2={x2} y2={y2} className="gauge__tick" />;
+        })}
+        <line x1={G.cx} y1={G.cy} x2={nx.toFixed(2)} y2={ny.toFixed(2)} className="gauge__needle" />
+        <circle cx={G.cx} cy={G.cy} r="4" className="gauge__hub" />
       </svg>
       <div className="gauge__readout">
         <b style={{ color: zone }}>{value}</b>
@@ -58,6 +66,7 @@ export default function Recipe() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [user] = useUser();
   const [recipe, setRecipe] = useState(undefined); // undefined = loading
 
   useEffect(() => {
@@ -87,6 +96,8 @@ export default function Recipe() {
   const country = recipe.origin ? countryOf(recipe.origin) : null;
   const method = (recipe.steps || []).map((s) => (typeof s === 'string' ? s : s.text));
   const allergens = recipe.allergens || { contains: [], free: [] };
+  const author = recipe.author;
+  const isAuthor = user && author && user.id === author.id;
 
   return (
     <div className="recipe">
@@ -107,16 +118,39 @@ export default function Recipe() {
               {recipe.meta?.time && <li><IconClock className="recipe__meta-icon" /> {recipe.meta.time}</li>}
               {recipe.meta?.servings && <li>{recipe.meta.servings}</li>}
               {recipe.meta?.kcal && <li>{recipe.meta.kcal}</li>}
-              {recipe.difficulty && <li>difficulty {recipe.difficulty}</li>}
+              {recipe.difficulty && <li>{t('recipe.difficulty')} {recipe.difficulty}</li>}
             </ul>
 
-            <button
-              type="button"
-              className="recipe__cook"
-              onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
-            >
-              Cook step by step
-            </button>
+            {author && (
+              <div className="recipe__author">
+                <span className="recipe__author-avatar"
+                  style={author.avatar_url ? { backgroundImage: `url(${author.avatar_url})` } : undefined}>
+                  {!author.avatar_url && (author.full_name || author.username || '?')[0].toUpperCase()}
+                </span>
+                <span className="recipe__author-text">
+                  {t('recipe.by')} <b>{author.full_name || author.username}</b>
+                </span>
+              </div>
+            )}
+
+            <div className="recipe__cta">
+              <button
+                type="button"
+                className="recipe__cook recipe__cook--full"
+                onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
+              >
+                {t('recipe.cook')}
+              </button>
+              {isAuthor && (
+                <button
+                  type="button"
+                  className="recipe__edit"
+                  onClick={() => navigate(`/recipe/${recipe.id}/edit`)}
+                >
+                  ✎ {t('recipe.edit')}
+                </button>
+              )}
+            </div>
           </div>
 
           <div
@@ -132,26 +166,24 @@ export default function Recipe() {
       {recipe.nutrition?.length > 0 && (
         <section className="recipe__dash">
           <div className="recipe__dash-card recipe__nutri">
-            <h2 className="recipe__panel-title">Nutrition <span>/ serving</span></h2>
+            <h2 className="recipe__panel-title">{t('recipe.nutrition')} <span>{t('recipe.perServing')}</span></h2>
             <div className="recipe__gauges">
               {recipe.nutrition.map((n) => (
                 <Gauge key={n.key} value={n.value} unit={n.unit} label={n.label} pct={n.value / n.max} />
               ))}
             </div>
-            <p className="recipe__dash-note">
-              Estimated by AI. The needle shows how much of your reference daily intake one serving covers.
-            </p>
+            <p className="recipe__dash-note">{t('recipe.aiNote')}</p>
           </div>
 
           <div className="recipe__dash-card recipe__allergens">
-            <h2 className="recipe__panel-title">Allergens</h2>
-            <p className="recipe__aller-label">Contains</p>
+            <h2 className="recipe__panel-title">{t('recipe.allergens')}</h2>
+            <p className="recipe__aller-label">{t('recipe.contains')}</p>
             <div className="recipe__aller-chips">
               {allergens.contains?.length ? allergens.contains.map((a) => (
                 <span className="aller aller--in" key={a}>{a}</span>
               )) : <span className="aller aller--free">—</span>}
             </div>
-            <p className="recipe__aller-label">Free from</p>
+            <p className="recipe__aller-label">{t('recipe.freeFrom')}</p>
             <div className="recipe__aller-chips">
               {allergens.free?.map((a) => (
                 <span className="aller aller--free" key={a}>{a}</span>
@@ -163,7 +195,7 @@ export default function Recipe() {
 
       <div className="recipe__body">
         <section className="recipe__col recipe__col--ingredients">
-          <h2 className="recipe__col-title">Ingredients</h2>
+          <h2 className="recipe__col-title">{t('recipe.ingredients')}</h2>
           <ul className="recipe__ingredients">
             {recipe.ingredients?.map((ing, i) => (
               <li key={i}>{ing}</li>
@@ -172,7 +204,7 @@ export default function Recipe() {
         </section>
 
         <section className="recipe__col recipe__col--method">
-          <h2 className="recipe__col-title">Method</h2>
+          <h2 className="recipe__col-title">{t('recipe.method')}</h2>
           <ol className="recipe__method">
             {method.map((step, i) => (
               <li key={i}>
@@ -187,7 +219,7 @@ export default function Recipe() {
             className="recipe__cook recipe__cook--wide"
             onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
           >
-            Cook step by step
+            {t('recipe.cook')}
           </button>
         </section>
       </div>

@@ -611,11 +611,46 @@
   color: #2a2016;
 }
 
+.home-review__recipe {
+  display: inline-block;
+  margin: 2px 0 4px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #ff6b35;
+  text-decoration: none;
+}
+
+.home-review__recipe:hover { text-decoration: underline; }
+
 .home-review__text {
   margin: 0;
   font-size: 14px;
   color: #6b5d43;
 }
+
+/* "+" create-recipe button in the top bar (where the avatar used to be) */
+.home-create-plus {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: none;
+  background: #ff6b35;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.35);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.home-create-plus:hover { background: #f2591f; }
+.home-create-plus:active { transform: scale(0.94); }
 
 /* ==========================================================================
    RESPONSIVE

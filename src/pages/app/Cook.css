@@ -190,18 +190,44 @@
 .cook__side-close:hover { background: rgba(255, 255, 255, 0.1); color: #fff8ef; }
 
 .cook__timers { padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-.cook__timers ul { margin: 0; padding: 0; list-style: none; }
+.cook__timers ul { margin: 8px 0 0; padding: 0; list-style: none; }
+
+.cook__timers-title {
+  font-family: var(--font-important), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 248, 239, 0.5);
+}
+
+.cook__timers-empty {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: rgba(255, 248, 239, 0.5);
+}
 
 .cook__timers li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   padding: 6px 0;
   font-size: 14px;
   color: rgba(255, 248, 239, 0.82);
 }
 
-.cook__timers .done { color: #7ed09a; font-weight: 700; }
-.cook__timers .run { color: #ff9f70; font-weight: 700; }
+.cook__timers li.is-current {
+  color: #ffb590;
+  font-weight: 700;
+}
+
+.cook__timers-val {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 248, 239, 0.62);
+}
+
+.cook__timers li.is-current .cook__timers-val { color: #ff9f70; }
 
 /* chat area */
 .cook__chat {
@@ -419,6 +445,51 @@
   color: #3fae6f;
   font-size: 1.05rem;
   margin: 0;
+}
+
+/* cook-photo picker (verification only — never uploaded) */
+.cook__photo-pick {
+  width: 100%;
+  padding: 22px;
+  border: 1.5px dashed var(--k-accent);
+  border-radius: 14px;
+  background: var(--k-accent-soft);
+  color: var(--k-accent);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.cook__photo-preview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  background: none;
+}
+
+.cook__photo-preview img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.cook__photo-preview span {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 /* ==========================================================================

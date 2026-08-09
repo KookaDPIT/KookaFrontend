@@ -63,13 +63,8 @@ export default function AppLayout() {
   }, [settings.theme]);
 
   const toggleTheme = () => {
-    const currentTheme = settings.theme;
-    let newTheme = 'system';
-    if (currentTheme === 'system' || currentTheme === 'light') {
-      newTheme = 'dark';
-    } else {
-      newTheme = 'light';
-    }
+    // system/light → dark, dark → light
+    const newTheme = settings.theme === 'dark' ? 'light' : 'dark';
     updateSettings({ theme: newTheme });
   };
 

@@ -123,6 +123,65 @@
 .recipe__cook:hover { background: #f2591f; }
 .recipe__cook:active { transform: translateY(1px); }
 
+/* author line */
+.recipe__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.recipe__author-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff8ef;
+  flex-shrink: 0;
+}
+
+.recipe__author-text {
+  font-size: 14px;
+  color: rgba(255, 248, 239, 0.78);
+}
+
+.recipe__author-text b { color: #fff8ef; font-weight: 700; }
+
+/* CTA: full-width cook button, with an optional edit button stacked below */
+.recipe__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.recipe__cook--full { width: 100%; text-align: center; }
+
+.recipe__edit {
+  width: 100%;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff8ef;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.recipe__edit:hover { background: rgba(255, 255, 255, 0.18); }
+
 .recipe__photo {
   aspect-ratio: 4 / 3;
   background:
