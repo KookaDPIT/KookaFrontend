@@ -476,3 +476,97 @@
 [data-theme="dark"] .pf-badge.is-locked { background: #332a21; }
 [data-theme="dark"] .pf-badge.is-locked b,
 [data-theme="dark"] .pf-flag--more { color: #a89968; }
+
+/* ===== profile media + states (avatar photo, cover photo, globe, private) ===== */
+.pf-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 32px;
+}
+
+/* cover as a background photo */
+.pf-cover--photo {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+.pf-cover--photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 12, 6, 0.10), rgba(20, 12, 6, 0.55));
+  z-index: 1;
+}
+
+/* private / locked view — name over the background */
+.pf-cover--identity {
+  height: 320px;
+  margin: 0 -40px;
+  display: flex;
+  align-items: flex-end;
+  background-size: cover;
+  background-position: center;
+  background-color: #24170f;
+  position: relative;
+  overflow: hidden;
+}
+.pf-cover--identity::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 12, 6, 0.15), rgba(20, 12, 6, 0.7));
+}
+.pf-cover__id { position: relative; z-index: 1; padding: 34px 40px; color: #fff; }
+.pf-cover__name {
+  margin: 0;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 46px;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+}
+.pf-cover__handle { margin: 8px 0 0; font-size: 15px; color: rgba(255, 255, 255, 0.85); }
+
+.pf-locked {
+  max-width: 1180px;
+  margin: 34px auto;
+  padding: 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+.pf-locked__icon {
+  display: grid;
+  place-items: center;
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: rgba(120, 80, 30, 0.12);
+  color: #8a7550;
+}
+.pf-locked__icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pf-locked h2 { margin: 0; font-family: var(--font-title), cursive; font-size: 26px; color: #2a2016; }
+.pf-locked p { margin: 0; color: #94805c; max-width: 360px; }
+.pf-locked .pf-follow { margin-top: 8px; }
+
+/* inline globe on the passport tab (no modal) */
+.pf-passport-tab { display: flex; flex-direction: column; gap: 22px; }
+.pf-globe { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pf-globe__hint { font-size: 13px; color: #94805c; margin: 0; }
+
+/* empty states + clickable items */
+.pf-empty { padding: 32px 6px; color: #94805c; font-size: 14.5px; }
+.pf-activity li.is-clickable { cursor: pointer; }
+.pf-activity li.is-clickable:hover { background: rgba(255, 107, 53, 0.06); border-radius: 10px; }
+.pf-recipe { cursor: pointer; }
+
+[data-theme="dark"] .pf-locked h2 { color: #f5e9d0; }
+[data-theme="dark"] .pf-locked p,
+[data-theme="dark"] .pf-globe__hint,
+[data-theme="dark"] .pf-empty { color: #b8a888; }
+[data-theme="dark"] .pf-locked__icon { background: rgba(255, 255, 255, 0.06); color: #d8c6a4; }

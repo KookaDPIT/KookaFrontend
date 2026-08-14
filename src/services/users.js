@@ -27,6 +27,11 @@ export async function getPassport(id) {
   return data; // { countries: [{country, count}], total }
 }
 
+export async function getUserActivity(id) {
+  const { data } = await api.get(`/users/${id}/activity`);
+  return data; // [{ kind, what, recipe_id, when }]
+}
+
 export async function updateProfile(payload) {
   const { data } = await api.patch('/me', payload);
   return data;

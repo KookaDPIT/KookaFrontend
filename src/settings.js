@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS = {
   username: 'searsalot',
   email: 'alex@kooka.app',
   bio: '', // empty → the profile falls back to the translated default
+  avatar: '', // avatar image URL (empty → initials)
+  cover: '', // profile background/cover image URL
   privateAccount: false,
   activityStatus: true,
   allowTagging: true,
@@ -73,6 +75,8 @@ export function mapUserToSettings(user) {
   if (user.username != null) mapped.username = user.username;
   if (user.email != null) mapped.email = user.email;
   if (user.bio != null) mapped.bio = user.bio;
+  if (user.avatar_url != null) mapped.avatar = user.avatar_url;
+  if (user.cover_url != null) mapped.cover = user.cover_url;
   if (user.theme != null) mapped.theme = user.theme;
   if (user.language != null) mapped.language = user.language;
   // the client-preference blob (privacy, notifications, …)
