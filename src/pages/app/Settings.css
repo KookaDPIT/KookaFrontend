@@ -464,3 +464,15 @@
 [data-theme="dark"] .settings-toggle.is-on {
   background: #c8551f;
 }
+
+/* change-password modal error line */
+.st-pw-err {
+  margin: 0.25rem 0 0;
+  color: #c0392b;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .st-pw-err {
+  color: #ff7a6b;
+}

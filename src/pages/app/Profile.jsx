@@ -2,15 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../settings';
+import { useUser, refreshUser } from '../../user';
+import { updateProfile, getUserRecipes, getPassport } from '../../services/users';
+import { countryOf } from '../../data/countries';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import './Profile.css';
 
 /* ==========================================================================
-   PROFILE — a straightforward cook profile. Identity (name / username / bio /
-   private) comes from the shared settings store, so edits here and on the
-   Settings screen stay in sync. Interactive: follow, kebab menu (edit / share /
-   settings), quick-edit modal, share-to-clipboard, tabs. Content is mock.
+   PROFILE — the signed-in cook's profile, backed by the live account. Identity
+   and stats come from GET /me (refreshed on mount, mirrored into the shared
+   settings store so edits here and on Settings stay in sync). Recipes and the
+   culinary passport are pulled from the backend, falling back to sample data
+   when it is unreachable. Activity and badges stay illustrative for now.
    ========================================================================== */
 
 const BASE = {
@@ -58,15 +62,35 @@ export default function Profile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [settings, update] = useSettings();
+  const [user] = useUser();
 
   const [tab, setTab] = useState('activity');
   const [following, setFollowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [draft, setDraft] = useState({ name: '', username: '', bio: '' });
 
+  // live backend data (null until loaded; falls back to sample data)
+  const [liveRecipes, setLiveRecipes] = useState(null);
+  const [passport, setPassport] = useState(null);
+
   const menuRef = useRef(null);
+
+  // pull the authoritative account on mount (also hydrates the settings store)
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  // once we know the user id, load their recipes + culinary passport
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let alive = true;
+    getUserRecipes(user.id).then((r) => { if (alive) setLiveRecipes(r); }).catch(() => {});
+    getPassport(user.id).then((p) => { if (alive) setPassport(p); }).catch(() => {});
+    return () => { alive = false; };
+  }, [user?.id]);
 
   // close the kebab menu on an outside click
   useEffect(() => {
@@ -96,14 +120,27 @@ export default function Profile() {
     setEditOpen(true);
   };
 
-  const saveEdit = () => {
-    update({
-      name: draft.name.trim() || settings.name,
-      username: draft.username.trim().replace(/^@/, '') || settings.username,
-      bio: draft.bio,
-    });
-    setEditOpen(false);
-    flash(t('profile.savedToast'));
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      const data = await updateProfile({
+        full_name: draft.name.trim() || settings.name,
+        username: draft.username.trim().replace(/^@/, '') || settings.username,
+        bio: draft.bio,
+      });
+      update({
+        name: data.full_name,
+        username: data.username,
+        bio: data.bio ?? '',
+      });
+      setEditOpen(false);
+      flash(t('profile.savedToast'));
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      flash(typeof detail === 'string' ? detail : t('common.error'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openSettings = () => {
@@ -112,8 +149,39 @@ export default function Profile() {
   };
 
   const TABS = ['activity', 'recipes', 'passport', 'badges'];
-  const initials = settings.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const initials = (settings.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2);
   const aboutText = settings.bio || t('profile.about');
+
+  // ----- derived, backend-first with graceful fallback to sample data -----
+  const level = user?.level ?? BASE.level;
+  const joined = user?.created_at ? new Date(user.created_at).getFullYear() : BASE.joined;
+
+  const countriesTotal = passport?.total ?? BASE.stats.countries;
+  const stats = {
+    recipes: user?.recipe_count ?? BASE.stats.recipes,
+    streak: BASE.stats.streak, // no backend metric yet
+    countries: countriesTotal,
+    followers: user?.followers ?? BASE.stats.followers,
+  };
+
+  const recipeList = liveRecipes?.length
+    ? liveRecipes.map((r) => ({
+        name: r.title,
+        meta: [r.meta?.time, r.meta?.kcal].filter(Boolean).join(' · '),
+        times: r.saves ?? 0,
+        image: r.image_url || '',
+      }))
+    : RECIPES;
+
+  const passportList = passport?.countries?.length
+    ? passport.countries
+        .slice()
+        .sort((a, b) => b.count - a.count)
+        .map((c) => {
+          const info = countryOf(c.country);
+          return { flag: info.flag, name: info.name, dishes: c.count };
+        })
+    : PASSPORT;
 
   return (
     <div className="pf">
@@ -124,7 +192,7 @@ export default function Profile() {
         <div className="pf-head__row">
           <div className="pf-avatar" aria-hidden="true">
             {initials}
-            <span className="pf-avatar__level">{BASE.level}</span>
+            <span className="pf-avatar__level">{level}</span>
           </div>
 
           <div className="pf-id">
@@ -139,7 +207,7 @@ export default function Profile() {
             <p className="pf-handle">
               @{settings.username}
               <span className="pf-dot" />
-              {t('profile.joinedIn')} {BASE.joined}
+              {t('profile.joinedIn')} {joined}
             </p>
           </div>
 
@@ -180,7 +248,7 @@ export default function Profile() {
         <div className="pf-stats">
           {['recipes', 'streak', 'countries', 'followers'].map((k) => (
             <div className="pf-stat" key={k}>
-              <b>{BASE.stats[k]}</b>
+              <b>{stats[k]}</b>
               <span>{t(`profile.stats.${k}`)}</span>
             </div>
           ))}
@@ -222,10 +290,14 @@ export default function Profile() {
 
           {tab === 'recipes' && (
             <div className="pf-recipes">
-              {RECIPES.map((r) => (
-                <article className="pf-recipe" key={r.name}>
-                  <div className="pf-recipe__photo" aria-hidden="true">
-                    <span className="pf-recipe__times">×{r.times}</span>
+              {recipeList.map((r, i) => (
+                <article className="pf-recipe" key={r.name + i}>
+                  <div
+                    className="pf-recipe__photo"
+                    aria-hidden="true"
+                    style={r.image ? { backgroundImage: `url(${r.image})` } : undefined}
+                  >
+                    {r.times > 0 && <span className="pf-recipe__times">×{r.times}</span>}
                   </div>
                   <h3>{r.name}</h3>
                   <span>{r.meta}</span>
@@ -236,7 +308,7 @@ export default function Profile() {
 
           {tab === 'passport' && (
             <div className="pf-passport">
-              {PASSPORT.map((c) => (
+              {passportList.map((c) => (
                 <div className="pf-stamp" key={c.name}>
                   <span className="pf-stamp__flag" aria-hidden="true">{c.flag}</span>
                   <b>{c.name}</b>
@@ -288,12 +360,14 @@ export default function Profile() {
               </button>
             </div>
             <div className="pf-flags">
-              {PASSPORT.slice(0, 6).map((c) => (
+              {passportList.slice(0, 6).map((c) => (
                 <span key={c.name} className="pf-flag" title={c.name}>{c.flag}</span>
               ))}
-              <span className="pf-flag pf-flag--more">+{BASE.stats.countries - 6}</span>
+              {countriesTotal > 6 && (
+                <span className="pf-flag pf-flag--more">+{countriesTotal - 6}</span>
+              )}
             </div>
-            <p className="pf-flags__sub">{BASE.stats.countries} {t('profile.passportSub')}</p>
+            <p className="pf-flags__sub">{countriesTotal} {t('profile.passportSub')}</p>
           </section>
         </aside>
       </div>
@@ -308,8 +382,8 @@ export default function Profile() {
             <button type="button" className="kbtn kbtn--ghost" onClick={() => setEditOpen(false)}>
               {t('common.cancel')}
             </button>
-            <button type="button" className="kbtn kbtn--primary" onClick={saveEdit}>
-              {t('common.save')}
+            <button type="button" className="kbtn kbtn--primary" onClick={saveEdit} disabled={saving}>
+              {saving ? t('common.saving') : t('common.save')}
             </button>
           </>
         }

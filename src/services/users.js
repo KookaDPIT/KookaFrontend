@@ -31,3 +31,9 @@ export async function updateProfile(payload) {
   const { data } = await api.patch('/me', payload);
   return data;
 }
+
+export async function changePassword(payload) {
+  // { current_password, new_password }
+  const { data } = await api.patch('/me/password', payload);
+  return data;
+}

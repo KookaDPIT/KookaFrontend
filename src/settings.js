@@ -22,8 +22,22 @@ export const DEFAULT_SETTINGS = {
   messagesFrom: 'followers', // everyone | followers | none
   notif: { followers: true, comments: true, forum: true, digest: false, daily: true },
   theme: 'system', // system | light | dark
+  language: 'en', // en | ro — mirrors i18n, persisted server-side
   twoFactor: false,
 };
+
+/* The subset of settings the backend stores as an opaque JSON blob (there are
+   no dedicated columns for these client preferences). Kept in sync via the
+   `settings` field of PATCH /me. */
+export const CLIENT_PREF_KEYS = [
+  'privateAccount',
+  'activityStatus',
+  'allowTagging',
+  'publicPassport',
+  'messagesFrom',
+  'notif',
+  'twoFactor',
+];
 
 function read() {
   try {
@@ -47,6 +61,46 @@ function write(next) {
     /* storage may be unavailable — keep working in memory */
   }
   window.dispatchEvent(new CustomEvent(EVENT, { detail: next }));
+}
+
+/* Map a GET /me response onto the settings shape. Only fields the backend
+   actually returned override what we already have, so a partial response never
+   wipes local preferences. */
+export function mapUserToSettings(user) {
+  if (!user) return {};
+  const mapped = {};
+  if (user.full_name != null) mapped.name = user.full_name;
+  if (user.username != null) mapped.username = user.username;
+  if (user.email != null) mapped.email = user.email;
+  if (user.bio != null) mapped.bio = user.bio;
+  if (user.theme != null) mapped.theme = user.theme;
+  if (user.language != null) mapped.language = user.language;
+  // the client-preference blob (privacy, notifications, …)
+  if (user.settings && typeof user.settings === 'object') {
+    Object.assign(mapped, user.settings);
+  }
+  return mapped;
+}
+
+/* Merge a fresh backend user into the store (used after GET /me). */
+export function hydrateFromUser(user) {
+  const mapped = mapUserToSettings(user);
+  if (Object.keys(mapped).length === 0) return read();
+  const base = read();
+  const next = {
+    ...base,
+    ...mapped,
+    notif: { ...base.notif, ...(mapped.notif || {}) },
+  };
+  write(next);
+  return next;
+}
+
+/* Serialize the client-only preference subset for the PATCH /me `settings` field. */
+export function settingsBlob(s) {
+  const blob = {};
+  for (const key of CLIENT_PREF_KEYS) blob[key] = s[key];
+  return JSON.stringify(blob);
 }
 
 /* apply the chosen theme to the document (system falls back to the OS scheme) */

@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useSettings, applyTheme } from '../../settings';
+import { useSettings, applyTheme, settingsBlob } from '../../settings';
+import { refreshUser, logout as logoutUser } from '../../user';
+import { updateProfile, changePassword } from '../../services/users';
+import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import './Settings.css';
 
 /* ==========================================================================
    SETTINGS — social-media-style settings screen. Category rail on the left,
-   the active section's controls on the right. Everything is wired to the
-   shared settings store (localStorage) so the profile reflects changes.
+   the active section's controls on the right. Wired to the backend: account,
+   appearance, privacy and notification changes are persisted through
+   PATCH /me (the shared settings store mirrors them so the profile stays in
+   sync). Sessions and the blocked list have no backend model yet, so they
+   remain local for now.
    ========================================================================== */
 
 const SECTIONS = ['account', 'privacy', 'notifications', 'appearance', 'security', 'blocked'];
@@ -22,7 +28,7 @@ const SECTION_ICONS = {
   blocked: '🚫',
 };
 
-/* seed mock data — a backend would supply these */
+/* seed mock data — no backend model for these yet */
 const SEED_SESSIONS = [
   { id: 's1', device: 'Chrome · Windows', where: 'Bucharest, RO', current: true },
   { id: 's2', device: 'Kooka for iOS', where: 'Cluj-Napoca, RO', current: false },
@@ -64,39 +70,145 @@ export default function Settings() {
   const [toast, setToast] = useState('');
   const [sessions, setSessions] = useState(SEED_SESSIONS);
   const [blocked, setBlocked] = useState(SEED_BLOCKED);
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  // password modal
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwErr, setPwErr] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
 
   // account draft — committed on Save
   const [draft, setDraft] = useState({
     name: settings.name,
     username: settings.username,
     email: settings.email,
-    bio: settings.bio,
+    bio: settings.bio ?? '',
   });
+
+  // Re-seed the draft when the stored identity changes (after hydration from
+  // GET /me or a save). This "adjust state during render" pattern keeps the
+  // form in sync without an effect; typing only mutates `draft`, so it never
+  // clobbers user input (typing doesn't change the identity signature).
+  const identitySig = `${settings.name}|${settings.username}|${settings.email}|${settings.bio ?? ''}`;
+  const [seededSig, setSeededSig] = useState(identitySig);
+  if (identitySig !== seededSig) {
+    setSeededSig(identitySig);
+    setDraft({
+      name: settings.name,
+      username: settings.username,
+      email: settings.email,
+      bio: settings.bio ?? '',
+    });
+  }
+
+  // pull the live account from the backend on mount so the form + toggles
+  // reflect the real user; hydrateFromUser() (inside refreshUser) updates the
+  // shared store, which flows back here through useSettings().
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const flash = (msg) => {
     setToast(msg);
     window.setTimeout(() => setToast(''), 2200);
   };
 
+  const errText = (err, fallback) => {
+    const detail = err?.response?.data?.detail;
+    return typeof detail === 'string' ? detail : fallback;
+  };
+
   const logout = () => {
-    localStorage.removeItem('kooka_token');
-    localStorage.removeItem('kooka_user');
+    logoutUser();
     navigate('/login');
   };
 
-  const saveAccount = () => {
-    update({
-      name: draft.name.trim() || settings.name,
-      username: draft.username.trim().replace(/^@/, '') || settings.username,
-      email: draft.email.trim(),
-      bio: draft.bio,
+  const saveAccount = async () => {
+    setSavingAccount(true);
+    try {
+      const data = await updateProfile({
+        full_name: draft.name.trim() || settings.name,
+        username: draft.username.trim().replace(/^@/, '') || settings.username,
+        email: draft.email.trim() || settings.email,
+        bio: draft.bio,
+      });
+      // reflect the authoritative response locally
+      update({
+        name: data.full_name,
+        username: data.username,
+        email: data.email ?? draft.email.trim(),
+        bio: data.bio ?? '',
+      });
+      flash(t('settings.account.saved'));
+    } catch (err) {
+      flash(errText(err, t('common.error')));
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
+  // persist the client-preference blob (privacy + notifications) to the backend
+  const syncPrefs = (next) => {
+    updateProfile({ settings: settingsBlob(next) }).catch(() => {
+      /* best-effort: the local store already updated, UI stays responsive */
     });
-    flash(t('settings.account.saved'));
+  };
+
+  const setPref = (patch) => {
+    const next = { ...settings, ...patch };
+    update(patch);
+    syncPrefs(next);
+  };
+
+  const setNotif = (key, value) => {
+    const next = { ...settings, notif: { ...settings.notif, [key]: value } };
+    update((s) => ({ ...s, notif: { ...s.notif, [key]: value } }));
+    syncPrefs(next);
   };
 
   const setTheme = (theme) => {
     update({ theme });
     applyTheme(theme);
+    updateProfile({ theme }).catch(() => {});
+  };
+
+  const setLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    update({ language: lng });
+    updateProfile({ language: lng }).catch(() => {});
+  };
+
+  const openPassword = () => {
+    setPw({ current: '', next: '', confirm: '' });
+    setPwErr('');
+    setPwOpen(true);
+  };
+
+  const submitPassword = async () => {
+    setPwErr('');
+    if (!pw.current || !pw.next) {
+      setPwErr(t('settings.security.pwRequired'));
+      return;
+    }
+    if (pw.next.length < 6) {
+      setPwErr(t('settings.security.pwTooShort'));
+      return;
+    }
+    if (pw.next !== pw.confirm) {
+      setPwErr(t('settings.security.pwMismatch'));
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await changePassword({ current_password: pw.current, new_password: pw.next });
+      setPwOpen(false);
+      flash(t('settings.security.pwChanged'));
+    } catch (err) {
+      setPwErr(errText(err, t('common.error')));
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   return (
@@ -170,8 +282,8 @@ export default function Settings() {
                 />
               </label>
               <div className="st-actions">
-                <button type="button" className="st-save" onClick={saveAccount}>
-                  {t('settings.account.save')}
+                <button type="button" className="st-save" onClick={saveAccount} disabled={savingAccount}>
+                  {savingAccount ? t('common.saving') : t('settings.account.save')}
                 </button>
               </div>
             </div>
@@ -182,19 +294,19 @@ export default function Settings() {
             <div className="st-rows">
               <Row label={t('settings.privacy.private')} hint={t('settings.privacy.privateHint')}>
                 <Switch on={settings.privateAccount} label={t('settings.privacy.private')}
-                  onChange={(v) => update({ privateAccount: v })} />
+                  onChange={(v) => setPref({ privateAccount: v })} />
               </Row>
               <Row label={t('settings.privacy.activity')} hint={t('settings.privacy.activityHint')}>
                 <Switch on={settings.activityStatus} label={t('settings.privacy.activity')}
-                  onChange={(v) => update({ activityStatus: v })} />
+                  onChange={(v) => setPref({ activityStatus: v })} />
               </Row>
               <Row label={t('settings.privacy.tagging')} hint={t('settings.privacy.taggingHint')}>
                 <Switch on={settings.allowTagging} label={t('settings.privacy.tagging')}
-                  onChange={(v) => update({ allowTagging: v })} />
+                  onChange={(v) => setPref({ allowTagging: v })} />
               </Row>
               <Row label={t('settings.privacy.passport')} hint={t('settings.privacy.passportHint')}>
                 <Switch on={settings.publicPassport} label={t('settings.privacy.passport')}
-                  onChange={(v) => update({ publicPassport: v })} />
+                  onChange={(v) => setPref({ publicPassport: v })} />
               </Row>
               <Row label={t('settings.privacy.messages')}>
                 <div className="st-seg">
@@ -203,7 +315,7 @@ export default function Settings() {
                       key={opt}
                       type="button"
                       className={settings.messagesFrom === opt ? 'is-active' : ''}
-                      onClick={() => update({ messagesFrom: opt })}
+                      onClick={() => setPref({ messagesFrom: opt })}
                     >
                       {t(`settings.privacy.${opt}`)}
                     </button>
@@ -221,7 +333,7 @@ export default function Settings() {
                   <Switch
                     on={settings.notif[k]}
                     label={t(`settings.notifications.${k}`)}
-                    onChange={(v) => update((s) => ({ ...s, notif: { ...s.notif, [k]: v } }))}
+                    onChange={(v) => setNotif(k, v)}
                   />
                 </Row>
               ))}
@@ -252,7 +364,7 @@ export default function Settings() {
                       key={lng}
                       type="button"
                       className={i18n.language?.startsWith(lng) ? 'is-active' : ''}
-                      onClick={() => i18n.changeLanguage(lng)}
+                      onClick={() => setLanguage(lng)}
                     >
                       {t(`lang.${lng}`)}
                     </button>
@@ -270,7 +382,7 @@ export default function Settings() {
                   on={settings.twoFactor}
                   label={t('settings.security.twoFactor')}
                   onChange={(v) => {
-                    update({ twoFactor: v });
+                    setPref({ twoFactor: v });
                     flash(v ? t('settings.security.twoFactorOn') : t('settings.security.twoFactorOff'));
                   }}
                 />
@@ -305,7 +417,7 @@ export default function Settings() {
                 <button
                   type="button"
                   className="st-ghost"
-                  onClick={() => flash(t('settings.security.passwordSent'))}
+                  onClick={openPassword}
                 >
                   {t('settings.security.changePassword')}
                 </button>
@@ -344,6 +456,55 @@ export default function Settings() {
           )}
         </section>
       </div>
+
+      {/* ===== CHANGE PASSWORD MODAL ===== */}
+      <Modal
+        open={pwOpen}
+        onClose={() => setPwOpen(false)}
+        title={t('settings.security.changePassword')}
+        footer={
+          <>
+            <button type="button" className="kbtn kbtn--ghost" onClick={() => setPwOpen(false)}>
+              {t('common.cancel')}
+            </button>
+            <button type="button" className="kbtn kbtn--primary" onClick={submitPassword} disabled={pwSaving}>
+              {pwSaving ? t('common.saving') : t('settings.security.updatePassword')}
+            </button>
+          </>
+        }
+      >
+        <div className="kfield">
+          <label htmlFor="pw-current">{t('settings.security.currentPassword')}</label>
+          <input
+            id="pw-current"
+            type="password"
+            className="kinput"
+            value={pw.current}
+            onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))}
+          />
+        </div>
+        <div className="kfield">
+          <label htmlFor="pw-next">{t('settings.security.newPassword')}</label>
+          <input
+            id="pw-next"
+            type="password"
+            className="kinput"
+            value={pw.next}
+            onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))}
+          />
+        </div>
+        <div className="kfield">
+          <label htmlFor="pw-confirm">{t('settings.security.confirmPassword')}</label>
+          <input
+            id="pw-confirm"
+            type="password"
+            className="kinput"
+            value={pw.confirm}
+            onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))}
+          />
+        </div>
+        {pwErr && <p className="st-pw-err">{pwErr}</p>}
+      </Modal>
 
       <Toast message={toast} />
     </div>

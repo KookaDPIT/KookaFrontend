@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from './api';
+import i18n from './i18n';
+import { hydrateFromUser, applyTheme } from './settings';
 
 /* ==========================================================================
    Shared current-user store. Backed by localStorage ('kooka_user') and kept
@@ -45,6 +47,13 @@ export async function refreshUser() {
   try {
     const { data } = await api.get('/me');
     write(data);
+    // keep the shared settings store, theme and language in sync with the
+    // authoritative backend account so Profile + Settings reflect it everywhere.
+    hydrateFromUser(data);
+    if (data?.theme) applyTheme(data.theme);
+    if (data?.language && !i18n.language?.startsWith(data.language)) {
+      i18n.changeLanguage(data.language);
+    }
     return data;
   } catch (err) {
     // 401 → token dead: clear it so guards send the user back to login.
