@@ -9,6 +9,8 @@ import Recipe from './pages/app/Recipe'
 import Cook from './pages/app/Cook'
 import Learn from './pages/app/Learn'
 import Forum from './pages/app/Forum'
+import ForumPost from './pages/app/ForumPost'
+import CreateForumPost from './pages/app/CreateForumPost'
 import Profile from './pages/app/Profile'
 import Settings from './pages/app/Settings'
 import Admin from './pages/app/Admin'
@@ -79,6 +81,10 @@ function App() {
           <Route path="/recipe/:id/cook" element={<Cook />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/forum" element={<Forum />} />
+          {/* `new` is declared before `:id` so it is not read as a post id */}
+          <Route path="/forum/new" element={<CreateForumPost />} />
+          <Route path="/forum/:id" element={<ForumPost />} />
+          <Route path="/forum/:id/edit" element={<CreateForumPost />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />

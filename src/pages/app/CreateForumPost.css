@@ -1,0 +1,218 @@
+/* ==========================================================================
+   NEW / EDIT FORUM POST — pick a subforum and a tag, then write.
+   ========================================================================== */
+.cfp {
+  flex: 1;
+  min-width: 0;
+  padding: 30px 40px 64px;
+  background: #f8ecd4;
+  color: #2a2016;
+  font-family: var(--font-body), sans-serif;
+}
+
+.cfp-card {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 28px 30px 26px;
+  border-radius: 24px;
+  background: #fffdf9;
+  box-shadow: 0 6px 22px rgba(74, 47, 20, 0.12);
+}
+
+.cfp-head { margin-bottom: 22px; }
+.cfp-title {
+  margin: 0;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1;
+  color: #2a2016;
+}
+.cfp-sub { margin: 8px 0 0; font-size: 14.5px; color: #94805c; }
+
+.cfp-field {
+  margin: 0 0 22px;
+  padding: 0;
+  border: none;
+  position: relative;
+}
+.cfp-field > legend,
+.cfp-field > label {
+  padding: 0;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #2a2016;
+}
+.cfp-hint { margin: 4px 0 10px; font-size: 12.5px; color: #94805c; }
+
+.cfp-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.cfp-opts--quick { margin-top: 10px; }
+
+/* the chosen subforum, with the picker one button away */
+.cfp-langrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid #e7d8b6;
+  border-radius: 14px;
+  background: #fdf7ec;
+}
+.cfp-chosen { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.cfp-chosen__code {
+  flex-shrink: 0;
+  width: 36px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+.cfp-chosen__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.28; }
+.cfp-chosen__text b {
+  font-family: var(--font-important), sans-serif;
+  font-size: 14.5px;
+  color: #2a2016;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cfp-chosen__text small { font-size: 11.5px; color: #94805c; }
+.cfp-change {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1.5px solid #e7d8b6;
+  border-radius: 10px;
+  background: #fffdf9;
+  color: #6b5d43;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.cfp-change:hover { border-color: #ff6b35; color: #ff6b35; }
+.cfp-opt--sm { padding: 7px 12px; font-size: 12.5px; }
+
+.cfp-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 1.5px solid #e7d8b6;
+  border-radius: 14px;
+  background: transparent;
+  color: #6b5d43;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.cfp-opt__icon { font-size: 15px; line-height: 1; }
+.cfp-opt__code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(120, 80, 30, 0.12);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.cfp-opt.is-active .cfp-opt__code { background: rgba(255, 255, 255, 0.22); }
+.cfp-opt:hover { border-color: #ff6b35; color: #ff6b35; }
+.cfp-opt.is-active {
+  background: #2a2016;
+  border-color: #2a2016;
+  color: #fff;
+}
+
+/* the tag choice previews the colour its tile will take in the mosaic */
+.cfp-opt--question.is-active { background: #9b4f18; border-color: #9b4f18; }
+.cfp-opt--recipe.is-active   { background: #7d2418; border-color: #7d2418; }
+.cfp-opt--tip.is-active      { background: #4f5d26; border-color: #4f5d26; }
+.cfp-opt--help.is-active     { background: #7a2020; border-color: #7a2020; }
+.cfp-opt--win.is-active      { background: #96631a; border-color: #96631a; }
+.cfp-opt--showcase.is-active { background: #5a3358; border-color: #5a3358; }
+.cfp-opt--gear.is-active     { background: #423b33; border-color: #423b33; }
+.cfp-opt--offtopic.is-active { background: #6d5433; border-color: #6d5433; }
+
+.cfp-input,
+.cfp-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 13px 15px;
+  font-family: var(--font-body), sans-serif;
+  font-size: 15px;
+  color: #2a2016;
+  background: #fdf7ec;
+  border: 1.5px solid #e7d8b6;
+  border-radius: 14px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.cfp-textarea { line-height: 1.6; resize: vertical; min-height: 150px; }
+.cfp-input:focus,
+.cfp-textarea:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.14);
+}
+
+.cfp-count {
+  position: absolute;
+  right: 2px;
+  top: 0;
+  font-size: 11.5px;
+  color: #94805c;
+}
+
+.cfp-error {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(217, 45, 32, 0.08);
+  border: 1px solid rgba(217, 45, 32, 0.25);
+  font-size: 14px;
+  color: #b42318;
+}
+
+.cfp-foot { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 900px) {
+  .cfp { padding: 24px 20px 52px; }
+  .cfp-card { padding: 22px 18px; }
+  .cfp-title { font-size: 27px; }
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+[data-theme='dark'] .cfp { background: #2a2016; color: #f5f5f0; }
+[data-theme='dark'] .cfp-card { background: #3a3228; }
+[data-theme='dark'] .cfp-title,
+[data-theme='dark'] .cfp-field > legend,
+[data-theme='dark'] .cfp-field > label { color: #f5f5f0; }
+[data-theme='dark'] .cfp-sub,
+[data-theme='dark'] .cfp-hint,
+[data-theme='dark'] .cfp-count { color: #a89988; }
+[data-theme='dark'] .cfp-input,
+[data-theme='dark'] .cfp-textarea {
+  background: #2f2820;
+  border-color: #4a4238;
+  color: #f5f5f0;
+}
+[data-theme='dark'] .cfp-langrow { background: #2f2820; border-color: #4a4238; }
+[data-theme='dark'] .cfp-chosen__text b { color: #f5f5f0; }
+[data-theme='dark'] .cfp-chosen__text small { color: #a89988; }
+[data-theme='dark'] .cfp-change { background: #3a3228; border-color: #4a4238; color: #c9bea7; }
+[data-theme='dark'] .cfp-opt { border-color: #4a4238; color: #c9bea7; }
+[data-theme='dark'] .cfp-opt.is-active { background: #f5f5f0; border-color: #f5f5f0; color: #2a2016; }
+[data-theme='dark'] .cfp-error {
+  background: rgba(255, 138, 106, 0.14);
+  border-color: rgba(255, 138, 106, 0.35);
+  color: #ff8a6a;
+}
