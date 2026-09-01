@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme, settingsBlob } from '../../settings';
 import { refreshUser, logout as logoutUser } from '../../user';
-import { updateProfile, changePassword } from '../../services/users';
+import {
+  updateProfile, changePassword, checkAvailability, getBlocked, unblockUser,
+} from '../../services/users';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import './Settings.css';
@@ -34,7 +36,7 @@ const SEED_SESSIONS = [
   { id: 's2', device: 'Kooka for iOS', where: 'Cluj-Napoca, RO', current: false },
   { id: 's3', device: 'Safari · macOS', where: 'Berlin, DE', current: false },
 ];
-const SEED_BLOCKED = ['spam_chef_99', 'burnt_toast_bot', 'mlm_recipes'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function Switch({ on, onChange, label }) {
   return (
@@ -69,7 +71,8 @@ export default function Settings() {
   const [active, setActive] = useState('account');
   const [toast, setToast] = useState('');
   const [sessions, setSessions] = useState(SEED_SESSIONS);
-  const [blocked, setBlocked] = useState(SEED_BLOCKED);
+  const [blocked, setBlocked] = useState([]);
+  const [blockedLoaded, setBlockedLoaded] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
 
   // password modal
@@ -102,12 +105,65 @@ export default function Settings() {
     });
   }
 
+  /* Same live check as signup, but the backend excludes the signed-in account,
+     so your own handle never comes back as "taken". Each verdict is tagged with
+     the value it answered and compared against the box on render, so a slow
+     reply cannot mislabel a value you have since changed. */
+  const [usernameCheck, setUsernameCheck] = useState(null);
+  const [emailCheck, setEmailCheck] = useState(null);
+
+  const draftUsername = draft.username.trim().replace(/^@/, '');
+  const draftEmail = draft.email.trim();
+
+  useEffect(() => {
+    if (draftUsername.length < 3 || draftUsername === settings.username) return undefined;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const res = await checkAvailability({ username: draftUsername });
+        if (!cancelled) setUsernameCheck({ value: draftUsername, taken: !!res.username_taken });
+      } catch { /* offline: let the save decide */ }
+    }, 450);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [draftUsername, settings.username]);
+
+  useEffect(() => {
+    if (!EMAIL_RE.test(draftEmail) || draftEmail === settings.email) return undefined;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const res = await checkAvailability({ email: draftEmail });
+        if (!cancelled) setEmailCheck({ value: draftEmail, taken: !!res.email_taken });
+      } catch { /* offline: let the save decide */ }
+    }, 450);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [draftEmail, settings.email]);
+
+  const availOf = (check, value, unchanged) => {
+    if (unchanged) return 'idle';
+    if (!check || check.value !== value) return 'idle';
+    return check.taken ? 'taken' : 'free';
+  };
+  const usernameState = availOf(usernameCheck, draftUsername, draftUsername === settings.username);
+  const emailState = availOf(emailCheck, draftEmail, draftEmail === settings.email);
+  const accountBlocked = usernameState === 'taken' || emailState === 'taken';
+
   // pull the live account from the backend on mount so the form + toggles
   // reflect the real user; hydrateFromUser() (inside refreshUser) updates the
   // shared store, which flows back here through useSettings().
   useEffect(() => {
     refreshUser();
   }, []);
+
+  // the blocked list is real data now, so load it when that section is opened
+  useEffect(() => {
+    if (active !== 'blocked' || blockedLoaded) return undefined;
+    let alive = true;
+    getBlocked()
+      .then((list) => { if (alive) { setBlocked(list || []); setBlockedLoaded(true); } })
+      .catch(() => { if (alive) setBlockedLoaded(true); });
+    return () => { alive = false; };
+  }, [active, blockedLoaded]);
 
   const flash = (msg) => {
     setToast(msg);
@@ -119,12 +175,30 @@ export default function Settings() {
     return typeof detail === 'string' ? detail : fallback;
   };
 
+  const unblock = async (u) => {
+    const before = blocked;
+    setBlocked((list) => list.filter((x) => x.id !== u.id));
+    try {
+      await unblockUser(u.id);
+      flash(t('settings.blocked.unblocked', { name: u.username }));
+    } catch {
+      setBlocked(before);
+      flash(t('common.error'));
+    }
+  };
+
   const logout = () => {
     logoutUser();
     navigate('/login');
   };
 
   const saveAccount = async () => {
+    if (accountBlocked) {
+      flash(t(usernameState === 'taken'
+        ? 'auth.signup.errUsernameTaken'
+        : 'auth.signup.errEmailTaken'));
+      return;
+    }
     setSavingAccount(true);
     try {
       const data = await updateProfile({
@@ -257,21 +331,34 @@ export default function Settings() {
               </label>
               <label className="st-field">
                 <span>{t('settings.account.username')}</span>
-                <div className="st-prefix">
+                <div className={`st-prefix ${usernameState === 'taken' ? 'is-taken' : ''} ${usernameState === 'free' ? 'is-free' : ''}`}>
                   <i>@</i>
                   <input
                     value={draft.username}
                     onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))}
+                    aria-invalid={usernameState === 'taken'}
                   />
                 </div>
+                {usernameState !== 'idle' && (
+                  <span className={`st-note st-note--${usernameState === 'free' ? 'ok' : 'bad'}`}>
+                    {t(usernameState === 'free' ? 'auth.signup.usernameFree' : 'auth.signup.usernameTaken')}
+                  </span>
+                )}
               </label>
               <label className="st-field">
                 <span>{t('settings.account.email')}</span>
                 <input
                   type="email"
+                  className={emailState === 'taken' ? 'is-taken' : emailState === 'free' ? 'is-free' : ''}
                   value={draft.email}
                   onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
+                  aria-invalid={emailState === 'taken'}
                 />
+                {emailState !== 'idle' && (
+                  <span className={`st-note st-note--${emailState === 'free' ? 'ok' : 'bad'}`}>
+                    {t(emailState === 'free' ? 'auth.signup.emailFree' : 'auth.signup.emailTaken')}
+                  </span>
+                )}
               </label>
               <label className="st-field">
                 <span>{t('settings.account.bio')}</span>
@@ -282,7 +369,7 @@ export default function Settings() {
                 />
               </label>
               <div className="st-actions">
-                <button type="button" className="st-save" onClick={saveAccount} disabled={savingAccount}>
+                <button type="button" className="st-save" onClick={saveAccount} disabled={savingAccount || accountBlocked}>
                   {savingAccount ? t('common.saving') : t('settings.account.save')}
                 </button>
               </div>
@@ -307,20 +394,6 @@ export default function Settings() {
               <Row label={t('settings.privacy.passport')} hint={t('settings.privacy.passportHint')}>
                 <Switch on={settings.publicPassport} label={t('settings.privacy.passport')}
                   onChange={(v) => setPref({ publicPassport: v })} />
-              </Row>
-              <Row label={t('settings.privacy.messages')}>
-                <div className="st-seg">
-                  {['everyone', 'followers', 'none'].map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      className={settings.messagesFrom === opt ? 'is-active' : ''}
-                      onClick={() => setPref({ messagesFrom: opt })}
-                    >
-                      {t(`settings.privacy.${opt}`)}
-                    </button>
-                  ))}
-                </div>
               </Row>
             </div>
           )}
@@ -432,19 +505,18 @@ export default function Settings() {
                 <p className="st-empty">{t('settings.blocked.empty')}</p>
               ) : (
                 <ul className="st-blocked">
-                  {blocked.map((name) => (
-                    <li key={name}>
+                  {blocked.map((u) => (
+                    <li key={u.id}>
                       <span className="st-blocked__avatar" aria-hidden="true">
-                        {name.slice(0, 1).toUpperCase()}
+                        {u.avatar_url
+                          ? <img src={u.avatar_url} alt="" />
+                          : (u.full_name || u.username || '?').slice(0, 1).toUpperCase()}
                       </span>
-                      <b>@{name}</b>
+                      <b>@{u.username}</b>
                       <button
                         type="button"
                         className="st-linkbtn"
-                        onClick={() => {
-                          setBlocked((list) => list.filter((n) => n !== name));
-                          flash(t('settings.blocked.unblocked', { name }));
-                        }}
+                        onClick={() => unblock(u)}
                       >
                         {t('settings.blocked.unblock')}
                       </button>

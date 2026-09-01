@@ -17,6 +17,7 @@ const resources = {
   en: {
     translation: {
       lang: { en: 'EN', ro: 'RO', switch: 'Change language' },
+      theme: { toggle: 'Toggle dark mode' },
 
       nav: {
         home: 'Home',
@@ -224,15 +225,20 @@ const resources = {
         subtitle: '{{count}} countries stamped',
         empty: 'No stamps yet. Cook a dish from anywhere to start your map.',
         visited: 'Visited',
-        recipes: '{{count}} recipes',
+        recipes_one: '{{count}} recipe',
+        recipes_other: '{{count}} recipes',
         spin: 'Drag to spin the globe',
+        countryEmpty: 'Nothing from here yet.',
+        how: { created: 'Published by them', cooked: 'Cooked', both: 'Published and cooked' },
       },
 
       upload: {
         add: '+ Photo',
         uploading: 'Uploading…',
         remove: 'Remove photo',
-        replace: 'Change / reposition',
+        replace: 'Replace photo',
+        reposition: 'Reposition',
+        repositionFailed: 'Could not load that photo for re-framing.',
         failed: 'Upload failed. Try again.',
       },
 
@@ -247,6 +253,15 @@ const resources = {
         apply: 'Use photo',
       },
 
+      moderation: {
+        label: 'Moderation',
+        visibleNote: 'This is publicly visible.',
+        recipeHiddenNote: 'Hidden — only you and its author can see it.',
+        postHiddenNote: 'Hidden — only you and its author can see it.',
+        hide: 'Hide',
+        restore: 'Restore',
+      },
+
       roles: {
         user: 'Member',
         moderator: 'Moderator',
@@ -256,7 +271,23 @@ const resources = {
       admin: {
         title: 'Moderation',
         subtitle: 'Roles, accounts and the flagged recipe queue.',
-        panes: { users: 'People', recipes: 'Recipes' },
+        panes: { users: 'People', recipes: 'Recipes', forum: 'Forum' },
+        forumSearchPh: 'Search posts by #id or title',
+        postStatus: { ok: 'Published', hidden: 'Hidden' },
+        postHidden: 'Post hidden',
+        postRestored: 'Post restored',
+        postDeleted: 'Post deleted',
+        confirmDeletePost: '“{{name}}” and all its comments will be deleted permanently.',
+        restore: 'Restore',
+        recipeRestored: 'Recipe restored',
+        suspend: 'Suspend',
+        suspendTitle: 'Suspend {{name}}',
+        suspendNote: 'While suspended they cannot post, and none of their recipes or forum posts are visible to anyone — not by search, not by direct link.',
+        suspendedFor: 'Suspended for {{time}}',
+        durations: {
+          '12h': '12 hours', '1d': '1 day', '3d': '3 days', '7d': '7 days',
+          '30d': '30 days', '90d': '90 days', '1y': '1 year',
+        },
         searchPh: 'Search by name, username or email',
         filterRole: 'Filter by role',
         allRoles: 'All roles',
@@ -432,6 +463,7 @@ const resources = {
         aboutEmpty: 'Nothing here yet.',
         privateTitle: 'This account is private',
         privateNote: 'Follow to see their recipes, passport and activity.',
+        removeActivity: 'Remove from my activity',
       },
 
       settings: {
@@ -537,6 +569,7 @@ const resources = {
   ro: {
     translation: {
       lang: { en: 'EN', ro: 'RO', switch: 'Schimbă limba' },
+      theme: { toggle: 'Comută modul întunecat' },
 
       nav: {
         home: 'Acasă',
@@ -744,15 +777,21 @@ const resources = {
         subtitle: '{{count}} țări ștampilate',
         empty: 'Încă nicio ștampilă. Gătește un preparat de oriunde ca să pornești harta.',
         visited: 'Vizitat',
-        recipes: '{{count}} rețete',
+        recipes_one: '{{count}} rețetă',
+        recipes_few: '{{count}} rețete',
+        recipes_other: '{{count}} de rețete',
         spin: 'Trage ca să rotești globul',
+        countryEmpty: 'Încă nimic de aici.',
+        how: { created: 'Publicată de el', cooked: 'Gătită', both: 'Publicată și gătită' },
       },
 
       upload: {
         add: '+ Poză',
         uploading: 'Se încarcă…',
         remove: 'Șterge poza',
-        replace: 'Schimbă / repoziționează',
+        replace: 'Schimbă poza',
+        reposition: 'Repoziționează',
+        repositionFailed: 'Nu am putut încărca poza pentru reîncadrare.',
         failed: 'Încărcarea a eșuat. Încearcă din nou.',
       },
 
@@ -767,6 +806,15 @@ const resources = {
         apply: 'Folosește poza',
       },
 
+      moderation: {
+        label: 'Moderare',
+        visibleNote: 'Este vizibilă public.',
+        recipeHiddenNote: 'Ascunsă — o vedeți doar tu și autorul.',
+        postHiddenNote: 'Ascunsă — o vedeți doar tu și autorul.',
+        hide: 'Ascunde',
+        restore: 'Repune',
+      },
+
       roles: {
         user: 'Membru',
         moderator: 'Moderator',
@@ -776,7 +824,23 @@ const resources = {
       admin: {
         title: 'Moderare',
         subtitle: 'Roluri, conturi și coada de rețete semnalate.',
-        panes: { users: 'Utilizatori', recipes: 'Rețete' },
+        panes: { users: 'Utilizatori', recipes: 'Rețete', forum: 'Forum' },
+        forumSearchPh: 'Caută postări după #id sau titlu',
+        postStatus: { ok: 'Publicate', hidden: 'Ascunse' },
+        postHidden: 'Postare ascunsă',
+        postRestored: 'Postare repusă',
+        postDeleted: 'Postare ștearsă',
+        confirmDeletePost: '„{{name}}” și toate comentariile ei vor fi șterse definitiv.',
+        restore: 'Repune',
+        recipeRestored: 'Rețetă repusă',
+        suspend: 'Suspendă',
+        suspendTitle: 'Suspendă {{name}}',
+        suspendNote: 'Cât e suspendat nu poate posta, iar rețetele și postările lui nu mai sunt vizibile pentru nimeni — nici din căutare, nici pe link direct.',
+        suspendedFor: 'Suspendat pentru {{time}}',
+        durations: {
+          '12h': '12 ore', '1d': 'o zi', '3d': '3 zile', '7d': '7 zile',
+          '30d': '30 de zile', '90d': '90 de zile', '1y': 'un an',
+        },
         searchPh: 'Caută după nume, username sau email',
         filterRole: 'Filtrează după rol',
         allRoles: 'Toate rolurile',
@@ -955,6 +1019,7 @@ const resources = {
         aboutEmpty: 'Încă nimic aici.',
         privateTitle: 'Acest cont este privat',
         privateNote: 'Urmărește pentru a-i vedea rețetele, pașaportul și activitatea.',
+        removeActivity: 'Scoate din activitatea mea',
       },
 
       settings: {

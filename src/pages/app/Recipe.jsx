@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getRecipe } from '../../services/recipes';
+import { getRecipe, moderateRecipe } from '../../services/recipes';
+import ModerationBar from '../../components/ModerationBar';
 import { countryOf } from '../../data/countries';
 import { useUser } from '../../user';
 import Reviews from '../../components/Reviews';
@@ -99,8 +100,24 @@ export default function Recipe() {
   const author = recipe.author;
   const isAuthor = user && author && user.id === author.id;
 
+  /* A moderator who lands on a recipe should be able to act on it here rather
+     than memorising the id and walking over to the console. */
+  const moderate = async (action) => {
+    const res = await moderateRecipe(recipe.id, action);
+    setRecipe((r) => ({ ...r, is_hidden: res.moderation_status === 'hidden' }));
+  };
+
   return (
     <div className="recipe">
+      {recipe.can_moderate && (
+        <ModerationBar
+          hidden={recipe.is_hidden}
+          onHide={() => moderate('hide')}
+          onRestore={() => moderate('restore')}
+          hiddenNote={t('moderation.recipeHiddenNote')}
+        />
+      )}
+
       <header className="recipe__hero">
         <button type="button" className="recipe__back" onClick={() => navigate(-1)}>
           <IconBack className="recipe__back-icon" /> {t('common.back')}

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '../../user';
 import {
-  ROLES, getModerationQueue, hideRecipe, deleteRecipe,
+  ROLES, SUSPENSIONS, getModerationQueue, hideRecipe, restoreRecipe, deleteRecipe,
+  getForumQueue, hideForumPost, restoreForumPost, deleteForumPost,
   listUsers, setUserRole, suspendUser, unsuspendUser,
   deactivateUser, activateUser,
 } from '../../services/admin';
@@ -26,6 +27,7 @@ import './Admin.css';
    ========================================================================== */
 
 const RECIPE_FILTERS = ['flagged', 'hidden', 'ok'];
+const FORUM_FILTERS = ['ok', 'hidden'];
 
 /* Prefer the backend's own message (it explains *why* an action was refused —
    "you can't suspend an account with an equal or higher role") over a generic
@@ -73,8 +75,18 @@ export default function Admin() {
   const usersKey = JSON.stringify([query, roleFilter]);
   const usersLoading = usersFor !== usersKey;
 
+  // forum pane
+  const [forumFilter, setForumFilter] = useState('ok');
+  const [forumQuery, setForumQuery] = useState('');
+  const [posts, setPosts] = useState([]);
+  const [postsFor, setPostsFor] = useState(null);
+  const forumKey = JSON.stringify([forumFilter, forumQuery]);
+  const postsLoading = postsFor !== forumKey;
+
   // confirmation for the destructive actions
   const [confirm, setConfirm] = useState(null); // { kind, id, label }
+  // who we are about to suspend, and for how long
+  const [suspendFor, setSuspendFor] = useState(null); // { id, label }
 
   const flash = useCallback((msg) => {
     setToast(msg);
@@ -119,6 +131,21 @@ export default function Admin() {
     return () => { alive = false; window.clearTimeout(id); };
   }, [isStaff, pane, query, roleFilter, usersKey, usersFor, fail]);
 
+  useEffect(() => {
+    if (!isStaff || pane !== 'forum' || postsFor === forumKey) return undefined;
+    let alive = true;
+    const id = window.setTimeout(() => {
+      getForumQueue({ status: forumFilter, q: forumQuery })
+        .then((data) => {
+          if (!alive) return;
+          setPosts(data || []);
+          setPostsFor(forumKey);
+        })
+        .catch((err) => { if (alive) fail(err); });
+    }, 250);
+    return () => { alive = false; window.clearTimeout(id); };
+  }, [isStaff, pane, forumFilter, forumQuery, forumKey, postsFor, fail]);
+
   /* run an action, then patch the affected row in place — reloading the whole
      list would lose the moderator's scroll position mid-triage */
   const act = async (id, fn, message) => {
@@ -149,6 +176,9 @@ export default function Admin() {
     if (kind === 'deleteRecipe') {
       const ok = await act(id, () => deleteRecipe(id), t('admin.recipeDeleted'));
       if (ok) setRecipes((list) => list.filter((r) => r.id !== id));
+    } else if (kind === 'deletePost') {
+      const ok = await act(id, () => deleteForumPost(id), t('admin.postDeleted'));
+      if (ok) setPosts((list) => list.filter((x) => x.id !== id));
     } else if (kind === 'deactivate') {
       const ok = await act(id, () => deactivateUser(id), t('admin.userDeactivated'));
       if (ok) setUsers((list) => list.map((u) => (u.id === id ? { ...u, is_active: false } : u)));
@@ -169,7 +199,7 @@ export default function Admin() {
       </header>
 
       <div className="adm-panes" role="tablist">
-        {['users', 'recipes'].map((k) => (
+        {['users', 'recipes', 'forum'].map((k) => (
           <button
             key={k}
             type="button"
@@ -273,9 +303,9 @@ export default function Admin() {
                         type="button"
                         className="adm-btn"
                         disabled={busy || self}
-                        onClick={() => act(u.id, () => suspendUser(u.id, 7), t('admin.suspended7'))}
+                        onClick={() => setSuspendFor({ id: u.id, label: u.full_name || u.username })}
                       >
-                        {t('admin.suspend7')}
+                        {t('admin.suspend')}
                       </button>
                     )}
 
@@ -355,7 +385,7 @@ export default function Admin() {
                 {r.ai_notes && <p className="adm-reason">{r.ai_notes}</p>}
 
                 <div className="adm-tools">
-                  {r.moderation_status !== 'hidden' && (
+                  {r.moderation_status !== 'hidden' ? (
                     <button
                       type="button"
                       className="adm-btn"
@@ -366,6 +396,18 @@ export default function Admin() {
                       }}
                     >
                       {t('admin.hide')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="adm-btn adm-btn--go"
+                      disabled={busyId === r.id}
+                      onClick={async () => {
+                        const ok = await act(r.id, () => restoreRecipe(r.id), t('admin.recipeRestored'));
+                        if (ok) setRecipes((l) => l.filter((x) => x.id !== r.id));
+                      }}
+                    >
+                      {t('admin.restore')}
                     </button>
                   )}
                   <button
@@ -382,6 +424,123 @@ export default function Admin() {
           </ul>
         </section>
       )}
+
+      {/* ===================== FORUM ===================== */}
+      {pane === 'forum' && (
+        <section className="adm-section">
+          <div className="adm-filters">
+            <input
+              className="adm-search"
+              type="search"
+              value={forumQuery}
+              placeholder={t('admin.forumSearchPh')}
+              onChange={(e) => setForumQuery(e.target.value)}
+              aria-label={t('admin.forumSearchPh')}
+            />
+            {FORUM_FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`adm-chipbtn ${forumFilter === f ? 'is-active' : ''}`}
+                onClick={() => setForumFilter(f)}
+              >
+                {t(`admin.postStatus.${f}`)}
+              </button>
+            ))}
+          </div>
+
+          {postsLoading && <p className="adm-empty">{t('common.loading')}</p>}
+          {!postsLoading && posts.length === 0 && <p className="adm-empty">{t('admin.queueEmpty')}</p>}
+
+          <ul className="adm-list">
+            {posts.map((p) => (
+              <li key={p.id} className="adm-row adm-row--recipe">
+                <button
+                  type="button"
+                  className="adm-who"
+                  onClick={() => navigate(`/forum/${p.id}`)}
+                >
+                  <span className="adm-thumb">{'\u{1F4AC}'}</span>
+                  <span className="adm-who__text">
+                    <b>{p.title}</b>
+                    <small>
+                      #{p.id} · {p.language?.toUpperCase()} · {t(`forum.tags.${p.tag}`)}
+                      {p.author?.username ? ` · @${p.author.username}` : ''}
+                    </small>
+                  </span>
+                </button>
+
+                {p.excerpt && <p className="adm-reason">{p.excerpt}</p>}
+
+                <div className="adm-tools">
+                  {p.moderation_status !== 'hidden' ? (
+                    <button
+                      type="button"
+                      className="adm-btn"
+                      disabled={busyId === p.id}
+                      onClick={async () => {
+                        const ok = await act(p.id, () => hideForumPost(p.id), t('admin.postHidden'));
+                        if (ok) setPosts((l) => l.filter((x) => x.id !== p.id));
+                      }}
+                    >
+                      {t('admin.hide')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="adm-btn adm-btn--go"
+                      disabled={busyId === p.id}
+                      onClick={async () => {
+                        const ok = await act(p.id, () => restoreForumPost(p.id), t('admin.postRestored'));
+                        if (ok) setPosts((l) => l.filter((x) => x.id !== p.id));
+                      }}
+                    >
+                      {t('admin.restore')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--danger"
+                    disabled={busyId === p.id}
+                    onClick={() => setConfirm({ kind: 'deletePost', id: p.id, label: p.title })}
+                  >
+                    {t('admin.delete')}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ===================== SUSPEND FOR HOW LONG ===================== */}
+      <Modal
+        open={!!suspendFor}
+        onClose={() => setSuspendFor(null)}
+        title={t('admin.suspendTitle', { name: suspendFor?.label })}
+      >
+        <p className="adm-confirm">{t('admin.suspendNote')}</p>
+        <div className="adm-durations">
+          {SUSPENSIONS.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              className="adm-duration"
+              onClick={async () => {
+                const target = suspendFor;
+                setSuspendFor(null);
+                await act(
+                  target.id,
+                  () => suspendUser(target.id, d.hours),
+                  t('admin.suspendedFor', { time: t(`admin.durations.${d.key}`) }),
+                );
+              }}
+            >
+              {t(`admin.durations.${d.key}`)}
+            </button>
+          ))}
+        </div>
+      </Modal>
 
       <Modal
         open={!!confirm}
@@ -401,7 +560,9 @@ export default function Admin() {
         <p className="adm-confirm">
           {confirm?.kind === 'deleteRecipe'
             ? t('admin.confirmDeleteRecipe', { name: confirm?.label })
-            : t('admin.confirmDeactivate', { name: confirm?.label })}
+            : confirm?.kind === 'deletePost'
+              ? t('admin.confirmDeletePost', { name: confirm?.label })
+              : t('admin.confirmDeactivate', { name: confirm?.label })}
         </p>
       </Modal>
 

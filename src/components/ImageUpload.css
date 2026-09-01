@@ -72,10 +72,11 @@
   margin: 6px 0 0;
 }
 
-/* "Change / reposition" — shown next to the thumbnail when a crop step is
+/* Reposition / replace — shown next to the thumbnail when a crop step is
    configured, so re-framing does not mean removing the photo first. */
-.imgup__replace {
-  align-self: center;
+.imgup__ops { display: flex; flex-direction: column; gap: 6px; align-self: center; }
+
+.imgup__op {
   padding: 9px 14px;
   border: 1.5px solid var(--k-border-strong);
   border-radius: 10px;
@@ -88,12 +89,12 @@
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
-.imgup__replace:hover:not(:disabled) {
+.imgup__op:hover:not(:disabled) {
   border-color: var(--k-accent);
   color: var(--k-accent);
 }
 
-.imgup__replace:disabled {
+.imgup__op:disabled {
   opacity: 0.6;
   cursor: progress;
 }

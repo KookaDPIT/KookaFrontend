@@ -21,7 +21,6 @@ export const DEFAULT_SETTINGS = {
   activityStatus: true,
   allowTagging: true,
   publicPassport: true,
-  messagesFrom: 'followers', // everyone | followers | none
   notif: { followers: true, comments: true, forum: true, digest: false, daily: true },
   theme: 'system', // system | light | dark
   language: 'en', // en | ro — mirrors i18n, persisted server-side
@@ -36,7 +35,6 @@ export const CLIENT_PREF_KEYS = [
   'activityStatus',
   'allowTagging',
   'publicPassport',
-  'messagesFrom',
   'notif',
   'twoFactor',
 ];

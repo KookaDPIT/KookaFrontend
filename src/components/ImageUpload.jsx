@@ -66,6 +66,26 @@ export default function ImageUpload({
     }
   };
 
+  /* Re-frame the photo that is already uploaded. Pulling it back through
+     fetch() gives us a same-origin blob URL, which also keeps the canvas
+     untainted — drawing a remote <img> directly would make toBlob() throw. */
+  const repositionCurrent = async () => {
+    const url = urls[0];
+    if (!url) return;
+    setError('');
+    setBusy(true);
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      setPending(new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }));
+    } catch {
+      setError(t('upload.repositionFailed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /* the cropper hands back a JPEG blob of the framed area */
   const handleCropped = async (blob) => {
     setBusy(true);
@@ -117,17 +137,28 @@ export default function ImageUpload({
           </button>
         )}
 
-        {/* once a photo exists, re-framing it means picking the file again —
-            offer that next to the thumbnail rather than hiding it behind remove */}
+        {/* Two different jobs, so two buttons: reposition re-frames the photo
+            that is already there, replace picks a different file. Folding them
+            into one control meant you had to re-upload just to nudge a crop. */}
         {cropping && urls.length > 0 && (
-          <button
-            type="button"
-            className="imgup__replace"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-          >
-            {busy ? t('upload.uploading') : t('upload.replace')}
-          </button>
+          <div className="imgup__ops">
+            <button
+              type="button"
+              className="imgup__op"
+              onClick={repositionCurrent}
+              disabled={busy}
+            >
+              {t('upload.reposition')}
+            </button>
+            <button
+              type="button"
+              className="imgup__op"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+            >
+              {busy ? t('upload.uploading') : t('upload.replace')}
+            </button>
+          </div>
         )}
       </div>
 

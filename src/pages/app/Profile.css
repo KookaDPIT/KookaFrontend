@@ -39,13 +39,17 @@
    ========================================================================== */
 .pf {
   --pf-cover-h: 340px; /* taller in Y: the identity now lives on the photo */
+  --pf-cover-radius: 28px;
 }
 
 .pf-cover {
   position: relative;
   isolation: isolate;
   height: var(--pf-cover-h);
-  margin: 0 -40px;
+  /* inset instead of full-bleed, so the band can be a rounded card like the
+     rest of the page rather than a hard-edged strip */
+  margin: 12px 0 0;
+  border-radius: var(--pf-cover-radius);
   display: flex;
   align-items: flex-end;
   overflow: visible;
@@ -57,6 +61,7 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  border-radius: inherit;
   background:
     radial-gradient(120% 180% at 82% 0%, #3a2519 0%, #24170f 60%, #170d08 100%);
 }
@@ -77,6 +82,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
+  border-radius: inherit;
   pointer-events: none;
   background: linear-gradient(
     180deg,
@@ -91,7 +97,7 @@
   z-index: 2;
   width: 100%;
   box-sizing: border-box;
-  padding: 0 40px 28px;
+  padding: 0 34px 28px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: flex-end;
@@ -477,8 +483,8 @@
 @media (max-width: 900px) {
   .pf { --pf-cover-h: 300px; }
   .pf-head { padding: 0 20px; }
-  .pf-cover { margin: 0 -20px; }
-  .pf-head__row { padding: 0 20px 22px; }
+  .pf { --pf-cover-radius: 22px; }
+  .pf-head__row { padding: 0 18px 22px; }
   .pf-cover__id { padding: 26px 20px; }
   .pf-body { padding: 0 20px 40px; }
   .pf-stats { grid-template-columns: repeat(2, 1fr); }
@@ -561,6 +567,7 @@
 
 /* private / locked view — same three layers, just a taller band and no avatar */
 .pf-cover--identity { height: 360px; }
+.pf-cover__id { border-radius: inherit; }
 .pf-cover__id {
   position: relative;
   z-index: 2; /* layer 2, like the identity row on the normal header */
@@ -619,3 +626,81 @@
 [data-theme="dark"] .pf-globe__hint,
 [data-theme="dark"] .pf-empty { color: #b8a888; }
 [data-theme="dark"] .pf-locked__icon { background: rgba(255, 255, 255, 0.06); color: #d8c6a4; }
+
+
+/* ==========================================================================
+   ACTIVITY — the owner can take an entry out of their own feed
+   ========================================================================== */
+.pf-activity__x {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #b3a082;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pf-activity li:hover .pf-activity__x,
+.pf-activity__x:focus-visible { opacity: 1; }
+.pf-activity__x:hover { background: rgba(229, 83, 58, 0.14); color: #c2401f; }
+
+/* the stamps became buttons — keep them looking like stamps */
+.pf-stamp {
+  border: none;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.16s ease;
+}
+.pf-stamp:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(74, 47, 20, 0.16); }
+
+/* ==========================================================================
+   PASSPORT COUNTRY SHEET
+   ========================================================================== */
+.pf-country { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pf-country__empty { margin: 18px 0; text-align: center; color: #94805c; font-size: 14.5px; }
+
+.pf-country__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.pf-country__row:hover { background: rgba(120, 80, 30, 0.08); }
+
+.pf-country__photo {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  background: rgba(120, 80, 30, 0.12) center / cover no-repeat;
+}
+
+.pf-country__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-country__text b {
+  font-family: var(--font-important), sans-serif;
+  font-size: 14.5px;
+  color: #2a2016;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-country__text small { font-size: 12px; color: #94805c; }
+
+[data-theme="dark"] .pf-country__row:hover { background: rgba(255, 255, 255, 0.07); }
+[data-theme="dark"] .pf-country__text b { color: #f5f5f0; }
+[data-theme="dark"] .pf-country__text small,
+[data-theme="dark"] .pf-country__empty { color: #a89988; }
+[data-theme="dark"] .pf-activity__x { color: #8a7a66; }

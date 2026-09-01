@@ -57,6 +57,12 @@ export async function votePost(id, value) {
   return data; // { votes, my_vote }
 }
 
+/* Hide or restore straight from the thread (moderators only). */
+export async function moderatePost(id, action) {
+  const { data } = await api.post(`/forum/posts/${id}/moderate`, { action });
+  return data;
+}
+
 export async function addComment(postId, body, parentId = null) {
   const { data } = await api.post(`/forum/posts/${postId}/comments`, {
     body,

@@ -364,115 +364,139 @@
 /* ==========================================================================
     DARK MODE
     ========================================================================== */
-[data-theme="dark"] .settings {
-  background: #2a2016;
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .settings-header {
-  background: #3a3228;
-  border-bottom-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-header__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .settings-sidebar {
-  background: #3a3228;
-  border-right-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-nav-item {
-  color: #b8b0a0;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-nav-item.is-active {
-  background: rgba(255, 107, 53, 0.16);
-  color: #ff8a5a;
-  border-color: #ff8a5a;
-}
-
-[data-theme="dark"] .settings-content {
-  background: #2a2016;
-}
-
-[data-theme="dark"] .settings-section {
-  background: #3a3228;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-section__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .settings-section__desc {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .settings-item {
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-item__label {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .settings-item__value {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .settings-item input,
-[data-theme="dark"] .settings-item select,
-[data-theme="dark"] .settings-item textarea {
-  background: #2a2016;
-  color: #f5f5f0;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-item input::placeholder,
-[data-theme="dark"] .settings-item textarea::placeholder {
-  color: #a89968;
-}
-
-[data-theme="dark"] .settings-btn {
-  background: #c8551f;
-  box-shadow: 0 4px 12px rgba(200, 85, 31, 0.24);
-}
-
-[data-theme="dark"] .settings-btn:hover {
-  background: #e0691f;
-  box-shadow: 0 6px 16px rgba(200, 85, 31, 0.32);
-}
-
-[data-theme="dark"] .settings-cancel-btn {
-  background: #3a3228;
-  color: #f5f5f0;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .settings-cancel-btn:hover {
-  background: #4a4238;
-}
-
-[data-theme="dark"] .settings-toggle {
-  background: #4a4238;
-  border-color: #5a5248;
-}
-
-[data-theme="dark"] .settings-toggle.is-on {
-  background: #c8551f;
-}
-
-/* change-password modal error line */
-.st-pw-err {
-  margin: 0.25rem 0 0;
-  color: #c0392b;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
 [data-theme="dark"] .st-pw-err {
   color: #ff7a6b;
 }
+
+
+/* ==========================================================================
+   AVAILABILITY FEEDBACK (username / email)
+   The border carries the state and the note spells it out — colour alone
+   would leave colour-blind users with nothing.
+   ========================================================================== */
+.st-field input.is-free,
+.st-prefix.is-free input { border-color: #3f8f5f; }
+.st-field input.is-taken,
+.st-prefix.is-taken input {
+  border-color: #d92d20;
+  background: rgba(217, 45, 32, 0.04);
+}
+.st-field input.is-taken:focus,
+.st-prefix.is-taken input:focus {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 4px rgba(217, 45, 32, 0.14);
+}
+
+.st-note {
+  font-family: var(--font-important), sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.st-note--ok { color: #2f7a4e; }
+.st-note--bad { color: #b42318; }
+
+.st-blocked__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.st-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+[data-theme="dark"] .st {
+  background: #2a2016;
+  color: #f5f5f0;
+}
+[data-theme="dark"] .st-title,
+[data-theme="dark"] .st-panel__head h2,
+[data-theme="dark"] .st-row__label,
+[data-theme="dark"] .st-nav__item.is-active,
+[data-theme="dark"] .st-blocked b,
+[data-theme="dark"] .st-session b { color: #f5f5f0; }
+
+[data-theme="dark"] .st-panel__head p,
+[data-theme="dark"] .st-row__hint,
+[data-theme="dark"] .st-field > span,
+[data-theme="dark"] .st-empty,
+[data-theme="dark"] .st-hint,
+[data-theme="dark"] .st-session small,
+[data-theme="dark"] .st-back,
+[data-theme="dark"] .st-nav__item { color: #a89988; }
+
+[data-theme="dark"] .st-back:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .st-panel {
+  background: #3a3228;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .st-nav__item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #f5f5f0;
+}
+[data-theme="dark"] .st-nav__item.is-active {
+  background: #3a3228;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .st-row {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .st-row:last-child { box-shadow: none; }
+
+[data-theme="dark"] .st-field input,
+[data-theme="dark"] .st-field textarea {
+  background: #2f2820;
+  border-color: #4a4238;
+  color: #f5f5f0;
+}
+[data-theme="dark"] .st-field input::placeholder,
+[data-theme="dark"] .st-field textarea::placeholder { color: #7d7062; }
+[data-theme="dark"] .st-prefix i { color: #7d7062; }
+
+[data-theme="dark"] .st-switch { background: #4a4238; }
+
+[data-theme="dark"] .st-seg { background: rgba(255, 255, 255, 0.07); }
+[data-theme="dark"] .st-seg button { color: #c9bea7; }
+[data-theme="dark"] .st-seg button.is-active {
+  background: #2f2820;
+  color: #ff9a70;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .st-ghost {
+  border-color: #4a4238;
+  color: #c9bea7;
+}
+[data-theme="dark"] .st-ghost:hover { border-color: #ff6b35; color: #ff9a70; }
+
+[data-theme="dark"] .st-session,
+[data-theme="dark"] .st-blocked li {
+  background: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .st-session__icon,
+[data-theme="dark"] .st-blocked__avatar {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c9bea7;
+}
+
+[data-theme="dark"] .st-note--ok { color: #7ec99b; }
+[data-theme="dark"] .st-note--bad { color: #ff8a6a; }
+[data-theme="dark"] .st-field input.is-taken,
+[data-theme="dark"] .st-prefix.is-taken input {
+  background: rgba(255, 138, 106, 0.08);
+  border-color: #ff8a6a;
+}
+[data-theme="dark"] .st-field input.is-free,
+[data-theme="dark"] .st-prefix.is-free input { border-color: #7ec99b; }

@@ -22,6 +22,40 @@ export async function unfollow(id) {
   return data;
 }
 
+/* What earned the stamp for one country: recipes published there and recipes
+   from there that this cook has actually made. */
+export async function getPassportCountry(id, country) {
+  const { data } = await api.get(`/users/${id}/passport/${encodeURIComponent(country)}`);
+  return data; // { country, recipes: [{...recipe, how}], total }
+}
+
+/* Removing an activity entry is a display choice, not a deletion — the recipe
+   or review underneath stays exactly where it is. */
+export async function hideActivity(kind, entryId) {
+  const { data } = await api.post('/me/activity/hide', { kind, entry_id: entryId });
+  return data;
+}
+
+export async function restoreAllActivity() {
+  const { data } = await api.delete('/me/activity/hide');
+  return data;
+}
+
+export async function getBlocked() {
+  const { data } = await api.get('/me/blocked');
+  return data;
+}
+
+export async function blockUser(id) {
+  const { data } = await api.post(`/users/${id}/block`);
+  return data;
+}
+
+export async function unblockUser(id) {
+  const { data } = await api.delete(`/users/${id}/block`);
+  return data;
+}
+
 export async function getPassport(id) {
   const { data } = await api.get(`/users/${id}/passport`);
   return data; // { countries: [{country, count}], total }

@@ -278,3 +278,41 @@
 [data-theme='dark'] .adm-reason { color: #a89988; }
 [data-theme='dark'] .adm-chip--off { background: rgba(255, 255, 255, 0.1); color: #c9bea7; }
 [data-theme='dark'] .adm-chip--susp { background: rgba(255, 138, 106, 0.18); color: #ff8a6a; }
+
+
+/* restore is a constructive action — it should not look like hide */
+.adm-btn--go { color: #2f7a4e; border-color: rgba(63, 174, 111, 0.45); }
+.adm-btn--go:hover:not(:disabled) {
+  border-color: #3fae6f;
+  background: rgba(63, 174, 111, 0.1);
+  color: #2f7a4e;
+}
+
+/* the suspension menu — durations, shortest first */
+.adm-durations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.adm-duration {
+  padding: 11px 18px;
+  border: 1.5px solid #e7d8b6;
+  border-radius: 12px;
+  background: transparent;
+  color: #2a2016;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.adm-duration:hover {
+  border-color: #c2401f;
+  background: rgba(229, 83, 58, 0.09);
+  color: #c2401f;
+}
+
+[data-theme='dark'] .adm-btn--go { color: #7ec99b; border-color: rgba(126, 201, 155, 0.4); }
+[data-theme='dark'] .adm-duration { border-color: #4a4238; color: #f5f5f0; }
+[data-theme='dark'] .adm-duration:hover { border-color: #ff8a6a; color: #ff8a6a; }

@@ -22,6 +22,32 @@ export async function deleteRecipe(id) {
   return data;
 }
 
+export async function restoreRecipe(id) {
+  const { data } = await api.post(`/admin/recipes/${id}/restore`);
+  return data;
+}
+
+// ----- forum -----
+export async function getForumQueue({ status = 'ok', q = '' } = {}) {
+  const { data } = await api.get('/admin/forum/posts', { params: { status, q } });
+  return data;
+}
+
+export async function hideForumPost(id) {
+  const { data } = await api.post(`/admin/forum/posts/${id}/hide`);
+  return data;
+}
+
+export async function restoreForumPost(id) {
+  const { data } = await api.post(`/admin/forum/posts/${id}/restore`);
+  return data;
+}
+
+export async function deleteForumPost(id) {
+  const { data } = await api.delete(`/admin/forum/posts/${id}`);
+  return data;
+}
+
 // ----- users -----
 export async function listUsers({ q = '', role = '' } = {}) {
   const { data } = await api.get('/admin/users', { params: { q, role } });
@@ -33,8 +59,23 @@ export async function setUserRole(id, role) {
   return data;
 }
 
-export async function suspendUser(id, days = 7) {
-  const { data } = await api.post(`/admin/users/${id}/suspend`, { days });
+/* The menu of sanctions, shortest first. Hours (not days) so a one-day cool-off
+   is possible; `days` is derived for the backend's older field. */
+export const SUSPENSIONS = [
+  { key: '12h', hours: 12 },
+  { key: '1d', hours: 24 },
+  { key: '3d', hours: 72 },
+  { key: '7d', hours: 168 },
+  { key: '30d', hours: 720 },
+  { key: '90d', hours: 2160 },
+  { key: '1y', hours: 8760 },
+];
+
+export async function suspendUser(id, hours = 168) {
+  const { data } = await api.post(`/admin/users/${id}/suspend`, {
+    hours,
+    days: Math.max(1, Math.round(hours / 24)),
+  });
   return data;
 }
 

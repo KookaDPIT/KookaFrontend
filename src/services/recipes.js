@@ -26,6 +26,12 @@ export async function deleteRecipe(id) {
   await api.delete(`/recipes/${id}`);
 }
 
+/* Hide or restore straight from the recipe page (moderators only). */
+export async function moderateRecipe(id, action) {
+  const { data } = await api.post(`/recipes/${id}/moderate`, { action });
+  return data;
+}
+
 export async function getDailyDish() {
   const { data } = await api.get('/daily-dish');
   return data.daily; // null when the catalogue is empty

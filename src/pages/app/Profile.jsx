@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../settings';
 import { useUser, refreshUser } from '../../user';
 import {
-  updateProfile, getUser, getUserRecipes, getPassport, getUserActivity, follow, unfollow,
+  updateProfile, getUser, getUserRecipes, getPassport, getUserActivity,
+  getPassportCountry, hideActivity, follow, unfollow,
 } from '../../services/users';
 import { countryOf } from '../../data/countries';
 import Modal from '../../components/Modal';
@@ -74,6 +75,8 @@ export default function Profile() {
   const [toast, setToast] = useState('');
   const [draft, setDraft] = useState({ name: '', username: '', bio: '', avatar: '', cover: '' });
   const [reloadTick, setReloadTick] = useState(0);
+  const [country, setCountry] = useState(null);   // { code, name, flag }
+  const [countryRecipes, setCountryRecipes] = useState(null);
 
   // live backend data
   const [liveRecipes, setLiveRecipes] = useState([]);
@@ -227,6 +230,32 @@ export default function Profile() {
   const openModeration = () => {
     setMenuOpen(false);
     navigate('/admin');
+  };
+
+  /* Tapping a stamp answers the obvious question: what did I actually cook
+     from there? Loaded on demand — the passport itself only carries counts. */
+  const openCountry = async (c) => {
+    setCountry(c);
+    setCountryRecipes(null);
+    try {
+      const data = await getPassportCountry(targetId, c.code);
+      setCountryRecipes(data.recipes || []);
+    } catch {
+      setCountryRecipes([]);
+    }
+  };
+
+  /* Removing an entry only hides it from the feed; the recipe or review it
+     points at is untouched. */
+  const dismissActivity = async (item) => {
+    const before = activity;
+    setActivity((list) => list.filter((a) => !(a.kind === item.kind && a.entry_id === item.entry_id)));
+    try {
+      await hideActivity(item.kind, item.entry_id);
+    } catch {
+      setActivity(before);
+      flash(t('common.error'));
+    }
   };
 
   const toggleFollow = async () => {
@@ -428,7 +457,7 @@ export default function Profile() {
               <ul className="pf-activity">
                 {activity.map((a, i) => (
                   <li
-                    key={i}
+                    key={`${a.kind}:${a.entry_id ?? i}`}
                     className={a.recipe_id ? 'is-clickable' : ''}
                     onClick={() => a.recipe_id && navigate(`/recipe/${a.recipe_id}`)}
                   >
@@ -437,6 +466,17 @@ export default function Profile() {
                       {t(`profile.${a.kind}`)} <b>{a.what}</b>
                     </span>
                     <span className="pf-activity__when">{timeAgo(a.when)}</span>
+                    {isSelf && a.entry_id != null && (
+                      <button
+                        type="button"
+                        className="pf-activity__x"
+                        title={t('profile.removeActivity')}
+                        aria-label={t('profile.removeActivity')}
+                        onClick={(e) => { e.stopPropagation(); dismissActivity(a); }}
+                      >
+                        ×
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -480,11 +520,16 @@ export default function Profile() {
               ) : (
                 <div className="pf-passport">
                   {passportList.map((c) => (
-                    <div className="pf-stamp" key={c.name}>
+                    <button
+                      type="button"
+                      className="pf-stamp"
+                      key={c.name}
+                      onClick={() => openCountry(c)}
+                    >
                       <span className="pf-stamp__flag" aria-hidden="true">{c.flag}</span>
                       <b>{c.name}</b>
-                      <small>{c.dishes} {t('profile.tabs.recipes').toLowerCase()}</small>
-                    </div>
+                      <small>{t('passport.recipes', { count: c.dishes })}</small>
+                    </button>
                   ))}
                 </div>
               )}
@@ -617,6 +662,41 @@ export default function Profile() {
             onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))}
           />
         </div>
+      </Modal>
+
+      {/* ===== WHAT EARNED THIS STAMP ===== */}
+      <Modal
+        open={!!country}
+        onClose={() => setCountry(null)}
+        title={country ? `${country.flag} ${country.name}` : ''}
+      >
+        {countryRecipes === null ? (
+          <p className="pf-country__empty">{t('common.loading')}</p>
+        ) : countryRecipes.length === 0 ? (
+          <p className="pf-country__empty">{t('passport.countryEmpty')}</p>
+        ) : (
+          <ul className="pf-country">
+            {countryRecipes.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  className="pf-country__row"
+                  onClick={() => { setCountry(null); navigate(`/recipe/${r.id}`); }}
+                >
+                  <span
+                    className="pf-country__photo"
+                    aria-hidden="true"
+                    style={r.image_url ? { backgroundImage: `url(${r.image_url})` } : undefined}
+                  />
+                  <span className="pf-country__text">
+                    <b>{r.title}</b>
+                    <small>{t(`passport.how.${r.how}`)}{r.meta?.time ? ` · ${r.meta.time}` : ''}</small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
 
       <Toast message={toast} />

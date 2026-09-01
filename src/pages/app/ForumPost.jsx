@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  getPost, votePost, addComment, deleteComment, deletePost,
+  getPost, votePost, addComment, deleteComment, deletePost, moderatePost,
 } from '../../services/forum';
+import ModerationBar from '../../components/ModerationBar';
 import { useUser } from '../../user';
 import { languageName } from '../../lib/languages';
 import Modal from '../../components/Modal';
@@ -146,8 +147,26 @@ export default function ForumPost() {
 
   const isStaff = me?.role === 'admin' || me?.role === 'moderator';
 
+  const moderate = async (action) => {
+    try {
+      const res = await moderatePost(post.id, action);
+      setPost((prev) => ({ ...prev, is_hidden: res.moderation_status === 'hidden' }));
+    } catch (err) {
+      fail(err);
+    }
+  };
+
   return (
     <div className="fp">
+      {post.can_moderate && (
+        <ModerationBar
+          hidden={post.is_hidden}
+          onHide={() => moderate('hide')}
+          onRestore={() => moderate('restore')}
+          hiddenNote={t('moderation.postHiddenNote')}
+        />
+      )}
+
       <div className="fp-wrap">
         <button type="button" className="fp-back" onClick={() => navigate('/forum')}>
           ← {t('forum.backToForum')}
