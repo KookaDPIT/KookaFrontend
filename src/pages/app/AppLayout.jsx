@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme } from '../../settings';
+import { useUser } from '../../user';
 import kookaIcon from '../../assets/kooka-icon.png';
 import './AppLayout.css';
 
@@ -42,6 +43,13 @@ const ICONS = {
       <path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
     </svg>
   ),
+  admin: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l7.5 3v5.6c0 4.6-3.1 8.8-7.5 10-4.4-1.2-7.5-5.4-7.5-10V6z" />
+      <path d="M9 12l2.2 2.2L15.5 10" />
+    </svg>
+  ),
 };
 
 const NAV = [
@@ -55,6 +63,10 @@ const NAV = [
 export default function AppLayout() {
   const { t, i18n } = useTranslation();
   const [settings, updateSettings] = useSettings();
+  const [me] = useUser();
+  // the moderation link only exists for staff; the route and every /admin
+  // endpoint check the role again, so this is presentation, not access control
+  const isStaff = me?.role === 'admin' || me?.role === 'moderator';
   const other = i18n.language?.startsWith('ro') ? 'en' : 'ro';
 
   // apply the saved theme whenever it changes (and on first mount)
@@ -77,7 +89,7 @@ export default function AppLayout() {
         </div>
 
         <nav className="app-nav__links">
-          {NAV.map((item) => (
+          {(isStaff ? [...NAV, { to: '/admin', key: 'admin', icon: ICONS.admin }] : NAV).map((item) => (
             <NavLink key={item.to} to={item.to} className="app-nav__link">
               <span className="app-nav__icon">{item.icon}</span>
               <span className="app-nav__label">{t(`nav.${item.key}`)}</span>

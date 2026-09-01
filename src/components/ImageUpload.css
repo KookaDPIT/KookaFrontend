@@ -71,3 +71,29 @@
   font-size: 0.8rem;
   margin: 6px 0 0;
 }
+
+/* "Change / reposition" — shown next to the thumbnail when a crop step is
+   configured, so re-framing does not mean removing the photo first. */
+.imgup__replace {
+  align-self: center;
+  padding: 9px 14px;
+  border: 1.5px solid var(--k-border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--k-text);
+  font-family: var(--font-important), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.imgup__replace:hover:not(:disabled) {
+  border-color: var(--k-accent);
+  color: var(--k-accent);
+}
+
+.imgup__replace:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}

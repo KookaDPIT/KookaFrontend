@@ -10,6 +10,7 @@ import { countryOf } from '../../data/countries';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import ImageUpload from '../../components/ImageUpload';
+import RoleBadge from '../../components/RoleBadge';
 import WorldGlobe from '../../components/WorldGlobe';
 import './Profile.css';
 
@@ -22,6 +23,10 @@ import './Profile.css';
    ========================================================================== */
 
 const ACTIVITY_ICONS = { created: '📖', reviewed: '⭐', cooked: '🍳' };
+
+/* The cover crop frame matches the header band's proportions, so what the user
+   frames is exactly what the profile shows. Keep in sync with --pf-cover-h. */
+const COVER_ASPECT = 1180 / 340;
 
 /* compact relative time from an ISO timestamp */
 function timeAgo(iso) {
@@ -148,6 +153,7 @@ export default function Profile() {
         recipe_count: me?.recipe_count ?? 0,
         created_at: me?.created_at,
         private: settings.privateAccount,
+        role: me?.role || 'user',
         locked: false,
       }
     : {
@@ -161,6 +167,7 @@ export default function Profile() {
         recipe_count: other?.recipe_count ?? 0,
         created_at: other?.created_at,
         private: other?.private,
+        role: other?.role || 'user',
         locked: !!other?.locked,
       };
 
@@ -217,6 +224,11 @@ export default function Profile() {
     navigate('/settings');
   };
 
+  const openModeration = () => {
+    setMenuOpen(false);
+    navigate('/admin');
+  };
+
   const toggleFollow = async () => {
     const next = !following;
     setFollowing(next);
@@ -231,6 +243,7 @@ export default function Profile() {
   };
 
   const TABS = ['activity', 'recipes', 'passport', 'badges'];
+  const isStaff = me?.role === 'admin' || me?.role === 'moderator';
   const initials = (p.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2);
   const aboutText = p.bio || (isSelf ? t('profile.about') : '');
   const joined = p.created_at ? new Date(p.created_at).getFullYear() : '';
@@ -270,7 +283,9 @@ export default function Profile() {
     return (
       <div className="pf pf--locked">
         <header className="pf-head">
-          <div className="pf-cover pf-cover--identity" style={coverStyle}>
+          <div className="pf-cover pf-cover--identity">
+            <div className="pf-cover__media" style={coverStyle} aria-hidden="true" />
+            <div className="pf-cover__scrim" aria-hidden="true" />
             <div className="pf-cover__id">
               <h1 className="pf-cover__name">{p.name}</h1>
               <p className="pf-cover__handle">@{p.username}</p>
@@ -301,11 +316,20 @@ export default function Profile() {
 
   return (
     <div className="pf">
-      {/* ===== HEADER ===== */}
+      {/* ===== HEADER =====
+          The cover is its own stacking context (`isolation: isolate` in the
+          CSS) with three explicit layers, so the identity always paints above
+          the photo and its scrim instead of being dimmed by them:
+            0 — .pf-cover__media  the background photo
+            1 — .pf-cover__scrim  the darkening gradient that keeps text legible
+            2 — .pf-head__row     avatar, name, actions
+          See MDN, "Stacking context". */}
       <header className="pf-head">
-        <div className={`pf-cover ${p.cover ? 'pf-cover--photo' : ''}`} style={coverStyle} aria-hidden="true" />
+        <div className={`pf-cover ${p.cover ? 'pf-cover--photo' : ''}`}>
+          <div className="pf-cover__media" style={coverStyle} aria-hidden="true" />
+          <div className="pf-cover__scrim" aria-hidden="true" />
 
-        <div className="pf-head__row">
+          <div className="pf-head__row">
           <div className="pf-avatar" aria-hidden="true">
             {avatarNode}
             <span className="pf-avatar__level">{p.level}</span>
@@ -314,6 +338,7 @@ export default function Profile() {
           <div className="pf-id">
             <h1 className="pf-name">
               {p.name}
+              <RoleBadge role={p.role} />
               {p.private && (
                 <span className="pf-private" title={t('settings.privacy.private')} aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5z" /></svg>
@@ -355,9 +380,15 @@ export default function Profile() {
                   {isSelf && <button type="button" role="menuitem" onClick={openEdit}>{t('profile.edit')}</button>}
                   <button type="button" role="menuitem" onClick={share}>{t('profile.share')}</button>
                   {isSelf && <button type="button" role="menuitem" onClick={openSettings}>{t('profile.settings')}</button>}
+                  {isSelf && isStaff && (
+                    <button type="button" role="menuitem" onClick={openModeration}>
+                      {t('admin.title')}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
 
@@ -544,6 +575,8 @@ export default function Profile() {
             value={draft.cover}
             onChange={(url) => setDraft((d) => ({ ...d, cover: url }))}
             folder="/kooka/covers"
+            cropAspect={COVER_ASPECT}
+            cropWidth={1600}
           />
         </div>
         <div className="kfield">
@@ -552,6 +585,9 @@ export default function Profile() {
             value={draft.avatar}
             onChange={(url) => setDraft((d) => ({ ...d, avatar: url }))}
             folder="/kooka/avatars"
+            cropAspect={1}
+            cropShape="round"
+            cropWidth={512}
           />
         </div>
         <div className="kfield">

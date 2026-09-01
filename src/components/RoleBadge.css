@@ -1,0 +1,44 @@
+/* Role pill — moderator (calm teal-brown) vs admin (accent orange). */
+.rolebadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.rolebadge svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rolebadge--moderator {
+  background: rgba(90, 130, 120, 0.16);
+  color: #3f6d61;
+}
+
+.rolebadge--admin {
+  background: rgba(255, 107, 53, 0.16);
+  color: #d94e18;
+}
+
+[data-theme='dark'] .rolebadge--moderator {
+  background: rgba(120, 190, 172, 0.18);
+  color: #8fd3c1;
+}
+[data-theme='dark'] .rolebadge--admin {
+  background: rgba(255, 107, 53, 0.22);
+  color: #ff9a70;
+}

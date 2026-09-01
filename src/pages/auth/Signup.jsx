@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
+import { checkAvailability } from '../../services/users';
 import AuthLayout from './AuthLayout';
+
+/* Basic shape check before we bother the server — an obviously invalid address
+   can't be taken, so there is nothing to look up. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default function Signup() {
   const { t } = useTranslation();
@@ -17,6 +22,15 @@ export default function Signup() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  /* Last answer we got back, per field, tagged with the value it was about:
+     { value, taken }. Storing the value alongside the verdict means a reply
+     that lands after the user has typed on cannot mislabel the new value — the
+     status is derived by comparing against what is in the box right now.
+     The server enforces uniqueness on /register anyway; this only saves the
+     user from filling the whole form to find out the handle is gone. */
+  const [usernameCheck, setUsernameCheck] = useState(null);
+  const [emailCheck, setEmailCheck] = useState(null);
 
   const CHAR_LIMITS = {
     fullName: 50,
@@ -40,12 +54,61 @@ export default function Signup() {
     });
   };
 
+  const username = formData.username.trim().replace(/^@/, '');
+  const email = formData.email.trim();
+
+  /* Debounced lookups, one per field. A failed request stays silent — if we are
+     offline, /register is still the one that decides. */
+  useEffect(() => {
+    if (username.length < 3) return undefined;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const res = await checkAvailability({ username });
+        if (!cancelled) setUsernameCheck({ value: username, taken: !!res.username_taken });
+      } catch { /* leave it unknown */ }
+    }, 450);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [username]);
+
+  useEffect(() => {
+    if (!EMAIL_RE.test(email)) return undefined;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const res = await checkAvailability({ email });
+        if (!cancelled) setEmailCheck({ value: email, taken: !!res.email_taken });
+      } catch { /* leave it unknown */ }
+    }, 450);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [email]);
+
+  /* 'idle' until an answer about *this exact value* has come back */
+  const stateOf = (check, value) => {
+    if (!check || check.value !== value) return 'idle';
+    return check.taken ? 'taken' : 'free';
+  };
+  const avail = {
+    username: stateOf(usernameCheck, username),
+    email: stateOf(emailCheck, email),
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!formData.agreeTerms) {
       setError(t('auth.signup.errTerms'));
+      return;
+    }
+
+    if (avail.username === 'taken') {
+      setError(t('auth.signup.errUsernameTaken'));
+      return;
+    }
+
+    if (avail.email === 'taken') {
+      setError(t('auth.signup.errEmailTaken'));
       return;
     }
 
@@ -73,10 +136,37 @@ export default function Signup() {
     } catch (err) {
       const detail = err.response?.data?.detail;
       setError(typeof detail === 'string' ? detail : t('auth.signup.errFailed'));
+      // a race (someone claimed it between the check and submit) still lands here
+      if (typeof detail === 'string') {
+        if (/utilizator|username/i.test(detail)) setUsernameCheck({ value: username, taken: true });
+        if (/email/i.test(detail)) setEmailCheck({ value: email, taken: true });
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  /* Inline status line under a field. `checking` stays quiet on purpose —
+     a flickering "checking…" on every keystroke is worse than nothing. */
+  const statusNote = (field) => {
+    const state = avail[field];
+    if (state === 'free') {
+      return <span className="auth-note auth-note--ok">{t(`auth.signup.${field}Free`)}</span>;
+    }
+    if (state === 'taken') {
+      return <span className="auth-note auth-note--bad">{t(`auth.signup.${field}Taken`)}</span>;
+    }
+    return null;
+  };
+
+  const inputClass = (field) => {
+    const state = avail[field];
+    if (state === 'taken') return 'auth-input is-taken';
+    if (state === 'free') return 'auth-input is-free';
+    return 'auth-input';
+  };
+
+  const blocked = avail.username === 'taken' || avail.email === 'taken';
 
   return (
     <AuthLayout
@@ -109,8 +199,11 @@ export default function Signup() {
             value={formData.email}
             onChange={handleInputChange}
             maxLength={CHAR_LIMITS.email}
-            className="auth-input"
+            className={inputClass('email')}
+            aria-invalid={avail.email === 'taken'}
+            aria-describedby="signup-email-note"
           />
+          <span id="signup-email-note" role="status">{statusNote('email')}</span>
         </div>
 
         <div className="field">
@@ -123,8 +216,11 @@ export default function Signup() {
             value={formData.username}
             onChange={handleInputChange}
             maxLength={CHAR_LIMITS.username}
-            className="auth-input"
+            className={inputClass('username')}
+            aria-invalid={avail.username === 'taken'}
+            aria-describedby="signup-username-note"
           />
+          <span id="signup-username-note" role="status">{statusNote('username')}</span>
         </div>
 
         <div className="field">
@@ -172,7 +268,7 @@ export default function Signup() {
 
         {error && <p className="auth-error">{error}</p>}
 
-        <button type="submit" className="btn-primary" disabled={loading}>
+        <button type="submit" className="btn-primary" disabled={loading || blocked}>
           {loading ? t('auth.signup.submitting') : t('auth.signup.submit')}
         </button>
       </form>

@@ -280,6 +280,26 @@
   box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.14);
 }
 
+/* ===== AVAILABILITY FEEDBACK (signup) ================================= */
+/* The border carries the state, the note spells it out — colour alone would
+   leave colour-blind users with nothing. */
+.auth-input.is-free { border-color: #3f8f5f; }
+.auth-input.is-taken { border-color: #d92d20; background: rgba(217, 45, 32, 0.04); }
+.auth-input.is-taken:focus {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 4px rgba(217, 45, 32, 0.14);
+}
+
+.auth-note {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-important), sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.auth-note--ok { color: #2f7a4e; }
+.auth-note--bad { color: #b42318; }
+
 /* ===== PRIMARY BUTTON ================================================== */
 .btn-primary {
   width: 100%;

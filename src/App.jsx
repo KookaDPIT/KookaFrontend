@@ -11,6 +11,7 @@ import Learn from './pages/app/Learn'
 import Forum from './pages/app/Forum'
 import Profile from './pages/app/Profile'
 import Settings from './pages/app/Settings'
+import Admin from './pages/app/Admin'
 import CreateRecipe from './pages/app/CreateRecipe'
 import Search from './pages/app/Search'
 import KookaSplash from './pages/loading/KookaSplash'
@@ -81,6 +82,9 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          {/* staff only — Admin itself redirects a plain user, and every
+              /admin endpoint is guarded server-side regardless */}
+          <Route path="/admin" element={<Admin />} />
         </Route>
 
         {/* Redirect root to login */}

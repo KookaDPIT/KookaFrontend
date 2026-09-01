@@ -42,3 +42,15 @@ export async function changePassword(payload) {
   const { data } = await api.patch('/me/password', payload);
   return data;
 }
+
+/* Is this username / email already taken? Used by the signup form for live
+   feedback. Only the fields you pass are checked, and the backend answers with
+   plain booleans — it never reveals whose account holds them. */
+export async function checkAvailability({ username, email } = {}) {
+  const params = {};
+  if (username) params.username = username;
+  if (email) params.email = email;
+  if (!Object.keys(params).length) return {};
+  const { data } = await api.get('/auth/availability', { params });
+  return data; // { username_taken?: bool, email_taken?: bool }
+}
