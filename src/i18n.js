@@ -253,6 +253,19 @@ const resources = {
         apply: 'Use photo',
       },
 
+      suspended: {
+        title: 'Your account is suspended',
+        lead: 'A moderator has paused this account. You can still sign in, but you cannot post while the suspension lasts.',
+        untilLabel: 'Suspended until',
+        days_one: '{{count}} day', days_other: '{{count}} days',
+        hours_one: '{{count}} hour', hours_other: '{{count}} hours',
+        minutes_one: '{{count}} minute', minutes_other: '{{count}} minutes',
+        rule1: 'You cannot publish recipes, forum posts, comments or votes.',
+        rule2: 'Your recipes and posts are hidden from everyone else until it ends.',
+        rule3: 'Everything comes back on its own when the suspension expires — nothing is deleted.',
+        recheck: 'Check again',
+      },
+
       moderation: {
         label: 'Moderation',
         visibleNote: 'This is publicly visible.',
@@ -804,6 +817,19 @@ const resources = {
         zoomOut: 'Micșorează',
         reset: 'Resetează',
         apply: 'Folosește poza',
+      },
+
+      suspended: {
+        title: 'Contul tău este suspendat',
+        lead: 'Un moderator a oprit temporar acest cont. Te poți autentifica în continuare, dar nu poți publica nimic cât ține suspendarea.',
+        untilLabel: 'Suspendat până la',
+        days_one: 'o zi', days_few: '{{count}} zile', days_other: '{{count}} de zile',
+        hours_one: 'o oră', hours_few: '{{count}} ore', hours_other: '{{count}} de ore',
+        minutes_one: 'un minut', minutes_few: '{{count}} minute', minutes_other: '{{count}} de minute',
+        rule1: 'Nu poți publica rețete, postări pe forum, comentarii sau voturi.',
+        rule2: 'Rețetele și postările tale sunt ascunse pentru ceilalți până se termină.',
+        rule3: 'Totul revine singur când expiră suspendarea — nu se șterge nimic.',
+        recheck: 'Verifică din nou',
       },
 
       moderation: {

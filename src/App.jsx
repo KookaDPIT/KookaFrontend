@@ -14,10 +14,12 @@ import CreateForumPost from './pages/app/CreateForumPost'
 import Profile from './pages/app/Profile'
 import Settings from './pages/app/Settings'
 import Admin from './pages/app/Admin'
+import Suspended from './pages/app/Suspended'
 import CreateRecipe from './pages/app/CreateRecipe'
 import Search from './pages/app/Search'
 import KookaSplash from './pages/loading/KookaSplash'
 import { isLoggedIn } from './user'
+import { readSettings, applyTheme } from './settings'
 import './App.css'
 
 /* Gate the app routes: no token → back to login. */
@@ -33,6 +35,13 @@ const SPLASH_FADE_MS = 550
 function App() {
   const [booting, setBooting] = useState(true)
   const [fadeOut, setFadeOut] = useState(false)
+
+  /* The theme was only ever applied from inside AppLayout, so every screen
+     outside the app shell — login, signup, the suspension wall — rendered with
+     whatever happened to be on the root element. Apply it once at boot. */
+  useEffect(() => {
+    applyTheme(readSettings().theme);
+  }, [])
 
   useEffect(() => {
     const start = performance.now()
@@ -63,6 +72,17 @@ function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        {/* Suspended accounts are pinned here — outside the app shell, since
+            none of its navigation would work for them anyway. */}
+        <Route
+          path="/suspended"
+          element={
+            <ProtectedRoute>
+              <Suspended />
+            </ProtectedRoute>
+          }
+        />
 
         {/* App Routes (share the nav menu, require auth) */}
         <Route

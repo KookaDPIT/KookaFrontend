@@ -106,6 +106,12 @@ export function settingsBlob(s) {
 }
 
 /* apply the chosen theme to the document (system falls back to the OS scheme) */
+/* The stored settings, for callers that need them once and outside React
+   (the boot-time theme apply, before any component mounts). */
+export function readSettings() {
+  return read();
+}
+
 export function applyTheme(theme) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;

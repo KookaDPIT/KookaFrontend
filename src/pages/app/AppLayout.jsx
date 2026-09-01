@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme } from '../../settings';
-import { useUser } from '../../user';
+import { useUser, refreshUser } from '../../user';
 import kookaIcon from '../../assets/kooka-icon.png';
 import './AppLayout.css';
 
@@ -64,6 +64,28 @@ export default function AppLayout() {
   const { t, i18n } = useTranslation();
   const [settings, updateSettings] = useSettings();
   const [me] = useUser();
+
+  /* The cached user can be stale — someone suspended two minutes ago still has
+     a clean copy in localStorage. Re-ask on mount, and again whenever the tab
+     comes back to the foreground: this component stays mounted across in-app
+     navigation, so without the second check a sanction handed down mid-session
+     would not land until a full reload. */
+  useEffect(() => {
+    refreshUser();
+    // `focus` gets its own handler on purpose: gating it on visibilityState
+    // would swallow it whenever the document is not considered visible, which
+    // is exactly when the tab is being brought back.
+    const onFocus = () => refreshUser();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refreshUser();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
   // the moderation link only exists for staff; the route and every /admin
   // endpoint check the role again, so this is presentation, not access control
   const isStaff = me?.role === 'admin' || me?.role === 'moderator';
@@ -79,6 +101,9 @@ export default function AppLayout() {
     const newTheme = settings.theme === 'dark' ? 'light' : 'dark';
     updateSettings({ theme: newTheme });
   };
+
+  // a suspended account gets the wall instead of the app, from any route
+  if (me?.suspended) return <Navigate to="/suspended" replace />;
 
   return (
     <div className="app-shell">

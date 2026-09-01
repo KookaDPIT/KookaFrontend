@@ -1,0 +1,160 @@
+/* ==========================================================================
+   SUSPENDED — a full-page stop, deliberately without the app chrome around it.
+   ========================================================================== */
+.susp {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: #f8ecd4;
+  color: #2a2016;
+  font-family: var(--font-body), sans-serif;
+}
+
+.susp__card {
+  width: 100%;
+  max-width: 520px;
+  padding: 34px 32px 28px;
+  border-radius: 26px;
+  background: #fffdf9;
+  box-shadow: 0 14px 44px rgba(74, 47, 20, 0.16);
+  text-align: center;
+}
+
+.susp__icon {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 20px;
+  background: rgba(194, 64, 31, 0.12);
+  color: #c2401f;
+}
+.susp__icon svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.susp__title {
+  margin: 0;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.1;
+  color: #2a2016;
+}
+
+.susp__lead {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #6b5d43;
+}
+
+/* the answer to the only question that matters: until when */
+.susp__until {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 22px 0;
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: #fdf7ec;
+  box-shadow: inset 0 0 0 1.5px #eadcbe;
+}
+.susp__untilLabel {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94805c;
+}
+.susp__untilValue {
+  font-family: var(--font-important), sans-serif;
+  font-size: 19px;
+  color: #2a2016;
+}
+.susp__countdown { font-size: 13.5px; color: #94805c; }
+
+.susp__what {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.susp__what li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b5d43;
+}
+.susp__what li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c2401f;
+}
+
+.susp__actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.susp__btn {
+  padding: 12px 22px;
+  border: none;
+  border-radius: 12px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.28);
+  transition: background 0.18s ease;
+}
+.susp__btn:hover { background: #f2591f; }
+.susp__btn--ghost {
+  background: rgba(120, 80, 30, 0.1);
+  color: #6b5d43;
+  box-shadow: none;
+}
+.susp__btn--ghost:hover { background: rgba(120, 80, 30, 0.16); }
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+[data-theme='dark'] .susp { background: #2a2016; color: #f5f5f0; }
+[data-theme='dark'] .susp__card { background: #3a3228; box-shadow: none; }
+[data-theme='dark'] .susp__title,
+[data-theme='dark'] .susp__untilValue { color: #f5f5f0; }
+[data-theme='dark'] .susp__lead,
+[data-theme='dark'] .susp__what li { color: #c9bea7; }
+[data-theme='dark'] .susp__untilLabel,
+[data-theme='dark'] .susp__countdown { color: #a89988; }
+[data-theme='dark'] .susp__until {
+  background: #2f2820;
+  box-shadow: inset 0 0 0 1.5px #4a4238;
+}
+[data-theme='dark'] .susp__btn--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9bea7;
+}
+[data-theme='dark'] .susp__icon {
+  background: rgba(255, 138, 106, 0.16);
+  color: #ff8a6a;
+}
