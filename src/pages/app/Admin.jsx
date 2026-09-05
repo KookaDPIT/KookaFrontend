@@ -11,6 +11,7 @@ import {
 import RoleBadge from '../../components/RoleBadge';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
+import AdminLessons from './AdminLessons';
 import './Admin.css';
 
 /* ==========================================================================
@@ -199,7 +200,7 @@ export default function Admin() {
       </header>
 
       <div className="adm-panes" role="tablist">
-        {['users', 'recipes', 'forum'].map((k) => (
+        {['users', 'recipes', 'forum', 'lessons'].map((k) => (
           <button
             key={k}
             type="button"
@@ -565,6 +566,11 @@ export default function Admin() {
               : t('admin.confirmDeactivate', { name: confirm?.label })}
         </p>
       </Modal>
+
+      {/* ===================== LESSONS ===================== */}
+      {pane === 'lessons' && (
+        <AdminLessons canEdit={isAdmin} onToast={setToast} />
+      )}
 
       <Toast message={toast} />
     </div>

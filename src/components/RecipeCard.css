@@ -98,3 +98,23 @@
   padding: 2px 8px;
   border-radius: 999px;
 }
+
+/* Rank badge + lock veil for recipes above the viewer's rank. The card stays
+   visible on purpose — you should be able to see what you are working towards. */
+.rcard__rank {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+}
+
+.rcard__lockveil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(42, 32, 22, 0.42);
+  backdrop-filter: blur(1.5px);
+  font-size: 26px;
+  z-index: 1;
+}

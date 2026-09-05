@@ -509,3 +509,65 @@
   background: rgba(255, 107, 53, 0.2);
   color: #ff9a70;
 }
+
+/* ===== Rank ===== */
+.recipe__meta-rank {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Screen shown when a recipe sits above the viewer's rank. */
+.recipe--locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 70px 24px;
+}
+
+.recipe__lockTitle {
+  margin: 4px 0 0;
+  font-family: var(--font-title), cursive;
+  font-size: 34px;
+  line-height: 1;
+  /* The recipe header is a dark hero, so the page's default title colour is
+     white — which vanishes on this light lock screen. Set it explicitly. */
+  color: #2a2016;
+}
+
+[data-theme='dark'] .recipe__lockTitle {
+  color: #f2e6d2;
+}
+
+.recipe__lockMsg {
+  margin: 0;
+  max-width: 420px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.recipe__lockRank {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.72;
+}
+
+.recipe__lockActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.recipe__lockBack {
+  padding: 11px 20px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(122, 102, 71, 0.14);
+  color: inherit;
+  font-family: var(--font-important), sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}

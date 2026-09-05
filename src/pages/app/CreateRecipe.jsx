@@ -7,6 +7,7 @@ import CountryPicker from '../../components/CountryPicker';
 import ImageUpload from '../../components/ImageUpload';
 import Toast from '../../components/Toast';
 import { IconBack } from '../../components/Icons';
+import { RECIPE_RANKS } from '../../lib/ranks';
 import './CreateRecipe.css';
 
 export default function CreateRecipe() {
@@ -21,6 +22,9 @@ export default function CreateRecipe() {
   const [servings, setServings] = useState(2);
   const [duration, setDuration] = useState(30);
   const [difficulty, setDifficulty] = useState('easy');
+  // Rank is what readers actually see on the card, and it gates access —
+  // difficulty stays underneath for older clients.
+  const [rank, setRank] = useState('copper');
   const [images, setImages] = useState([]);
   const [ingredients, setIngredients] = useState(['']);
   const [steps, setSteps] = useState([{ text: '', timer: '' }]);
@@ -42,6 +46,7 @@ export default function CreateRecipe() {
         setServings(r.servings || 1);
         setDuration(r.duration_min || 0);
         setDifficulty(r.difficulty || 'easy');
+        setRank(r.rank || 'copper');
         setImages(r.images?.length ? r.images : (r.image_url ? [r.image_url] : []));
         setIngredients(r.ingredients?.length ? r.ingredients : ['']);
         setSteps(
@@ -86,6 +91,7 @@ export default function CreateRecipe() {
       servings: Number(servings) || 1,
       duration_min: Number(duration) || 0,
       difficulty,
+      rank,
       ingredients: cleanIngredients,
       steps: cleanSteps,
       image_url: images[0] || '',
@@ -166,18 +172,19 @@ export default function CreateRecipe() {
             />
           </label>
           <label className="create__field create__field--sm">
-            <span className="create__label">{t('create.difficulty')}</span>
+            <span className="create__label">{t('create.rank')}</span>
             <select
               className="create__input"
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
+              value={rank}
+              onChange={(e) => setRank(e.target.value)}
             >
-              <option value="easy">{t('create.easy')}</option>
-              <option value="medium">{t('create.medium')}</option>
-              <option value="hard">{t('create.hard')}</option>
+              {RECIPE_RANKS.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
             </select>
           </label>
         </div>
+        <span className="create__hint">{t('create.rankHint')}</span>
 
         {/* photos */}
         <div className="create__field">

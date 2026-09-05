@@ -1,588 +1,815 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
+import RankBadge, { RankPill } from '../../components/RankBadge';
+import * as learnApi from '../../services/learn';
 import './Learn.css';
 
 /* ==========================================================================
-   LEARN — a hexagonal skill tree ("honeycomb"). Techniques, not just recipes.
+   LEARN — rank ladder, daily challenges, and a 50-node hexagonal skill tree.
 
-   Unlocking is gated two ways: a skill's prerequisites must be mastered AND you
-   must have reached its required level. Each lesson ends in a short quiz — pass
-   every question to master the skill (awarding XP, which can level you up and
-   unlock higher-level skills). Miss the quiz and the lesson goes on a 24h
-   cooldown, persisted in localStorage so it survives a reload.
+   Everything on this page is backend state. The honeycomb layout comes from
+   axial coordinates the server computes at seed time, so the shape of the tree
+   is decided in one place rather than by hand-placed pixels here.
 
-   Skill copy + quiz questions are illustrative mock content; the UI chrome is
-   translated via i18n.
+   Quizzes are graded server-side: the options arrive without the correct
+   answer, and only the chosen indices are sent back. Cooldowns after a failed
+   quiz live in the database, so clearing browser storage does not reset them.
    ========================================================================== */
 
-const PER_LEVEL = 500;
-const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h
-const CD_KEY = 'kooka_quiz_cd';
+/* Hex geometry — pointy-top. `q`/`r` are axial coordinates from the API. */
+const HEX_R = 46;                       // circumradius in px
+const HEX_W = Math.sqrt(3) * HEX_R;     // face width AND horizontal spacing
+const HEX_H = 2 * HEX_R;                // face height
+const HEX_ROW = 1.5 * HEX_R;            // vertical spacing between rows
+/* A hairline shrink so neighbours read as separate tiles instead of one blob.
+   Any bigger and the honeycomb stops looking joined. */
+const HEX_GAP = 1.5;
+const PAD = 90;
 
-/* ===== RANKS SYSTEM ================================================== */
-const RANKS = [
-  { id: 'copper', name: 'Copper', divisions: 3, fadedColor: '#d9a8a0', vibrantColor: '#d74d34' },
-  { id: 'bronze', name: 'Bronze', divisions: 3, fadedColor: '#d4b5a0', vibrantColor: '#b8753d' },
-  { id: 'silver', name: 'Silver', divisions: 3, fadedColor: '#d5d0c8', vibrantColor: '#8b8882' },
-  { id: 'gold', name: 'Gold', divisions: 3, fadedColor: '#dcc793', vibrantColor: '#c9a632' },
-  { id: 'platinum', name: 'Platinum', divisions: 3, fadedColor: '#d0e8f2', vibrantColor: '#4fa3c8' },
-  { id: 'chef', name: 'Chef', divisions: 1, fadedColor: '#e6cde0', vibrantColor: '#d16ba8' },
-];
+/* Low enough that "Fit all" is never clamped before the whole board is in
+   frame, whatever shape the honeycomb grows into. */
+const ZOOM_MIN = 0.28;
+const ZOOM_MAX = 1.8;
+/* Fitting all 50 nodes shrinks them past the point where labels are readable,
+   so the opening view is a comfortable zoom centred on where you left off —
+   "Fit" is a button for when you want the whole board. */
+const ZOOM_START = 0.9;
 
-/* ===== DAILY CHALLENGES ============================================== */
-const DAILY_CHALLENGES = [
-  {
-    id: 'main-daily',
-    title: 'Master the Sauce',
-    desc: 'Perfect an emulsion or pan sauce technique.',
-    xp: 150,
-    type: 'hard',
-  },
-  {
-    id: 'hard-daily',
-    title: 'Bread Challenge',
-    desc: 'Bake a loaf with a perfect crumb structure.',
-    xp: 100,
-    type: 'hard',
-  },
-  {
-    id: 'easy-1',
-    title: 'Knife Practice',
-    desc: 'Practice knife skills with any vegetable.',
-    xp: 50,
-    type: 'easy',
-  },
-];
-
-/* pixel centres on the 720×660 canvas — connectors read straight from these */
-const SKILLS = {
-  found: {
-    name: 'Foundations', icon: '🍳', cx: 360, cy: 66, reqLevel: 1,
-    lessons: 5, min: 40, xp: 250,
-    desc: 'Salt, heat, acid, fat. The four dials every dish turns on — and how to taste your way between them.',
-    unlocks: ['Knife Skills', 'Heat Control'],
-    quiz: [
-      { q: 'Which four elements does great cooking balance?', options: ['Salt, fat, acid, heat', 'Sugar, oil, water, ice', 'Flour, egg, milk, butter', 'Pepper, garlic, onion, wine'], correct: 0 },
-      { q: 'The best way to check seasoning is to…', options: ['Trust the recipe exactly', 'Taste as you go', 'Salt only at the end', 'Never taste while cooking'], correct: 1 },
-    ],
-  },
-  knife: {
-    name: 'Knife Skills', icon: '🔪', cx: 214, cy: 196, reqLevel: 1,
-    lessons: 6, min: 55, xp: 300,
-    desc: 'Grip, claw and rock. Turn an onion into an even dice without donating a fingertip.',
-    unlocks: ['Mise en Place', 'Eggs Mastery'],
-    quiz: [
-      { q: "The 'claw' grip mainly protects your…", options: ['Wrist', 'Fingertips', 'Thumb only', 'Palm'], correct: 1 },
-      { q: 'A sharp knife is safer because it…', options: ['Needs less force and slips less', 'Cuts faster so you finish sooner', 'Looks more professional', 'Is heavier to hold'], correct: 0 },
-    ],
-  },
-  heat: {
-    name: 'Heat Control', icon: '🔥', cx: 506, cy: 196, reqLevel: 2,
-    lessons: 4, min: 35, xp: 220,
-    desc: 'Read the pan, not the timer. Smoke points, carryover and the difference between a sear and a stew.',
-    unlocks: ['Eggs Mastery', 'Sear & Sauté'],
-    quiz: [
-      { q: 'Carryover cooking means food…', options: ['Stops the moment it leaves the heat', 'Keeps cooking after you remove the heat', 'Only cooks in the oven', 'Cooks twice as fast'], correct: 1 },
-      { q: 'Add food to a pan when the oil is…', options: ['Cold', 'Shimmering and hot', 'Smoking heavily', 'Barely warm'], correct: 1 },
-    ],
-  },
-  mise: {
-    name: 'Mise en Place', icon: '🧺', cx: 120, cy: 326, reqLevel: 3,
-    lessons: 3, min: 25, xp: 150,
-    desc: 'Everything in its place before the pan gets hot. The habit that makes weeknight cooking calm.',
-    unlocks: ['Emulsions'],
-    quiz: [
-      { q: "'Mise en place' translates roughly to…", options: ['Everything in its place', 'Cook it on high', 'Clean as you go', 'Plate it nicely'], correct: 0 },
-      { q: 'When should you prep your ingredients?', options: ['While the pan heats mid-cook', 'Before the pan gets hot', 'After plating', 'Only when baking'], correct: 1 },
-    ],
-  },
-  eggs: {
-    name: 'Eggs Mastery', icon: '🥚', cx: 360, cy: 326, reqLevel: 3,
-    lessons: 5, min: 45, xp: 260,
-    desc: 'Soft scramble to glassy custard. Eggs are the exam every technique eventually sits.',
-    unlocks: ['Emulsions'],
-    quiz: [
-      { q: 'For a silky scramble, use…', options: ['High heat, stir once', 'Low heat, stir constantly', 'Boiling water', 'No stirring at all'], correct: 1 },
-      { q: 'A classic French omelette should be…', options: ['Browned and crisp', 'Pale and custardy', 'Rock hard', 'Deep fried'], correct: 1 },
-    ],
-  },
-  sear: {
-    name: 'Sear & Sauté', icon: '🍤', cx: 600, cy: 326, reqLevel: 4,
-    lessons: 4, min: 40, xp: 240,
-    desc: 'Dry the surface, trust the crust. Build fond and deglaze it into a pan sauce.',
-    unlocks: ['Fermentation'],
-    quiz: [
-      { q: 'Before searing, the surface of the meat should be…', options: ['Wet', 'Patted dry', 'Frozen solid', 'Heavily oiled'], correct: 1 },
-      { q: 'The browned bits stuck to the pan are called…', options: ['Fond', 'Roux', 'Slurry', 'Curd'], correct: 0 },
-    ],
-  },
-  emul: {
-    name: 'Emulsions', icon: '🥣', cx: 244, cy: 456, reqLevel: 5,
-    lessons: 4, min: 50, xp: 320,
-    desc: 'Mayonnaise, hollandaise, carbonara. Force oil and water to hold hands and stay together.',
-    unlocks: ['Bread Craft'],
-    quiz: [
-      { q: 'An emulsion combines…', options: ['Two solids', 'Fat and water that normally separate', 'Sugar and salt', 'Air and flour'], correct: 1 },
-      { q: 'If a carbonara sauce breaks, rescue it with…', options: ['More cheese over high heat', 'A splash of hot pasta water, off the heat', 'Cold cream', 'Butter and sugar'], correct: 1 },
-    ],
-  },
-  ferment: {
-    name: 'Fermentation', icon: '🫙', cx: 476, cy: 456, reqLevel: 6,
-    lessons: 6, min: 70, xp: 380,
-    desc: 'Let time and salt do the cooking. Krauts, hot sauces and the good kind of funk.',
-    unlocks: ['Bread Craft'],
-    quiz: [
-      { q: 'Salt in a ferment mainly…', options: ['Adds sweetness', 'Favours good microbes and slows bad ones', 'Speeds up browning', 'Thickens the brine'], correct: 1 },
-      { q: 'A healthy vegetable ferment should be kept…', options: ['Exposed to the air', 'Submerged under its brine', 'In the freezer', 'In direct sun'], correct: 1 },
-    ],
-  },
-  bread: {
-    name: 'Bread Craft', icon: '🍞', cx: 360, cy: 586, reqLevel: 8,
-    lessons: 8, min: 120, xp: 500,
-    desc: 'Hydration, gluten and a patient oven. The capstone: a loaf with an open, glossy crumb.',
-    unlocks: [],
-    quiz: [
-      { q: 'Higher-hydration dough tends to give a…', options: ['Denser crumb', 'More open crumb', 'Sweeter loaf', 'Thicker crust only'], correct: 1 },
-      { q: 'Kneading mainly develops…', options: ['Gluten', 'Sugar', 'Fat', 'Salt'], correct: 0 },
-    ],
-  },
-};
-
-const LINKS = [
-  ['found', 'knife'], ['found', 'heat'],
-  ['knife', 'mise'], ['knife', 'eggs'],
-  ['heat', 'eggs'], ['heat', 'sear'],
-  ['mise', 'emul'], ['eggs', 'emul'],
-  ['sear', 'ferment'],
-  ['emul', 'bread'], ['ferment', 'bread'],
-];
-
-const ORDER = Object.keys(SKILLS);
-
-/* prerequisites: for each child, the parents that must be mastered to unlock it */
-const PREREQ = LINKS.reduce((acc, [from, to]) => {
-  (acc[to] = acc[to] || []).push(from);
-  return acc;
-}, {});
-
-/* derive a skill's state from what's completed + the current level */
-function computeState(completed, level, id) {
-  if (completed.has(id)) return 'done';
-  const prereqsDone = (PREREQ[id] || []).every((p) => completed.has(p));
-  const levelOk = level >= SKILLS[id].reqLevel;
-  return prereqsDone && levelOk ? 'active' : 'locked';
+function hexToPixel(q, r) {
+  return { x: HEX_W * (q + r / 2), y: HEX_ROW * r };
 }
 
-function loadCooldowns() {
-  try {
-    return JSON.parse(localStorage.getItem(CD_KEY) || '{}') || {};
-  } catch {
-    return {};
-  }
-}
-
-function fmtRemaining(ms) {
+function fmtRemaining(untilIso) {
+  if (!untilIso) return '';
+  const ms = new Date(untilIso).getTime() - Date.now();
   const totalMin = Math.max(0, Math.ceil(ms / 60000));
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
+/* Read the API error shape used across the app (FastAPI `detail`). */
+function errText(err, fallback) {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (detail?.message) return detail.message;
+  return fallback;
+}
+
 export default function Learn() {
   const { t } = useTranslation();
-  const [completed, setCompleted] = useState(() => new Set(['found', 'knife', 'heat']));
-  const [selected, setSelected] = useState('eggs');
-  const [xp, setXp] = useState(200);
-  const [level, setLevel] = useState(3);
-  const [cooldowns, setCooldowns] = useState(loadCooldowns);
-  const [now, setNow] = useState(() => Date.now());
-  const [toast, setToast] = useState('');
-  const [globalProgress, setGlobalProgress] = useState(-1);
 
-  // lesson modal
-  const [lessonOpen, setLessonOpen] = useState(false);
-  const [phase, setPhase] = useState('intro'); // intro | quiz | result
+  const [tree, setTree] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [toast, setToast] = useState('');
+
+  const [selected, setSelected] = useState(null);
+  const [detail, setDetail] = useState(null);
+
+  // modal: intro -> quiz -> result, plus the mastery track
+  const [modalOpen, setModalOpen] = useState(false);
+  const [phase, setPhase] = useState('intro');
   const [answers, setAnswers] = useState([]);
   const [result, setResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleDivisionClick = (rankIndex, divIndex) => {
-    const globalIndex = RANKS.slice(0, rankIndex).reduce((sum, r) => sum + r.divisions, 0) + divIndex;
-    if (globalIndex === globalProgress) {
-      setGlobalProgress(-1);
-    } else {
-      setGlobalProgress(globalIndex);
-    }
-  };
+  // canvas pan/zoom
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null);
+  const viewportRef = useRef(null);
 
-  const skill = SKILLS[selected];
-  const selState = computeState(completed, level, selected);
-  const lockReason = (PREREQ[selected] || []).every((p) => completed.has(p)) ? 'level' : 'prereq';
-  const cdUntil = cooldowns[selected] && cooldowns[selected] > now ? cooldowns[selected] : 0;
-
-  const stateLabel = { done: t('learn.done'), active: t('learn.inProgress'), locked: t('learn.locked') };
-
-  // tick the clock once a minute while a cooldown could be showing
-  useEffect(() => {
-    if (!lessonOpen) return undefined;
-    const id = window.setInterval(() => setNow(Date.now()), 30000);
-    return () => window.clearInterval(id);
-  }, [lessonOpen]);
-
-  const flash = (msg) => {
+  const flash = useCallback((msg) => {
     setToast(msg);
-    window.setTimeout(() => setToast(''), 3200);
+    window.setTimeout(() => setToast(''), 4200);
+  }, []);
+
+  /* ---- load the tree ---- */
+  useEffect(() => {
+    let alive = true;
+    learnApi
+      .getTree()
+      .then((data) => {
+        if (!alive) return;
+        setTree(data);
+        // Land on something actionable rather than an arbitrary first node.
+        const focus =
+          data.lessons.find((l) => l.state === 'available') ||
+          data.lessons.find((l) => l.state === 'completed') ||
+          data.lessons[0];
+        setSelected(focus ? focus.slug : null);
+      })
+      .catch((err) => alive && setLoadError(errText(err, t('learn.loadFailed'))))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [t]);
+
+  /* ---- load the selected lesson's detail ---- */
+  useEffect(() => {
+    if (!selected) return undefined;
+    let alive = true;
+    learnApi
+      .getLesson(selected)
+      .then((data) => alive && setDetail(data))
+      .catch(() => alive && setDetail(null));
+    return () => {
+      alive = false;
+    };
+  }, [selected]);
+
+  // Derived rather than a second state: the panel is loading exactly while the
+  // detail we hold is not the one that is selected.
+  const detailLoading = Boolean(selected) && detail?.slug !== selected;
+
+  const lessons = useMemo(() => tree?.lessons || [], [tree]);
+  const branchColor = useMemo(
+    () => Object.fromEntries((tree?.branches || []).map((b) => [b.id, b.color])),
+    [tree],
+  );
+
+  /* ---- canvas geometry: derived from the nodes, never hard-coded ---- */
+  const layout = useMemo(() => {
+    if (!lessons.length) return null;
+    const pts = lessons.map((l) => ({ ...l, ...hexToPixel(l.q, l.r) }));
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    const minX = Math.min(...xs) - PAD;
+    const minY = Math.min(...ys) - PAD;
+    const width = Math.max(...xs) - minX + PAD;
+    const height = Math.max(...ys) - minY + PAD;
+    const placed = pts.map((p) => ({ ...p, x: p.x - minX, y: p.y - minY }));
+    const pos = Object.fromEntries(placed.map((p) => [p.slug, p]));
+
+    // One line per prerequisite edge. A link reads as "live" once the parent is
+    // done, which makes the unlocked frontier visible at a glance.
+    const links = [];
+    placed.forEach((node) => {
+      (node.prereqs || []).forEach((parentSlug) => {
+        const parent = pos[parentSlug];
+        if (!parent) return;
+        /* In a packed honeycomb, two tiles that touch already show they are
+           connected, so those links stay hidden underneath. Everything else —
+           a cross-branch requirement, or a branch head that could not fit
+           against the centre — is drawn as a faint dashed "also needs" line.
+           Giving those the full solid treatment turned them into bright
+           streaks cutting across the board. */
+        const span = Math.hypot(node.x - parent.x, node.y - parent.y);
+        const reaches = span > HEX_W * 1.1;
+        links.push({
+          key: `${parentSlug}-${node.slug}`,
+          x1: parent.x,
+          y1: parent.y,
+          x2: node.x,
+          y2: node.y,
+          live: ['completed', 'mastered'].includes(parent.state),
+          reaches,
+          color: branchColor[node.branch] || '#c9b18a',
+        });
+      });
+    });
+    return { placed, links, width, height };
+  }, [lessons, branchColor]);
+
+  /* Centre the board on the selected node once, when the layout first exists.
+     `centred` keeps later re-renders (a completed lesson, a new rank) from
+     yanking the view back while you are panning around. */
+  const centred = useRef(false);
+  useEffect(() => {
+    if (!layout || !viewportRef.current || centred.current) return;
+    const node = layout.placed.find((n) => n.slug === selected) || layout.placed[0];
+    const { clientWidth, clientHeight } = viewportRef.current;
+    setZoom(ZOOM_START);
+    setPan({
+      x: clientWidth / 2 - node.x * ZOOM_START,
+      y: clientHeight / 2 - node.y * ZOOM_START,
+    });
+    centred.current = true;
+  }, [layout, selected]);
+
+  /* Wheel zooms only with a modifier held. Plain wheel must keep scrolling the
+     page: the tree sits mid-page, and hijacking the wheel traps you on it.
+
+     Attached by hand rather than via onWheel because React registers wheel
+     listeners as passive, where preventDefault is ignored — with the JSX prop
+     the browser zoomed the page as well as the board. */
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return undefined;
+    const handler = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * (e.deltaY > 0 ? 0.9 : 1.1))));
+    };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
+
+  const onPointerDown = (e) => {
+    // Only start a drag on the canvas background, never on a hexagon.
+    if (e.target.closest('.lb-hex')) return;
+    dragRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e) => {
+    if (!dragRef.current) return;
+    setPan({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
+  };
+  const onPointerUp = () => {
+    dragRef.current = null;
   };
 
-  const links = LINKS.map(([a, b]) => {
-    const sa = computeState(completed, level, a);
-    const sb = computeState(completed, level, b);
-    const live = sa === 'done' || (sa === 'active' && sb !== 'locked');
-    return { a, b, x1: SKILLS[a].cx, y1: SKILLS[a].cy, x2: SKILLS[b].cx, y2: SKILLS[b].cy, live };
-  });
+  /* "Fit" shows the whole honeycomb at once — the overview, not the reading view. */
+  const resetView = () => {
+    if (!layout || !viewportRef.current) return;
+    const { clientWidth, clientHeight } = viewportRef.current;
+    const fit = Math.min(clientWidth / layout.width, clientHeight / layout.height, 1);
+    const next = Math.max(ZOOM_MIN, fit);
+    setZoom(next);
+    setPan({
+      x: (clientWidth - layout.width * next) / 2,
+      y: (clientHeight - layout.height * next) / 2,
+    });
+  };
 
+  /* Bring a node into view when it is picked from outside the canvas. */
+  const centreOn = (slug) => {
+    const node = layout?.placed.find((n) => n.slug === slug);
+    if (!node || !viewportRef.current) return;
+    const { clientWidth, clientHeight } = viewportRef.current;
+    setPan({ x: clientWidth / 2 - node.x * zoom, y: clientHeight / 2 - node.y * zoom });
+  };
+
+  /* ---- lesson / quiz flow ---- */
   const openLesson = () => {
     setPhase('intro');
     setAnswers([]);
     setResult(null);
-    setNow(Date.now());
-    setLessonOpen(true);
+    setModalOpen(true);
   };
 
-  const startQuiz = () => {
-    setAnswers(Array(skill.quiz.length).fill(null));
-    setPhase('quiz');
+  const startQuiz = (mastery = false) => {
+    const questions = mastery ? detail.mastery.quiz : detail.quiz;
+    setAnswers(Array(questions.length).fill(null));
+    setPhase(mastery ? 'mastery-quiz' : 'quiz');
   };
 
-  const complete = () => {
-    const nextCompleted = new Set(completed);
-    nextCompleted.add(selected);
-
-    let nx = xp + skill.xp;
-    let nl = level;
-    while (nx >= PER_LEVEL) {
-      nx -= PER_LEVEL;
-      nl += 1;
-    }
-
-    // which skills become available thanks to this completion / level-up?
-    const before = ORDER.filter((id) => computeState(completed, level, id) === 'active');
-    const after = ORDER.filter((id) => computeState(nextCompleted, nl, id) === 'active');
-    const freed = after.filter((id) => !before.includes(id)).map((id) => SKILLS[id].name);
-
-    setCompleted(nextCompleted);
-    setXp(nx);
-    setLevel(nl);
-    setLessonOpen(false);
-
-    const parts = [t('learn.masteredToast', { name: skill.name, xp: skill.xp })];
-    if (nl > level) parts.push(t('learn.levelUpToast', { level: nl }));
-    if (freed.length) parts.push(t('learn.unlockedToast', { names: freed.join(', ') }));
-    flash(parts.join(' · '));
+  const applyTree = (next) => {
+    if (!next) return;
+    setTree((prev) => ({ ...next, challenges: next.challenges ?? prev?.challenges ?? [] }));
   };
 
-  const submitQuiz = () => {
-    const total = skill.quiz.length;
-    const score = skill.quiz.reduce((acc, q, i) => acc + (answers[i] === q.correct ? 1 : 0), 0);
-    if (score === total) {
-      complete();
-      return;
-    }
-    // miss → 24h cooldown, persisted
-    const until = Date.now() + COOLDOWN_MS;
-    const nextCd = { ...cooldowns, [selected]: until };
-    setCooldowns(nextCd);
+  const refreshDetail = () => {
+    if (!selected) return;
+    learnApi.getLesson(selected).then(setDetail).catch(() => {});
+  };
+
+  const submit = async (mastery) => {
+    setSubmitting(true);
     try {
-      localStorage.setItem(CD_KEY, JSON.stringify(nextCd));
-    } catch {
-      /* ignore storage errors */
+      const res = mastery
+        ? await learnApi.submitMastery(selected, answers)
+        : await learnApi.submitQuiz(selected, answers);
+
+      applyTree(res.tree);
+      setResult(res);
+
+      if (!res.passed) {
+        setPhase(mastery ? 'mastery-result' : 'result');
+        refreshDetail();
+        return;
+      }
+
+      setModalOpen(false);
+      refreshDetail();
+
+      const parts = [];
+      if (mastery && res.mastered) {
+        parts.push(t('learn.masteredToast', { name: detail.title, xp: res.xp_gained }));
+      } else if (mastery) {
+        parts.push(t('learn.masteryQuizPassed'));
+      } else {
+        parts.push(t('learn.completedToast', { name: detail.title, xp: res.xp_gained }));
+      }
+      if (res.rank_up) parts.push(t('learn.rankUpToast', { rank: res.rank.tier_label }));
+      if (res.unlocked?.length) {
+        parts.push(t('learn.unlockedToast', { names: res.unlocked.join(', ') }));
+      }
+      flash(parts.join(' · '));
+    } catch (err) {
+      flash(errText(err, t('learn.submitFailed')));
+      setModalOpen(false);
+    } finally {
+      setSubmitting(false);
     }
-    setResult({ score, total });
-    setPhase('result');
   };
 
-  const pct = Math.round((xp / PER_LEVEL) * 100);
-  const answered = answers.length > 0 && answers.every((a) => a !== null);
+  /* ---- render ---- */
+  if (loading) {
+    return (
+      <div className="lb">
+        <div className="lb-header">
+          <h1 className="lb-header__title">{t('learn.title')}</h1>
+        </div>
+        <p className="lb-empty">{t('common.loading')}</p>
+      </div>
+    );
+  }
 
-  // ---- modal title + footer depend on the phase ----
-  let modalTitle = skill.name;
+  if (loadError || !tree) {
+    return (
+      <div className="lb">
+        <div className="lb-header">
+          <h1 className="lb-header__title">{t('learn.title')}</h1>
+        </div>
+        <p className="lb-empty">{loadError || t('learn.loadFailed')}</p>
+      </div>
+    );
+  }
+
+  const rank = tree.rank;
+  const answered = answers.length > 0 && answers.every((a) => a !== null);
+  const isMasteryPhase = phase.startsWith('mastery');
+  const activeQuiz = isMasteryPhase ? detail?.mastery?.quiz : detail?.quiz;
+
+  /* modal chrome depends on the phase */
+  let modalTitle = detail?.title || '';
   if (phase === 'quiz') modalTitle = t('learn.quizTitle');
-  else if (phase === 'result') modalTitle = t('learn.failedTitle');
+  else if (phase === 'mastery-quiz') modalTitle = t('learn.masteryQuizTitle');
+  else if (phase === 'result' || phase === 'mastery-result') modalTitle = t('learn.failedTitle');
 
   let modalFooter = null;
-  if (phase === 'intro') {
-    if (selState === 'done') {
+  if (phase === 'intro' && detail) {
+    const cd = detail.cooldown_until;
+    if (detail.state === 'locked') {
       modalFooter = (
-          <>
-            <button type="button" className="kbtn kbtn--ghost" onClick={() => setLessonOpen(false)}>{t('common.close')}</button>
-            <button type="button" className="kbtn kbtn--primary" onClick={() => setLessonOpen(false)}>{t('learn.practiceAgain')}</button>
-          </>
+        <button type="button" className="kbtn kbtn--primary" onClick={() => setModalOpen(false)}>
+          {t('common.close')}
+        </button>
       );
-    } else if (cdUntil) {
+    } else if (cd) {
       modalFooter = (
-          <button type="button" className="kbtn kbtn--primary" onClick={() => setLessonOpen(false)}>{t('common.close')}</button>
+        <button type="button" className="kbtn kbtn--primary" onClick={() => setModalOpen(false)}>
+          {t('common.close')}
+        </button>
+      );
+    } else if (detail.state === 'available') {
+      modalFooter = (
+        <>
+          <button type="button" className="kbtn kbtn--ghost" onClick={() => setModalOpen(false)}>
+            {t('common.cancel')}
+          </button>
+          <button type="button" className="kbtn kbtn--primary" onClick={() => startQuiz(false)}>
+            {t('learn.takeQuiz')}
+          </button>
+        </>
       );
     } else {
+      // completed / mastered — the mastery track lives in the body
       modalFooter = (
-          <>
-            <button type="button" className="kbtn kbtn--ghost" onClick={() => setLessonOpen(false)}>{t('common.cancel')}</button>
-            <button type="button" className="kbtn kbtn--primary" onClick={startQuiz}>{t('learn.takeQuiz')}</button>
-          </>
+        <button type="button" className="kbtn kbtn--primary" onClick={() => setModalOpen(false)}>
+          {t('common.close')}
+        </button>
       );
     }
-  } else if (phase === 'quiz') {
+  } else if (phase === 'quiz' || phase === 'mastery-quiz') {
     modalFooter = (
-        <>
-          <button type="button" className="kbtn kbtn--ghost" onClick={() => setPhase('intro')}>{t('common.back')}</button>
-          <button type="button" className="kbtn kbtn--primary" onClick={submitQuiz} disabled={!answered}>{t('learn.submitQuiz')}</button>
-        </>
+      <>
+        <button type="button" className="kbtn kbtn--ghost" onClick={() => setPhase('intro')}>
+          {t('common.back')}
+        </button>
+        <button
+          type="button"
+          className="kbtn kbtn--primary"
+          onClick={() => submit(isMasteryPhase)}
+          disabled={!answered || submitting}
+        >
+          {submitting ? t('learn.submitting') : t('learn.submitQuiz')}
+        </button>
+      </>
     );
-  } else if (phase === 'result') {
+  } else if (phase === 'result' || phase === 'mastery-result') {
     modalFooter = (
-        <button type="button" className="kbtn kbtn--primary" onClick={() => setLessonOpen(false)}>{t('common.close')}</button>
+      <button type="button" className="kbtn kbtn--primary" onClick={() => setModalOpen(false)}>
+        {t('common.close')}
+      </button>
     );
   }
 
   return (
-      <div className="lb">
-        {/* ===== HEADER WITH TITLE ===================================== */}
-        <div className="lb-header">
-          <h1 className="lb-header__title">{t('learn.title')}</h1>
-        </div>
+    <div className="lb">
+      <div className="lb-header">
+        <h1 className="lb-header__title">{t('learn.title')}</h1>
+        <p className="lb-sub">{t('learn.subtitle')}</p>
+      </div>
 
-        {/* ===== RANKS DISPLAY ========================================= */}
-        <div className="lb-ranks">
-          <span className="lb-ranks__label">{t('learn.yourRank') || 'Your Progress'}</span>
-          <div className="lb-ranks__tree">
-            {RANKS.map((rank, rankIndex) => {
-              const rankStartIndex = RANKS.slice(0, rankIndex).reduce((sum, r) => sum + r.divisions, 0);
-              return (
-                  <div key={rank.id} className="lb-rank">
-                    <div className="lb-rank__photo" aria-hidden="true" />
-                    <span className="lb-rank__name">{rank.name}</span>
-                    <div className="lb-rank__divisions">
-                      {Array.from({ length: rank.divisions }).map((_, divIndex) => {
-                        const globalIndex = rankStartIndex + divIndex;
-                        const isFilled = globalIndex <= globalProgress;
-                        const color = isFilled ? rank.vibrantColor : rank.fadedColor;
-                        return (
-                            <button
-                                key={divIndex}
-                                type="button"
-                                className="lb-rank__div"
-                                style={{ backgroundColor: color }}
-                                onClick={() => handleDivisionClick(rankIndex, divIndex)}
-                                aria-label={`${rank.name} Division ${divIndex + 1}`}
-                            />
-                        );
-                      })}
-                    </div>
-                  </div>
-              );
-            })}
+      {/* ===== RANK LADDER ========================================== */}
+      <section className="lb-ranks">
+        <div className="lb-ranks__head">
+          <span className="lb-ranks__label">{t('learn.yourRank')}</span>
+          <div className="lb-ranks__current">
+            <b>{rank.tier_label}</b>
+            <span>
+              {rank.xp_total.toLocaleString()} {t('learn.xp')}
+              {rank.is_max
+                ? ` · ${t('learn.maxRank')}`
+                : ` · ${rank.xp_to_next.toLocaleString()} ${t('learn.toNextRank')}`}
+            </span>
           </div>
         </div>
 
-        {/* ===== DAILY CHALLENGES ===================================== */}
-        <div className="lb-challenges">
-          <span className="lb-challenges__label">{t('learn.dailyChallenges') || 'Daily Challenges'}</span>
-          <div className="lb-challenges__grid">
-            {DAILY_CHALLENGES.map((challenge) => {
-              const isHard = challenge.type === 'hard';
-              return (
-                  <div key={challenge.id} className="lb-challenge">
-                    <div className="lb-challenge__icon" aria-hidden="true" />
-                    <div className="lb-challenge__content">
-                      <div className="lb-challenge__head">
-                        <h3 className="lb-challenge__title">{challenge.title}</h3>
-                        <span className={`lb-challenge__tag ${isHard ? 'lb-challenge__tag--hard' : 'lb-challenge__tag--easy'}`}>
-                      {isHard ? 'Hard' : 'Easy'}
-                    </span>
-                      </div>
-                      <p className="lb-challenge__desc">{challenge.desc}</p>
-                      <div className="lb-challenge__reward">
-                        <span className="lb-challenge__reward-val">+{challenge.xp}</span>
-                        <span className="lb-challenge__reward-label">XP</span>
-                      </div>
-                    </div>
-                    <button type="button" className="lb-challenge__btn">{t('common.start') || 'Start'}</button>
-                  </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ===== MASTERY SECTION (ORIGINAL) ============================= */}
-        <div className="lb-grid">
-          {/* ===== DETAIL PANEL (left, sticky) ===== */}
-          <aside className="lb-side">
-            <header className="lb-side__head">
-              <p className="lb-sub">{t('learn.subtitle')}</p>
-            </header>
-
-            {/* level / XP */}
-            <div className="lb-level">
-              <div className="lb-level__top">
-                <span className="lb-level__badge">{level}</span>
-                <div>
-                  <span className="lb-level__label">{t('learn.levelLabel')}</span>
-                  <b className="lb-level__val">{xp.toLocaleString()} {t('learn.xp')}</b>
+        <div className="lb-ranks__tree">
+          {(tree.ranks || []).reduce((groups, tier) => {
+            // The tier table is flat; group it back into the six rank families.
+            const last = groups[groups.length - 1];
+            if (last && last.rank === tier.rank) last.tiers.push(tier);
+            else groups.push({ rank: tier.rank, name: tier.rank_name, tiers: [tier] });
+            return groups;
+          }, []).map((group) => {
+            const reached = group.tiers.some((x) => x.tier <= rank.tier);
+            const isCurrent = group.rank === rank.rank;
+            return (
+              <div
+                key={group.rank}
+                className={`lb-rank ${isCurrent ? 'is-current' : ''} ${reached ? 'is-reached' : ''}`}
+              >
+                <RankBadge
+                  rank={group.rank}
+                  division={isCurrent ? rank.division : 0}
+                  size={78}
+                  muted={!reached}
+                  title={group.name}
+                />
+                <span className="lb-rank__name">{group.name}</span>
+                <div className="lb-rank__divisions">
+                  {group.tiers.map((tier) => (
+                    <span
+                      key={tier.tier}
+                      className="lb-rank__div"
+                      style={{
+                        backgroundColor: tier.tier <= rank.tier ? tier.vibrant : tier.faded,
+                      }}
+                      title={`${tier.label} — ${tier.xp.toLocaleString()} XP`}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="lb-level__bar"><i style={{ width: `${pct}%` }} /></div>
-              <span className="lb-level__hint">
-              {(PER_LEVEL - xp).toLocaleString()} {t('learn.xp')} {t('learn.toNext')}
-            </span>
-            </div>
-
-            {/* selected-skill detail — reacts to the honeycomb */}
-            <div className={`lb-detail lb-detail--${selState}`}>
-              <div className="lb-detail__icon" aria-hidden="true">{skill.icon}</div>
-              <span className={`lb-state lb-state--${selState}`}>{stateLabel[selState]}</span>
-
-              <div className="lb-detail__namerow">
-                <h2 className="lb-detail__name">{skill.name}</h2>
-                <span className="lb-detail__lvl">{t('learn.levelBadge', { level: skill.reqLevel })}</span>
-              </div>
-              <p className="lb-detail__desc">{skill.desc}</p>
-
-              <ul className="lb-detail__facts">
-                <li><b>{skill.lessons}</b><span>{t('learn.lessons')}</span></li>
-                <li><b>{skill.min}</b><span>{t('learn.est')}</span></li>
-                <li><b>+{skill.xp}</b><span>{t('learn.xp')}</span></li>
-              </ul>
-
-              {skill.unlocks.length > 0 && (
-                  <div className="lb-detail__unlocks">
-                    <span className="lb-detail__unlocks-label">{t('learn.unlocks')}</span>
-                    <div className="lb-detail__unlocks-list">
-                      {skill.unlocks.map((u) => <span key={u} className="lb-unlock">{u}</span>)}
-                    </div>
-                  </div>
-              )}
-
-              {selState === 'locked' ? (
-                  <p className="lb-detail__locked">
-                    {lockReason === 'level'
-                        ? t('learn.reqLevelHint', { level: skill.reqLevel })
-                        : t('learn.lockedHint')}
-                  </p>
-              ) : selState === 'active' && cdUntil ? (
-                  <>
-                    <p className="lb-detail__cooldown">{t('learn.cooldownBanner', { time: fmtRemaining(cdUntil - now) })}</p>
-                    <button type="button" className="lb-start" onClick={openLesson}>{t('learn.start')}</button>
-                  </>
-              ) : (
-                  <button type="button" className="lb-start" onClick={openLesson}>
-                    {selState === 'done' ? t('learn.review') : t('learn.start')}
-                  </button>
-              )}
-            </div>
-
-            <div className="lb-legend">
-              <span><i className="lb-legend__dot lb-legend__dot--done" />{t('learn.legend.done')}</span>
-              <span><i className="lb-legend__dot lb-legend__dot--active" />{t('learn.legend.active')}</span>
-              <span><i className="lb-legend__dot lb-legend__dot--locked" />{t('learn.legend.locked')}</span>
-            </div>
-          </aside>
-
-          {/* ===== HONEYCOMB CANVAS (right) ===== */}
-          <div className="lb-canvas-wrap">
-            <div className="lb-canvas">
-              <svg className="lb-links" viewBox="0 0 720 660" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                {links.map((l) => (
-                    <line key={`${l.a}-${l.b}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-                          className={`lb-link ${l.live ? 'is-live' : ''}`} />
-                ))}
-              </svg>
-
-              {ORDER.map((id) => {
-                const st = computeState(completed, level, id);
-                const s = SKILLS[id];
-                return (
-                    <button
-                        key={id}
-                        type="button"
-                        className={`lb-hex lb-hex--${st} ${selected === id ? 'is-selected' : ''}`}
-                        style={{ left: `${(s.cx / 720) * 100}%`, top: `${(s.cy / 660) * 100}%` }}
-                        onClick={() => setSelected(id)}
-                        aria-pressed={selected === id}
-                    >
-                      <span className="lb-hex__ring" aria-hidden="true" />
-                      <span className="lb-hex__face">
-                    <span className="lb-hex__icon">{s.icon}</span>
-                        {st === 'done' && <span className="lb-hex__check" aria-hidden="true">✓</span>}
-                        {st === 'locked' && <span className="lb-hex__lock" aria-hidden="true">🔒</span>}
-                  </span>
-                      <span className="lb-hex__label">{s.name}</span>
-                    </button>
-                );
-              })}
-            </div>
-          </div>
+            );
+          })}
         </div>
 
-        {/* ===== LESSON / QUIZ MODAL ===== */}
-        <Modal open={lessonOpen} onClose={() => setLessonOpen(false)} title={modalTitle} footer={modalFooter}>
-          {phase === 'intro' && (
-              <div className="lb-lesson">
-                <div className="lb-lesson__hero" aria-hidden="true">{skill.icon}</div>
-                <p className="lb-lesson__desc">{skill.desc}</p>
+        <div className="lb-xpbar">
+          <i style={{ width: `${rank.percent}%` }} />
+        </div>
+      </section>
 
-                {selState === 'active' && cdUntil ? (
-                    <div className="lb-cooldown">
-                      <span className="lb-cooldown__icon" aria-hidden="true">⏳</span>
-                      <p>{t('learn.retryIn', { time: fmtRemaining(cdUntil - now) })}</p>
-                    </div>
-                ) : (
-                    <>
-                      <span className="lb-lesson__label">{t('learn.whatYouLearn')}</span>
-                      <ol className="lb-lesson__steps">
-                        {t('learn.steps', { returnObjects: true }).map((step, i) => (
-                            <li key={i}><span>{i + 1}</span>{step}</li>
-                        ))}
-                      </ol>
-                    </>
-                )}
+      {/* ===== DAILY CHALLENGES ===================================== */}
+      <section className="lb-challenges">
+        <span className="lb-challenges__label">{t('learn.dailyChallenges')}</span>
+        {tree.challenges?.length ? (
+          <div className="lb-challenges__grid">
+            {tree.challenges.map((ch) => (
+              <article
+                key={ch.id}
+                className={`lb-challenge ${ch.done ? 'is-done' : ''} ${ch.locked ? 'is-locked' : ''}`}
+              >
+                <div
+                  className="lb-challenge__photo"
+                  style={
+                    ch.recipe.image_url
+                      ? { backgroundImage: `url(${ch.recipe.image_url})` }
+                      : undefined
+                  }
+                >
+                  {!ch.recipe.image_url && <span aria-hidden="true">🍳</span>}
+                </div>
+                <div className="lb-challenge__content">
+                  <div className="lb-challenge__head">
+                    <h3 className="lb-challenge__title">{ch.recipe.title}</h3>
+                    <RankPill rank={ch.rank} label={ch.rank_name} locked={ch.locked} />
+                  </div>
+                  <p className="lb-challenge__desc">
+                    {ch.locked
+                      ? t('learn.challengeLocked', { rank: ch.rank_name })
+                      : t('learn.challengeHint')}
+                  </p>
+                  <div className="lb-challenge__foot">
+                    <span className="lb-challenge__reward">+{ch.xp} {t('learn.xp')}</span>
+                    {ch.done ? (
+                      <span className="lb-challenge__done">✓ {t('learn.challengeDone')}</span>
+                    ) : ch.locked ? (
+                      <span className="lb-challenge__blocked">🔒</span>
+                    ) : (
+                      <Link to={`/recipe/${ch.recipe.id}`} className="lb-challenge__btn">
+                        {t('common.start')}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="lb-empty lb-empty--inline">{t('learn.noChallenges')}</p>
+        )}
+      </section>
+
+      {/* ===== SKILL TREE ========================================== */}
+      <section className="lb-grid">
+        {/* ---- detail panel ---- */}
+        <aside className="lb-side">
+          {detail && !detailLoading ? (
+            <div className={`lb-detail lb-detail--${detail.state}`}>
+              <div className="lb-detail__icon" aria-hidden="true">{detail.icon}</div>
+              <span className={`lb-state lb-state--${detail.state}`}>
+                {t(`learn.state.${detail.state}`)}
+              </span>
+
+              <div className="lb-detail__namerow">
+                <h2 className="lb-detail__name">{detail.title}</h2>
+                <RankPill rank={rankIdFor(detail.req_tier, tree.ranks)} label={detail.req_tier_label} />
               </div>
+              <p className="lb-detail__desc">{detail.summary}</p>
+
+              <ul className="lb-detail__facts">
+                <li><b>{detail.steps.length}</b><span>{t('learn.stepsLabel')}</span></li>
+                <li><b>{detail.est_min}</b><span>{t('learn.est')}</span></li>
+                <li><b>+{detail.xp}</b><span>{t('learn.xp')}</span></li>
+              </ul>
+
+              {detail.unlocks?.length > 0 && (
+                <div className="lb-detail__unlocks">
+                  <span className="lb-detail__unlocks-label">{t('learn.unlocks')}</span>
+                  <div className="lb-detail__unlocks-list">
+                    {detail.unlocks.map((u) => (
+                      <span key={u} className="lb-unlock">{u}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {detail.state === 'locked' ? (
+                <p className="lb-detail__locked">
+                  {detail.lock_reason === 'rank'
+                    ? t('learn.reqRankHint', { rank: detail.req_tier_label })
+                    : t('learn.lockedHint')}
+                </p>
+              ) : (
+                <>
+                  {detail.cooldown_until && (
+                    <p className="lb-detail__cooldown">
+                      {t('learn.cooldownBanner', { time: fmtRemaining(detail.cooldown_until) })}
+                    </p>
+                  )}
+                  <button type="button" className="lb-start" onClick={openLesson}>
+                    {detail.state === 'available' ? t('learn.start') : t('learn.review')}
+                  </button>
+                </>
+              )}
+
+              {/* mastery track */}
+              {['completed', 'mastered'].includes(detail.state) && (
+                <div className={`lb-mastery ${detail.mastery.mastered ? 'is-done' : ''}`}>
+                  <span className="lb-mastery__label">{t('learn.mastery')}</span>
+                  <ul className="lb-mastery__checks">
+                    <li className={detail.mastery.quiz_passed ? 'is-ok' : ''}>
+                      {detail.mastery.quiz_passed ? '✓' : '○'} {t('learn.masteryQuizStep')}
+                    </li>
+                    <li className={detail.mastery.cook_done ? 'is-ok' : ''}>
+                      {detail.mastery.cook_done ? '✓' : '○'} {t('learn.masteryCookStep')}
+                    </li>
+                  </ul>
+                  {!detail.mastery.mastered && (
+                    <p className="lb-mastery__hint">
+                      {!detail.mastery.rank_ok
+                        ? t('learn.masteryRankHint', { rank: detail.mastery.req_tier_label })
+                        : !detail.mastery.quiz_passed
+                          ? t('learn.masteryTakeHint', { xp: detail.mastery.xp })
+                          : t('learn.masteryCookHint')}
+                    </p>
+                  )}
+                  {detail.mastery.mastered && (
+                    <p className="lb-mastery__hint">{t('learn.masteryComplete')}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="lb-empty lb-empty--inline">
+              {detailLoading ? t('common.loading') : t('learn.selectPrompt')}
+            </p>
           )}
 
-          {phase === 'quiz' && (
-              <div className="lb-quiz">
-                <p className="lb-quiz__intro">{t('learn.quizIntro')}</p>
-                {skill.quiz.map((q, qi) => (
-                    <fieldset className="lb-quiz__q" key={qi}>
-                      <legend>{q.q}</legend>
-                      <div className="lb-quiz__opts">
-                        {q.options.map((opt, oi) => (
-                            <label key={oi} className={`lb-opt ${answers[qi] === oi ? 'is-picked' : ''}`}>
-                              <input
-                                  type="radio"
-                                  name={`q${qi}`}
-                                  checked={answers[qi] === oi}
-                                  onChange={() => setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)))}
-                              />
-                              <span>{opt}</span>
-                            </label>
-                        ))}
-                      </div>
-                    </fieldset>
+          <div className="lb-legend">
+            <span><i className="lb-legend__dot lb-legend__dot--mastered" />{t('learn.state.mastered')}</span>
+            <span><i className="lb-legend__dot lb-legend__dot--completed" />{t('learn.state.completed')}</span>
+            <span><i className="lb-legend__dot lb-legend__dot--available" />{t('learn.state.available')}</span>
+            <span><i className="lb-legend__dot lb-legend__dot--locked" />{t('learn.state.locked')}</span>
+          </div>
+        </aside>
+
+        {/* ---- honeycomb ---- */}
+        <div className="lb-canvas-wrap">
+          <div className="lb-canvas-bar">
+            <span className="lb-canvas-bar__stats">
+              {t('learn.treeProgress', {
+                done: tree.stats.completed,
+                total: tree.stats.total,
+                mastered: tree.stats.mastered,
+              })}
+              <em className="lb-canvas-bar__hint">{t('learn.panHint')}</em>
+            </span>
+            <div className="lb-canvas-bar__zoom">
+              <button type="button" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z * 0.85))}
+                      aria-label={t('learn.zoomOut')}>−</button>
+              <button type="button" onClick={resetView}>{t('learn.fitView')}</button>
+              <button type="button" onClick={() => centreOn(selected)} disabled={!selected}>
+                {t('learn.locate')}
+              </button>
+              <button type="button" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.15))}
+                      aria-label={t('learn.zoomIn')}>+</button>
+            </div>
+          </div>
+
+          <div
+            className="lb-viewport"
+            ref={viewportRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          >
+            {layout && (
+              <div
+                className="lb-canvas"
+                style={{
+                  width: layout.width,
+                  height: layout.height,
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                }}
+              >
+                <svg className="lb-links" width={layout.width} height={layout.height} aria-hidden="true">
+                  {layout.links.map((l) => (
+                    <line
+                      key={l.key}
+                      x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                      className={`lb-link ${l.live ? 'is-live' : ''} ${l.reaches ? 'is-reach' : ''}`}
+                      style={l.live ? { stroke: l.color } : undefined}
+                    />
+                  ))}
+                </svg>
+
+                {layout.placed.map((node) => (
+                  <button
+                    key={node.slug}
+                    type="button"
+                    className={`lb-hex lb-hex--${node.state} ${selected === node.slug ? 'is-selected' : ''}`}
+                    style={{
+                      left: node.x,
+                      top: node.y,
+                      width: HEX_W,
+                      '--hex-color': branchColor[node.branch] || '#c9a632',
+                    }}
+                    onClick={() => setSelected(node.slug)}
+                    aria-pressed={selected === node.slug}
+                    title={`${node.title} — ${node.req_tier_label}`}
+                  >
+                    <span
+                      className="lb-hex__face"
+                      style={{ width: HEX_W - HEX_GAP, height: HEX_H - HEX_GAP }}
+                    >
+                      <span className="lb-hex__icon">{node.icon}</span>
+                      {node.state === 'mastered' && <span className="lb-hex__crown" aria-hidden="true">★</span>}
+                      {node.state === 'completed' && <span className="lb-hex__check" aria-hidden="true">✓</span>}
+                      {node.state === 'locked' && <span className="lb-hex__lock" aria-hidden="true">🔒</span>}
+                    </span>
+                    <span className="lb-hex__label">{node.title}</span>
+                  </button>
                 ))}
               </div>
-          )}
+            )}
+          </div>
+        </div>
+      </section>
 
-          {phase === 'result' && result && (
-              <div className="lb-result">
-                <div className="lb-result__icon" aria-hidden="true">😕</div>
-                <p className="lb-result__score">{t('learn.scoreLine', { score: result.score, total: result.total })}</p>
-                <p className="lb-result__retry">{t('learn.retryIn', { time: fmtRemaining(COOLDOWN_MS) })}</p>
+      {/* ===== LESSON MODAL ===== */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={modalTitle} footer={modalFooter}>
+        {phase === 'intro' && detail && (
+          <div className="lb-lesson">
+            {detail.video_url ? (
+              <div className="lb-lesson__video">
+                <iframe
+                  src={detail.video_url}
+                  title={detail.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
-          )}
-        </Modal>
+            ) : (
+              <div className="lb-lesson__hero" aria-hidden="true">{detail.icon}</div>
+            )}
 
-        <Toast message={toast} />
-      </div>
+            <p className="lb-lesson__intro">{detail.intro}</p>
+
+            {detail.cooldown_until ? (
+              <div className="lb-cooldown">
+                <span className="lb-cooldown__icon" aria-hidden="true">⏳</span>
+                <p>{t('learn.retryIn', { time: fmtRemaining(detail.cooldown_until) })}</p>
+              </div>
+            ) : (
+              <>
+                <span className="lb-lesson__label">{t('learn.whatYouLearn')}</span>
+                <ol className="lb-lesson__steps">
+                  {detail.steps.map((step, i) => (
+                    <li key={i}><span>{i + 1}</span>{step}</li>
+                  ))}
+                </ol>
+                {detail.tips?.length > 0 && (
+                  <>
+                    <span className="lb-lesson__label">{t('learn.tips')}</span>
+                    <ul className="lb-lesson__tips">
+                      {detail.tips.map((tip, i) => <li key={i}>{tip}</li>)}
+                    </ul>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* mastery quiz entry point, once the lesson itself is done */}
+            {['completed', 'mastered'].includes(detail.state) && !detail.mastery.mastered && (
+              <div className="lb-lesson__mastery">
+                <span className="lb-lesson__label">{t('learn.mastery')}</span>
+                {!detail.mastery.rank_ok ? (
+                  <p className="lb-lesson__masteryHint">
+                    {t('learn.masteryRankHint', { rank: detail.mastery.req_tier_label })}
+                  </p>
+                ) : detail.mastery.quiz_passed ? (
+                  <p className="lb-lesson__masteryHint">{t('learn.masteryCookHint')}</p>
+                ) : detail.mastery.cooldown_until ? (
+                  <p className="lb-lesson__masteryHint">
+                    {t('learn.retryIn', { time: fmtRemaining(detail.mastery.cooldown_until) })}
+                  </p>
+                ) : (
+                  <button type="button" className="lb-start lb-start--ghost" onClick={() => startQuiz(true)}>
+                    {t('learn.takeMasteryQuiz', { xp: detail.mastery.xp })}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(phase === 'quiz' || phase === 'mastery-quiz') && activeQuiz && (
+          <div className="lb-quiz">
+            <p className="lb-quiz__intro">
+              {isMasteryPhase ? t('learn.masteryQuizIntro') : t('learn.quizIntro')}
+            </p>
+            {activeQuiz.map((q, qi) => (
+              <fieldset className="lb-quiz__q" key={qi}>
+                <legend>{q.q}</legend>
+                <div className="lb-quiz__opts">
+                  {q.options.map((opt, oi) => (
+                    <label key={oi} className={`lb-opt ${answers[qi] === oi ? 'is-picked' : ''}`}>
+                      <input
+                        type="radio"
+                        name={`q${qi}`}
+                        checked={answers[qi] === oi}
+                        onChange={() => setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)))}
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        )}
+
+        {(phase === 'result' || phase === 'mastery-result') && result && (
+          <div className="lb-result">
+            <div className="lb-result__icon" aria-hidden="true">😕</div>
+            <p className="lb-result__score">
+              {t('learn.scoreLine', { score: result.score, total: result.total })}
+            </p>
+            <p className="lb-result__retry">
+              {t('learn.retryIn', { time: fmtRemaining(result.cooldown_until) })}
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      <Toast message={toast} />
+    </div>
   );
 }
-//puala aahagdsgdussdhdh
+
+/* Map a tier index back to its rank family, for the pill next to a lesson. */
+function rankIdFor(tier, tiers) {
+  const row = (tiers || []).find((x) => x.tier === tier);
+  return row ? row.rank : 'copper';
+}

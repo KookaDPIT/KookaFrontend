@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { countryOf } from '../data/countries';
 import Stars from './Stars';
+import { RankPill } from './RankBadge';
 import './RecipeCard.css';
 
 /* Feed / search recipe card. Expects the backend recipe shape. */
@@ -18,6 +19,16 @@ export default function RecipeCard({ recipe }) {
         {country && (
           <span className="rcard__flag" title={country.name}>
             {country.flag}
+          </span>
+        )}
+        {recipe.rank && (
+          <span className="rcard__rank">
+            <RankPill rank={recipe.rank} label={recipe.rank_name} locked={recipe.locked} />
+          </span>
+        )}
+        {recipe.locked && (
+          <span className="rcard__lockveil" aria-hidden="true">
+            <span>🔒</span>
           </span>
         )}
       </div>

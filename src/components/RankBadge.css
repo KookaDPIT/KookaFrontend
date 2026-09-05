@@ -1,0 +1,80 @@
+/* ==========================================================================
+   RankBadge — chef toque badge + compact rank pill.
+   ========================================================================== */
+
+.rbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22%;
+  background: linear-gradient(160deg, #fdf6e6, #f3e6cd);
+  /* elevation rather than a border, matching the rest of the app */
+  box-shadow: 0 2px 6px rgba(80, 55, 20, 0.1), 0 8px 20px rgba(80, 55, 20, 0.07);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+[data-theme='dark'] .rbadge {
+  background: linear-gradient(160deg, #3a2f24, #2e261d);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.26);
+}
+
+[data-theme='dark'] .rbadge.is-muted {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.rbadge svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rbadge.is-muted {
+  box-shadow: 0 1px 3px rgba(80, 55, 20, 0.07);
+  opacity: 0.75;
+}
+
+.rbadge__numeral {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+/* ===== compact pill ===== */
+.rpill {
+  /* Declared here so the value is defined even without the inline style the
+     component normally supplies; RankBadge sets both per rank, and an inline
+     style wins over this rule, so the rendered colour is unchanged. */
+  --rpill-color: #d74d34;
+  --rpill-deep: #a83722;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 999px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background: var(--rpill-color);
+  box-shadow: 0 1px 3px rgba(60, 40, 15, 0.2);
+  white-space: nowrap;
+}
+
+.rpill__icon {
+  width: 13px;
+  height: 13px;
+  fill: rgba(255, 255, 255, 0.92);
+  flex-shrink: 0;
+}
+
+.rpill.is-locked {
+  background: var(--rpill-deep);
+}
+
+.rpill__lock {
+  font-size: 9px;
+  line-height: 1;
+}

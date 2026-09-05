@@ -7,6 +7,7 @@ import { countryOf } from '../../data/countries';
 import { useUser } from '../../user';
 import Reviews from '../../components/Reviews';
 import { IconBack, IconClock } from '../../components/Icons';
+import RankBadge, { RankPill } from '../../components/RankBadge';
 import './Recipe.css';
 
 /* ==========================================================================
@@ -68,20 +69,65 @@ export default function Recipe() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [user] = useUser();
-  const [recipe, setRecipe] = useState(undefined); // undefined = loading
+  /* One state object rather than three: the outcome of a load is exactly one
+     of loading / ok / rank-locked / error, and keeping them together means the
+     effect never has to reset anything synchronously.
+
+     Recipes above your rank come back as a 403 carrying what you'd need to
+     reach, which we render as its own screen rather than a generic error. */
+  const [view, setView] = useState({ status: 'loading' });
 
   useEffect(() => {
     let alive = true;
     getRecipe(id)
-      .then((r) => alive && setRecipe(r))
-      .catch(() => alive && setRecipe(null));
+      .then((r) => alive && setView({ status: 'ok', recipe: r }))
+      .catch((err) => {
+        if (!alive) return;
+        const detail = err?.response?.data?.detail;
+        if (err?.response?.status === 403 && detail?.required_rank) {
+          setView({ status: 'locked', lock: detail });
+        } else {
+          setView({ status: 'error' });
+        }
+      });
     return () => {
       alive = false;
     };
   }, [id]);
 
-  if (recipe === undefined) {
+  const recipe = view.status === 'ok' ? view.recipe : null;
+  const rankLock = view.status === 'locked' ? view.lock : null;
+
+  if (view.status === 'loading') {
     return <div className="recipe recipe--state">{t('common.loading')}…</div>;
+  }
+  if (rankLock) {
+    return (
+      <div className="recipe recipe--state recipe--locked">
+        <RankBadge rank={rankLock.required_rank} size={104}
+                   title={rankLock.required_rank_name} />
+        <h1 className="recipe__lockTitle">{rankLock.recipe?.title}</h1>
+        <p className="recipe__lockMsg">
+          {t('recipe.rankLocked', { rank: rankLock.required_rank_name })}
+        </p>
+        <p className="recipe__lockRank">
+          {t('recipe.yourRankIs', { rank: rankLock.your_rank?.tier_label })}
+          {rankLock.your_rank && !rankLock.your_rank.is_max && (
+            <> · {t('recipe.xpToGo', {
+              xp: rankLock.your_rank.xp_to_next?.toLocaleString(),
+            })}</>
+          )}
+        </p>
+        <div className="recipe__lockActions">
+          <button type="button" className="recipe__cook" onClick={() => navigate('/learn')}>
+            {t('recipe.goEarnXp')}
+          </button>
+          <button type="button" className="recipe__lockBack" onClick={() => navigate('/home')}>
+            {t('common.back')}
+          </button>
+        </div>
+      </div>
+    );
   }
   if (recipe === null) {
     return (
@@ -104,7 +150,10 @@ export default function Recipe() {
      than memorising the id and walking over to the console. */
   const moderate = async (action) => {
     const res = await moderateRecipe(recipe.id, action);
-    setRecipe((r) => ({ ...r, is_hidden: res.moderation_status === 'hidden' }));
+    setView((v) => ({
+      ...v,
+      recipe: { ...v.recipe, is_hidden: res.moderation_status === 'hidden' },
+    }));
   };
 
   return (
@@ -135,7 +184,11 @@ export default function Recipe() {
               {recipe.meta?.time && <li><IconClock className="recipe__meta-icon" /> {recipe.meta.time}</li>}
               {recipe.meta?.servings && <li>{recipe.meta.servings}</li>}
               {recipe.meta?.kcal && <li>{recipe.meta.kcal}</li>}
-              {recipe.difficulty && <li>{t('recipe.difficulty')} {recipe.difficulty}</li>}
+              {recipe.rank && (
+                <li className="recipe__meta-rank">
+                  <RankPill rank={recipe.rank} label={recipe.rank_name} />
+                </li>
+              )}
             </ul>
 
             {author && (
