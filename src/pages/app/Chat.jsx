@@ -3,15 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { RECIPE_IDS } from '../../data/recipes';
 import {
   KookaAvatar, IconSend, IconMic, IconCamera, IconPlus, IconSidebar,
+  IconPot, IconSwap, IconCalendar, IconScale,
 } from '../../components/Icons';
 import './Chat.css';
 
 /* ==========================================================================
-   CHAT AI — Claude/ChatGPT-style conversation.
-   Collapsible history sidebar, one clean thread, centered composer. The rich
-   layouts (recipes, substitutions, weekly menu, calorie estimate, photo scan)
-   are AI RESPONSE TYPES. The cook-along is NOT here anymore — it lives in the
-   recipe cook flow (/recipe/:id/cook).
+   ASK KOOKA — the help page, written for people who have never used a chatbot.
+
+   Deliberately NOT a bare prompt box: the five things Kooka can actually do
+   are named in plain language and shown as cards on the welcome screen, then
+   kept as a row of chips above the composer once a conversation has started.
+   Nobody has to guess what to type; typing freely still works for everyone
+   who prefers it.
+
+   The rich layouts (recipes, substitutions, weekly menu, calorie estimate,
+   photo scan) are AI RESPONSE TYPES. The cook-along is NOT here — it lives in
+   the recipe cook flow (/recipe/:id/cook), where it has the recipe context.
 
    BACKEND SEAM: `fetchAssistantReply()` is a local MOCK. Replace its body with
    a real call (see api.js) returning { kind, intro?, text? }.
@@ -21,53 +28,67 @@ function Ph({ label = 'recipe photo', className = '', style }) {
   return <span className={`ph ${className}`} style={style} aria-hidden="true">{label}</span>;
 }
 
-/* conversation starters — shown as suggestions in the empty state */
-const STARTERS = [
+/* The five jobs Kooka does. Each one is named after the thing the person
+   wants ("I'm out of something"), not after the feature that does it
+   ("substitution engine"). `example` is the message sent on their behalf, so
+   a first click always produces a real, complete answer. */
+const TASKS = [
   {
     key: 'chat',
-    label: 'Recipe ideas',
-    hint: "with what's in my fridge",
+    icon: IconPot,
+    title: 'What can I cook?',
+    blurb: "Tell me what's in the fridge — I'll find recipes that fit.",
+    chip: 'What can I cook?',
     userText: 'I have chicken, rice and a bell pepper. Something quick, under 30 minutes, not too spicy.',
     reply: { kind: 'recipes', intro: "Perfect — with what you've got, here are three options. All done in a pan, no oven:" },
   },
   {
     key: 'subs',
-    label: 'Substitutions',
-    hint: "I'm missing an ingredient",
+    icon: IconSwap,
+    title: "I'm out of something",
+    blurb: 'Find what you can use instead, and what it changes.',
+    chip: 'Find a substitute',
     userText: "I don't have cooking cream. What can I use instead?",
     reply: { kind: 'subs', intro: "You've got three good options. For carbonara I'd go with the first — it stays creamy and won't split." },
   },
   {
     key: 'menu',
-    label: 'Weekly menu',
-    hint: 'plan my meals',
+    icon: IconCalendar,
+    title: 'Plan my week',
+    blurb: 'Seven days of meals and the shopping list to go with them.',
+    chip: 'Plan my week',
     userText: 'Make me a weekly menu for 2 people, budget around $60, as little meat as possible, packed lunches.',
     reply: { kind: 'menu', intro: "I've built the week with 4 vegetarian recipes and 2 with fish. Tuesday's and Thursday's dinners become the next day's packed lunch." },
   },
   {
     key: 'calorii',
-    label: 'Calorie estimate',
-    hint: 'describe what you ate',
+    icon: IconScale,
+    title: 'How much did I eat?',
+    blurb: 'Describe a meal in your own words and get the calories.',
+    chip: 'Count a meal',
     userText: 'I ate two slices of pepperoni pizza and a small beer.',
     reply: { kind: 'calorii', intro: 'Here is my estimate based on your description:' },
   },
   {
     key: 'scan',
-    label: 'Scan with a photo',
-    hint: "what's in the fridge",
+    icon: IconCamera,
+    title: 'Show me a photo',
+    blurb: 'Snap your fridge or your plate — I read what is in it.',
+    chip: 'Send a photo',
     userText: 'the shelf in my fridge',
     userPhoto: true,
-    reply: { kind: 'scan', intro: "I analyzed the photo — here's what I found:" },
+    reply: { kind: 'scan', intro: "I looked at the photo — here's what I found:" },
   },
 ];
 
-/* mock recent conversations for the history sidebar */
+/* mock earlier conversations for the history sidebar. The date matters as much
+   as the title: it is how you recognise "the one from Monday". */
 const HISTORY = [
-  'Quick chicken and pepper dinner',
-  'What to use instead of cream',
-  'Menu for 2, small budget',
-  'Calories — pizza and beer',
-  'Ingredients from a photo · fridge',
+  { title: 'Quick chicken and pepper dinner', when: 'Today' },
+  { title: 'What to use instead of cream', when: 'Yesterday' },
+  { title: 'Menu for 2, small budget', when: 'Monday' },
+  { title: 'Calories — pizza and beer', when: 'Last week' },
+  { title: 'Ingredients from a photo · fridge', when: 'Last week' },
 ];
 
 const PANTRY = ['chicken 500 g', 'rice', 'bell pepper', 'yogurt · exp. tomorrow'];
@@ -399,6 +420,8 @@ function Message({ msg }) {
     <div className="m-row m-row--ai">
       <KookaAvatar size="sm" />
       <div className="m-ai">
+        {/* Naming the speaker reads as a person answering, not as output */}
+        <span className="m-ai__who">Kooka</span>
         {(msg.intro || msg.text) && <p className="m-ai__text">{msg.intro || msg.text}</p>}
         {Rich && <div className="m-ai__rich"><Rich /></div>}
       </div>
@@ -441,7 +464,7 @@ export default function Chat() {
     else fetchAssistantReply(clean).then((reply) => window.setTimeout(() => settle(reply), 650));
   };
 
-  const runStarter = (s) => send(s.userText, { photo: !!s.userPhoto, preset: s.reply });
+  const runTask = (task) => send(task.userText, { photo: !!task.userPhoto, preset: task.reply });
   const onSubmit = (e) => { e.preventDefault(); send(draft); };
   const newChat = () => { setMessages([]); setDraft(''); };
 
@@ -450,20 +473,23 @@ export default function Chat() {
       {/* ===== HISTORY SIDEBAR ===== */}
       <aside className="chat-sb">
         <div className="chat-sb__head">
-          <button type="button" className="chat-sb__icon" onClick={() => setSidebarOpen(false)} aria-label="Hide history">
+          <button type="button" className="chat-sb__icon" onClick={() => setSidebarOpen(false)} aria-label="Hide past questions">
             <IconSidebar className="chat-sb__icon-svg" />
           </button>
           <button type="button" className="chat-sb__new" onClick={newChat}>
-            <IconPlus className="chat-sb__new-icon" /> New chat
+            <IconPlus className="chat-sb__new-icon" /> Ask something new
           </button>
         </div>
 
         <div className="chat-sb__scroll">
-          <p className="chat-sb__label">Recent</p>
+          <p className="chat-sb__label">Things you asked before</p>
           <ul className="chat-sb__list">
             {HISTORY.map((h, i) => (
-              <li key={h}>
-                <button type="button" className={`chat-sb__item ${i === 0 ? 'is-active' : ''}`}>{h}</button>
+              <li key={h.title}>
+                <button type="button" className={`chat-sb__item ${i === 0 ? 'is-active' : ''}`}>
+                  <span className="chat-sb__item-title">{h.title}</span>
+                  <span className="chat-sb__item-when">{h.when}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -471,7 +497,7 @@ export default function Chat() {
 
         <div className="chat-sb__foot">
           <KookaAvatar size="sm" />
-          <span>Kooka · your chef</span>
+          <span>Kooka · your kitchen helper</span>
         </div>
       </aside>
 
@@ -479,31 +505,49 @@ export default function Chat() {
       <div className="chat-main">
         <div className="chat-top">
           {!sidebarOpen && (
-            <button type="button" className="chat-top__icon" onClick={() => setSidebarOpen(true)} aria-label="Show history">
+            <button type="button" className="chat-top__icon" onClick={() => setSidebarOpen(true)} aria-label="Show past questions">
               <IconSidebar className="chat-sb__icon-svg" />
             </button>
           )}
-          <span className="chat-top__title">Chat AI</span>
+          <span className="chat-top__title">Ask Kooka</span>
+          <span className="chat-top__sub">Cooking questions, answered while you stand in the kitchen</span>
+          {!isEmpty && (
+            <button type="button" className="chat-top__new" onClick={newChat}>
+              Start over
+            </button>
+          )}
         </div>
 
         <div className="chat-scroll" ref={scrollRef}>
           {isEmpty ? (
             <div className="chat-welcome">
               <KookaAvatar size="lg" />
-              <h1 className="chat-welcome__title">How can I help today?</h1>
+              <h1 className="chat-welcome__title">Hi! What are we cooking?</h1>
               <p className="chat-welcome__sub">
-                Tell me what's in your fridge, what you're craving or what you ate — or start here:
+                Pick one of these, or just write to me the way you'd ask a friend.
+                There is no wrong way to say it.
               </p>
-              <div className="chat-welcome__starters">
-                {STARTERS.map((s) => (
-                  <button type="button" key={s.key} className="chat-starter" onClick={() => runStarter(s)} disabled={busy}>
-                    <span className="chat-starter__label">{s.label}</span>
-                    <span className="chat-starter__hint">{s.hint}</span>
-                  </button>
-                ))}
+
+              <div className="chat-welcome__tasks">
+                {TASKS.map((task) => {
+                  const Icon = task.icon;
+                  return (
+                    <button
+                      type="button" key={task.key} className="chat-task"
+                      onClick={() => runTask(task)} disabled={busy}
+                    >
+                      <span className="chat-task__icon"><Icon className="chat-task__icon-svg" /></span>
+                      <span className="chat-task__text">
+                        <span className="chat-task__title">{task.title}</span>
+                        <span className="chat-task__blurb">{task.blurb}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+
               <div className="chat-welcome__pantry">
-                <span className="chat-welcome__pantry-label">In the fridge:</span>
+                <span className="chat-welcome__pantry-label">You told me you have:</span>
                 {PANTRY.map((p) => <span className="chat__pchip" key={p}>{p}</span>)}
               </div>
             </div>
@@ -515,25 +559,42 @@ export default function Chat() {
         </div>
 
         <div className="chat-composer">
+          {/* Once the thread has started the welcome cards are scrolled away, so
+              the same five jobs stay reachable here as one-tap chips. */}
+          {!isEmpty && (
+            <div className="chat-quick">
+              <span className="chat-quick__label">Ask for:</span>
+              {TASKS.map((task) => (
+                <button
+                  type="button" key={task.key} className="chat-quick__chip"
+                  onClick={() => runTask(task)} disabled={busy}
+                >
+                  {task.chip}
+                </button>
+              ))}
+            </div>
+          )}
           <form onSubmit={onSubmit}>
             <button
               type="button" className="chat-composer__icon" aria-label="Send a photo"
-              onClick={() => runStarter(STARTERS.find((s) => s.key === 'scan'))}
+              onClick={() => runTask(TASKS.find((task) => task.key === 'scan'))}
             >
               <IconCamera className="chat-composer__icon-svg" />
             </button>
             <input
               type="text" value={draft} onChange={(e) => setDraft(e.target.value)}
-              placeholder="Type what's in your fridge or what you're craving…" aria-label="Type a message"
+              placeholder="Write it however you'd say it out loud…" aria-label="Write your question"
             />
-            <button type="button" className="chat-composer__icon" aria-label="Voice command">
+            <button type="button" className="chat-composer__icon" aria-label="Speak instead of typing">
               <IconMic className="chat-composer__icon-svg" />
             </button>
             <button type="submit" className="chat-composer__send" aria-label="Send" disabled={!draft.trim() || busy}>
               <IconSend className="chat-composer__send-svg" />
             </button>
           </form>
-          <p className="chat-composer__hint">Kooka can make mistakes. Check cooking times and temperatures for meat.</p>
+          <p className="chat-composer__hint">
+            Kooka is a good cook, not a perfect one — check times and temperatures for meat and fish.
+          </p>
         </div>
       </div>
     </div>

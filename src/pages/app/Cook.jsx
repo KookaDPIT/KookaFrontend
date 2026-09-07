@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRecipe } from '../../services/recipes';
+import { askWhileCooking } from '../../services/ai';
 import { verifyCook } from '../../services/reviews';
 import { refreshUser } from '../../user';
 import Modal from '../../components/Modal';
@@ -10,16 +11,18 @@ import { KookaAvatar, IconSparkle, IconSend, IconBack } from '../../components/I
 import './Cook.css';
 
 /* ==========================================================================
-   COOK — step-by-step cook-along for one recipe. The inline "Ask Kooka" panel
-   and its quick suggestions are derived from the actual recipe + current step,
-   not hard-coded demo content.
+   COOK — step-by-step cook-along for one recipe.
 
-   BACKEND SEAM: `cookAssistantReply` is still a local heuristic. Swap it for a
-   real call (see the Chat page's fetchAssistantReply) when ready — it already
-   receives the recipe title and current step as context.
+   The inline "Ask Kooka" panel talks to POST /ai/cook/:id. The backend holds
+   the recipe, so we only send the current step index and the last few turns —
+   that is what makes "how long does this take?" answer about the step actually
+   on screen instead of the recipe in general.
+
+   `localCookReply` is the offline fallback: if the AI call fails we still say
+   something useful from the recipe data we already have on the client.
    ========================================================================== */
 
-function cookAssistantReply(text, { step, stepNo, title }) {
+function localCookReply(text, { step, stepNo, title }) {
   const s = text.toLowerCase();
   if (/repeat|step|again|read/.test(s)) return `Step ${stepNo}: ${step.text}`;
   if (/time|minute|timer|long|how much/.test(s)) {
@@ -95,7 +98,10 @@ export default function Cook() {
   const inputRef = useRef(null);
   const chatRef = useRef(null);
 
+  const messagesRef = useRef(messages);
+
   useEffect(() => {
+    messagesRef.current = messages;
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
@@ -116,17 +122,25 @@ export default function Cook() {
     return () => window.cancelAnimationFrame(frame);
   }, [isAssistantOpen]);
 
-  const askKooka = (clean) => {
+  const askKooka = async (clean) => {
     if (!clean || busy) return;
     const user = { id: nextId(), role: 'user', text: clean };
     const typing = { id: nextId(), role: 'ai', typing: true };
+    // The history sent along is the thread as it stands *before* this question;
+    // the question itself travels as `message`.
+    const history = messagesRef.current.filter((m) => !m.typing);
     setMessages((m) => [...m, user, typing]);
     setBusy(true);
-    window.setTimeout(() => {
-      const reply = cookAssistantReply(clean, { step, stepNo: stepIndex + 1, title: recipe?.title || '' });
-      setMessages((m) => m.filter((x) => x.id !== typing.id).concat({ id: nextId(), role: 'ai', text: reply }));
-      setBusy(false);
-    }, 550);
+
+    let text;
+    try {
+      const res = await askWhileCooking(id, { stepIndex, message: clean, history });
+      text = res.text;
+    } catch {
+      text = localCookReply(clean, { step, stepNo: stepIndex + 1, title: recipe?.title || '' });
+    }
+    setMessages((m) => m.filter((x) => x.id !== typing.id).concat({ id: nextId(), role: 'ai', text }));
+    setBusy(false);
   };
 
   const send = (e) => {

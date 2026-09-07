@@ -571,3 +571,16 @@
   font-size: 14px;
   cursor: pointer;
 }
+
+/* "Translated from Romanian" — quiet provenance note under the tagline. */
+.recipe__translated {
+  margin: 10px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.82);
+}

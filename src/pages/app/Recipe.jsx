@@ -180,6 +180,17 @@ export default function Recipe() {
             <h1 className="recipe__title">{recipe.title}</h1>
             {recipe.description && <p className="recipe__tagline">{recipe.description}</p>}
 
+            {/* The site is English-only, so a recipe written in another language
+                is stored translated. Say so, rather than pretending it was
+                written this way. */}
+            {recipe.source_language && recipe.source_language !== 'en' && (
+              <p className="recipe__translated">
+                {t('recipe.translatedFrom', {
+                  lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
+                })}
+              </p>
+            )}
+
             <ul className="recipe__meta">
               {recipe.meta?.time && <li><IconClock className="recipe__meta-icon" /> {recipe.meta.time}</li>}
               {recipe.meta?.servings && <li>{recipe.meta.servings}</li>}

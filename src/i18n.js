@@ -21,7 +21,7 @@ const resources = {
 
       nav: {
         home: 'Home',
-        chat: 'AI Chat',
+        chat: 'Ask Kooka',
         learn: 'Learn',
         forum: 'Forum',
         profile: 'Profile',
@@ -213,6 +213,7 @@ const resources = {
         by: 'by',
         difficulty: 'difficulty',
         rankLocked: 'This recipe is {{rank}} rank. Keep cooking and learning to unlock it.',
+        translatedFrom: 'Translated from {{lang}}',
         yourRankIs: 'You are {{rank}}',
         xpToGo: '{{xp}} XP to the next rank',
         goEarnXp: 'Earn XP in Learn',
@@ -643,7 +644,7 @@ const resources = {
 
       nav: {
         home: 'Acasă',
-        chat: 'Chat AI',
+        chat: 'Întreabă Kooka',
         learn: 'Învață',
         forum: 'Forum',
         profile: 'Profil',
@@ -835,6 +836,7 @@ const resources = {
         by: 'de',
         difficulty: 'dificultate',
         rankLocked: 'Rețeta e de rank {{rank}}. Gătește și învață mai departe ca s-o deblochezi.',
+        translatedFrom: 'Tradusă din {{lang}}',
         yourRankIs: 'Ești {{rank}}',
         xpToGo: '{{xp}} XP până la rank-ul următor',
         goEarnXp: 'Câștigă XP în Learn',
