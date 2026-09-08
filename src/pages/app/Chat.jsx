@@ -1,46 +1,50 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RECIPE_IDS } from '../../data/recipes';
 import {
-  KookaAvatar, IconSend, IconMic, IconCamera, IconPlus, IconSidebar,
+  listConversations, getConversation, deleteConversation,
+  sendChatMessage, fileToDataUrl,
+} from '../../services/ai';
+import {
+  KookaAvatar, IconSend, IconCamera, IconPlus, IconSidebar,
   IconPot, IconSwap, IconCalendar, IconScale,
 } from '../../components/Icons';
 import './Chat.css';
 
 /* ==========================================================================
-   ASK KOOKA — the help page, written for people who have never used a chatbot.
+   ASK KOOKA — a real conversation with the assistant, written for people who
+   have never used a chatbot.
 
-   Deliberately NOT a bare prompt box: the five things Kooka can actually do
-   are named in plain language and shown as cards on the welcome screen, then
-   kept as a row of chips above the composer once a conversation has started.
-   Nobody has to guess what to type; typing freely still works for everyone
-   who prefers it.
+   Deliberately NOT a bare prompt box: the five things Kooka is good at are
+   named in plain language as cards on the welcome screen and as chips above
+   the composer, so nobody has to guess what to type. Typing freely still
+   works for everyone who prefers it.
 
-   The rich layouts (recipes, substitutions, weekly menu, calorie estimate,
-   photo scan) are AI RESPONSE TYPES. The cook-along is NOT here — it lives in
-   the recipe cook flow (/recipe/:id/cook), where it has the recipe context.
+   Everything here is live:
+     - POST /ai/chat          one turn; creates the thread on the first message
+     - GET  /ai/chat          the sidebar
+     - GET  /ai/chat/:id      reopen a thread
+     - DELETE /ai/chat/:id
+   Recipe cards in a reply are REAL recipes from our database — the backend
+   only lets the model pick ids the user is actually allowed to open, so every
+   card navigates to a page that exists.
 
-   BACKEND SEAM: `fetchAssistantReply()` is a local MOCK. Replace its body with
-   a real call (see api.js) returning { kind, intro?, text? }.
+   Photos are read into a data URL and sent inline. The server passes them to
+   the vision model once and never stores them, which is why a reopened thread
+   shows "Photo sent" rather than the picture.
    ========================================================================== */
 
-function Ph({ label = 'recipe photo', className = '', style }) {
-  return <span className={`ph ${className}`} style={style} aria-hidden="true">{label}</span>;
-}
-
-/* The five jobs Kooka does. Each one is named after the thing the person
-   wants ("I'm out of something"), not after the feature that does it
-   ("substitution engine"). `example` is the message sent on their behalf, so
-   a first click always produces a real, complete answer. */
+/* The five jobs Kooka does. Each is named after the thing the person wants
+   ("I'm out of something"), not after the feature that does it. `prompt` is
+   the message actually sent, so one click produces a complete answer. */
 const TASKS = [
   {
-    key: 'chat',
+    key: 'cook',
     icon: IconPot,
     title: 'What can I cook?',
     blurb: "Tell me what's in the fridge — I'll find recipes that fit.",
     chip: 'What can I cook?',
-    userText: 'I have chicken, rice and a bell pepper. Something quick, under 30 minutes, not too spicy.',
-    reply: { kind: 'recipes', intro: "Perfect — with what you've got, here are three options. All done in a pan, no oven:" },
+    prompt: "Here's what I have in the fridge: ",
+    needsMore: true,
   },
   {
     key: 'subs',
@@ -48,350 +52,169 @@ const TASKS = [
     title: "I'm out of something",
     blurb: 'Find what you can use instead, and what it changes.',
     chip: 'Find a substitute',
-    userText: "I don't have cooking cream. What can I use instead?",
-    reply: { kind: 'subs', intro: "You've got three good options. For carbonara I'd go with the first — it stays creamy and won't split." },
+    prompt: "I'm out of ",
+    needsMore: true,
   },
   {
     key: 'menu',
     icon: IconCalendar,
     title: 'Plan my week',
-    blurb: 'Seven days of meals and the shopping list to go with them.',
+    blurb: 'A week of meals, built around what you like and what it costs.',
     chip: 'Plan my week',
-    userText: 'Make me a weekly menu for 2 people, budget around $60, as little meat as possible, packed lunches.',
-    reply: { kind: 'menu', intro: "I've built the week with 4 vegetarian recipes and 2 with fish. Tuesday's and Thursday's dinners become the next day's packed lunch." },
+    prompt: 'Plan a week of dinners for me. Keep it simple and cheap, and tell me what to buy.',
   },
   {
-    key: 'calorii',
+    key: 'kcal',
     icon: IconScale,
     title: 'How much did I eat?',
     blurb: 'Describe a meal in your own words and get the calories.',
     chip: 'Count a meal',
-    userText: 'I ate two slices of pepperoni pizza and a small beer.',
-    reply: { kind: 'calorii', intro: 'Here is my estimate based on your description:' },
+    prompt: 'I ate ',
+    needsMore: true,
   },
   {
-    key: 'scan',
+    key: 'photo',
     icon: IconCamera,
     title: 'Show me a photo',
     blurb: 'Snap your fridge or your plate — I read what is in it.',
     chip: 'Send a photo',
-    userText: 'the shelf in my fridge',
-    userPhoto: true,
-    reply: { kind: 'scan', intro: "I looked at the photo — here's what I found:" },
+    photo: true,
   },
 ];
 
-/* mock earlier conversations for the history sidebar. The date matters as much
-   as the title: it is how you recognise "the one from Monday". */
-const HISTORY = [
-  { title: 'Quick chicken and pepper dinner', when: 'Today' },
-  { title: 'What to use instead of cream', when: 'Yesterday' },
-  { title: 'Menu for 2, small budget', when: 'Monday' },
-  { title: 'Calories — pizza and beer', when: 'Last week' },
-  { title: 'Ingredients from a photo · fridge', when: 'Last week' },
-];
-
-const PANTRY = ['chicken 500 g', 'rice', 'bell pepper', 'yogurt · exp. tomorrow'];
-
-/* ---- BACKEND SEAM ---------------------------------------------------- */
-async function fetchAssistantReply(text /*, history */) {
-  const t = text.toLowerCase();
-  const kind =
-    (/substitut|instead of|don't have|replace/.test(t) && 'subs') ||
-    (/menu|week|plan/.test(t) && 'menu') ||
-    (/calor|kcal|i ate|i had/.test(t) && 'calorii') ||
-    (/photo|scan|fridge/.test(t) && 'recipes') ||
-    'recipes';
-  const intro = {
-    subs: "Here's what you can use instead — sorted by how well they match:",
-    menu: "I've built a balanced week for you. You can swap any meal with a click.",
-    calorii: 'Here is my estimate based on your description:',
-    recipes: "With what you have on hand, here are a few options:",
-  }[kind];
-  return { kind, intro };
-}
-
 /* ======================================================================== */
-/* RICH RESPONSE CONTENT                                                     */
+/* TEXT RENDERING                                                            */
 /* ======================================================================== */
-function RecipesContent() {
-  const navigate = useNavigate();
-  const recipes = [
-    { name: 'Chicken with rice and peppers', meta: '25 min · 480 kcal', id: RECIPE_IDS[0], primary: true },
-    { name: 'Chicken wok, roasted pepper', meta: '18 min · 420 kcal', id: RECIPE_IDS[1] },
-    { name: 'Creamy pepper soup', meta: '30 min · 260 kcal', id: RECIPE_IDS[0] },
-  ];
-  return (
-    <>
-      <div className="rec-cards">
-        {recipes.map((r, i) => (
-          <article className="rec-card" key={i}>
-            <Ph className="rec-card__photo" />
-            <div className="rec-card__body">
-              <h3 className="rec-card__name">{r.name}</h3>
-              <span className="rec-card__meta">{r.meta}</span>
-              <button
-                type="button"
-                className={`btn btn--sm ${r.primary ? 'btn--primary' : 'btn--ghost'}`}
-                onClick={() => navigate(`/recipe/${r.id}`)}
-              >
-                {r.primary ? 'Cook with me' : 'View recipe'}
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="chat-suggest">
-        {['Make it lighter', 'For 4 servings', 'Dairy-free', 'What can I use instead of pepper?'].map((s) => (
-          <button type="button" key={s}>{s}</button>
-        ))}
-      </div>
-    </>
+
+/* Kooka writes prose with the occasional short list and a **bold** word. This
+   renders exactly that much — a markdown library would be 40 KB to support
+   syntax the prompt tells the model not to use. */
+function inline(text) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
   );
 }
 
-function SubsContent() {
-  const rows = [
-    ['10% Greek yogurt + 1 yolk', '200 ml → 200 g', 'Slightly more tangy, add off the heat', '90', '90%'],
-    ['Milk + butter', '180 ml + 20 g', 'Thinner — bind it with pasta water', '80', '80%'],
-    ['Cashew cream', '200 ml', 'Dairy-free option, slightly sweet taste', '65', '65%'],
-  ];
-  return (
-    <>
-      <div className="card">
-        <table className="subs-table">
-          <thead>
-            <tr><th>Substitute</th><th>Amount</th><th>What changes</th><th>Match</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r[0]}>
-                <td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td>
-                <td><span className={`fit fit--${r[3]}`}>{r[4]}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="subs-notes">
-          <div className="note">
-            <h4>Keep in mind</h4>
-            <p>Yogurt splits when it boils. Mix it with the yolk, then pour it over the pasta once it's off the heat.</p>
-          </div>
-          <div className="note">
-            <h4>Nutrition impact</h4>
-            <ul><li>Calories −120 kcal / serving</li><li>Fat −11 g</li><li>Protein +4 g</li></ul>
-          </div>
-        </div>
-      </div>
-      <div className="chat-actions">
-        <button type="button" className="btn btn--primary">Apply to recipe</button>
-        <button type="button" className="btn btn--ghost">Without parmesan too?</button>
-        <button type="button" className="btn btn--ghost">Recalculate calories</button>
-      </div>
-    </>
-  );
-}
+function AiText({ text }) {
+  if (!text) return null;
+  const blocks = [];
+  let list = null;
 
-const DOW = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const MEALS = [
-  { label: 'Breakfast', cells: [
-    { n: 'Oats with pears', k: '380 kcal' }, { n: 'Yogurt, nuts', k: '320 kcal' },
-    { n: 'Spinach omelette', k: '410 kcal' }, { n: 'Oats with pears', k: '380 kcal' },
-    { n: 'Avocado toast', k: '440 kcal' }, { n: 'Cheese pancakes', k: '520 kcal' },
-    { n: 'Fried eggs, tomatoes', k: '300 kcal' },
-  ] },
-  { label: 'Lunch', cells: [
-    { n: 'Chickpea salad', k: '560 kcal' }, { n: 'Dinner leftovers', pack: true },
-    { n: 'Lentil soup', k: '480 kcal' }, { n: 'Dinner leftovers', pack: true },
-    { n: 'Hummus wrap', k: '520 kcal' }, { n: 'Pasta with pesto', k: '640 kcal' },
-    { n: 'Vegetable soup', k: '330 kcal' },
-  ] },
-  { label: 'Dinner', cells: [
-    { n: 'Bean stew', k: '610 kcal' }, { n: 'Rice with vegetables', k: '580 kcal' },
-    { n: 'Baked salmon', sel: true, note: 'selecting…' }, { n: 'Zucchini fritters', k: '520 kcal' },
-    { n: 'Homemade pizza', k: '720 kcal' }, { n: 'Cod with potatoes', k: '540 kcal' }, { liber: true },
-  ] },
-];
+  const flush = () => {
+    if (list) { blocks.push(list); list = null; }
+  };
 
-function MenuContent() {
+  text.split('\n').forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) { flush(); return; }
+
+    const bullet = line.match(/^[-*•]\s+(.*)$/);
+    const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+    if (bullet || numbered) {
+      const ordered = !!numbered;
+      if (!list || list.ordered !== ordered) { flush(); list = { ordered, items: [] }; }
+      list.items.push({ key: i, text: (bullet || numbered)[1] });
+      return;
+    }
+    flush();
+    blocks.push({ paragraph: line, key: i });
+  });
+  flush();
+
   return (
-    <div className="menu">
-      <aside className="menu__aside">
-        <div className="menu__summary">
-          <h4>Summary</h4>
-          <ul>
-            <li><span>Meals · ingredients</span><span>14 · 21</span></li>
-            <li><span>Estimated cost</span><span>$57</span></li>
-            <li><span>Average / day</span><span>1 940 kcal</span></li>
-            <li><span>Total cook time</span><span>3 h 40 min</span></li>
-          </ul>
-        </div>
-        <div className="chat-actions">
-          <button type="button" className="btn btn--primary" style={{ width: '100%' }}>Generate shopping list</button>
-          <button type="button" className="btn btn--ghost">Swap meals</button>
-          <button type="button" className="btn btn--ghost">Cheaper</button>
-        </div>
-      </aside>
-      <section className="menu__cal">
-        <div className="menu__cal-head">
-          <h4>August 3 – 9</h4>
-          <button type="button" className="btn btn--ghost btn--sm">Last week</button>
-          <button type="button" className="btn btn--ghost btn--sm">Next</button>
-        </div>
-        <div className="menu__grid">
-          <span />
-          {DOW.map((d) => <span className="menu__dow" key={d}>{d}</span>)}
-          {MEALS.map((meal) => <MenuRow key={meal.label} meal={meal} />)}
-        </div>
-      </section>
+    <div className="m-ai__text">
+      {blocks.map((b, i) =>
+        b.items
+          ? (b.ordered
+            ? <ol className="m-ai__list" key={i}>{b.items.map((it) => <li key={it.key}>{inline(it.text)}</li>)}</ol>
+            : <ul className="m-ai__list" key={i}>{b.items.map((it) => <li key={it.key}>{inline(it.text)}</li>)}</ul>)
+          : <p key={i}>{inline(b.paragraph)}</p>
+      )}
     </div>
   );
 }
 
-function MenuRow({ meal }) {
+/* ======================================================================== */
+/* ATTACHMENTS — real data, not mock layouts                                 */
+/* ======================================================================== */
+
+function RecipeCards({ recipes }) {
+  const navigate = useNavigate();
+  if (!recipes?.length) return null;
   return (
-    <>
-      <span className="menu__rowlabel">{meal.label}</span>
-      {meal.cells.map((c, i) => (
-        <div className={`menu__cell ${c.pack ? 'is-pack' : ''} ${c.sel ? 'is-sel' : ''}`} key={i}>
-          {c.liber ? <span style={{ margin: 'auto' }}>free</span> : (
-            <>
-              <b>{c.n}</b>
-              {c.note ? <em>{c.note}</em> : <span>{c.pack ? 'packed' : c.k}</span>}
-            </>
-          )}
-        </div>
+    <div className={`rec-cards ${recipes.length < 3 ? 'rec-cards--few' : ''}`}>
+      {recipes.map((r) => (
+        <article className="rec-card" key={r.id}>
+          {r.image_url
+            ? <img className="rec-card__img" src={r.image_url} alt="" loading="lazy" />
+            : <span className="ph rec-card__photo" aria-hidden="true">no photo</span>}
+          <div className="rec-card__body">
+            <h3 className="rec-card__name">{r.title}</h3>
+            <span className="rec-card__meta">
+              {[r.meta?.time, r.meta?.kcal, r.meta?.servings].filter(Boolean).join(' · ')}
+            </span>
+            <button
+              type="button" className="btn btn--sm btn--primary"
+              onClick={() => navigate(`/recipe/${r.id}`)}
+            >
+              Open recipe
+            </button>
+          </div>
+        </article>
       ))}
-    </>
+    </div>
   );
 }
 
-function CaloriiContent() {
-  const macros = [['Carbs', 96, 'c1', '90%'], ['Fat', 34, 'c2', '55%'], ['Protein', 31, 'c3', '48%']];
-  const breakdown = [
-    ['Pepperoni pizza, 2 slices', '~130 g / slice', '660 kcal'],
-    ['Lager beer', '330 ml', '140 kcal'],
-    ['Extra oil / cheese (assumed)', 'estimated', '90 kcal'],
-  ];
+const MACRO_ROWS = [
+  ['Carbs', 'carbs_g', 'c1', 300],
+  ['Fat', 'fat_g', 'c2', 80],
+  ['Protein', 'protein_g', 'c3', 120],
+];
+
+function NutritionCard({ nutrition }) {
+  if (!nutrition || !nutrition.total_kcal) return null;
+  const macros = nutrition.macros || {};
+  const items = nutrition.items || [];
   return (
-    <>
-      <div className="est">
-        <div className="card">
-          <div className="est__kcal">
-            <b>890</b><span>kcal estimate</span>
-            <span className="est__conf">±120 kcal · medium confidence</span>
+    <div className="card est-card">
+      <div className="est__kcal">
+        <b>{nutrition.total_kcal}</b>
+        <span>kcal, roughly</span>
+        {nutrition.confidence && (
+          <span className="est__conf">{nutrition.confidence} confidence</span>
+        )}
+      </div>
+
+      {MACRO_ROWS.map(([label, key, tone, scale]) => (
+        macros[key] == null ? null : (
+          <div className="macro" key={key}>
+            <span>{label}</span>
+            <span className="macro__bar">
+              <i className={tone} style={{ width: `${Math.min(100, (macros[key] / scale) * 100)}%` }} />
+            </span>
+            <span className="macro__val">{macros[key]} g</span>
           </div>
-          {macros.map(([name, g, c, w]) => (
-            <div className="macro" key={name}>
-              <span>{name}</span>
-              <span className="macro__bar"><i className={c} style={{ width: w }} /></span>
-              <span className="macro__val">{g} g</span>
+        )
+      ))}
+
+      {items.length > 0 && (
+        <div className="est__break">
+          <h4>How I got there — tell me if I guessed wrong</h4>
+          {items.map((it, i) => (
+            <div className="est__row" key={i}>
+              <span>{it.name}</span>
+              {it.detail && <span className="est__pill">{it.detail}</span>}
+              {it.kcal != null && <span className="est__kc">{it.kcal} kcal</span>}
             </div>
           ))}
-          <div className="est__break">
-            <h4>How I calculated it — adjust if I got it wrong</h4>
-            {breakdown.map(([name, pill, kc]) => (
-              <div className="est__row" key={name}>
-                <span>{name}</span><span className="est__pill">{pill}</span><span className="est__kc">{kc}</span>
-              </div>
-            ))}
-          </div>
         </div>
-        <aside className="est__aside">
-          <div className="card est__today">
-            <h4>Today</h4>
-            <div><b>2 130</b> <span>/ 2 200 kcal</span></div>
-            <div className="est__prog"><i style={{ width: '96%' }} /></div>
-            <p>You have 70 kcal left. I'd suggest a plain Greek yogurt.</p>
-          </div>
-          <div className="card est__added">
-            <h4>Added today</h4>
-            <ul>
-              <li><span>Oats with pears</span><b>380</b></li>
-              <li><span>Chickpea salad</span><b>560</b></li>
-              <li><span>Coffee with milk</span><b>90</b></li>
-              <li><span>Pizza + beer</span><b>890</b></li>
-            </ul>
-          </div>
-        </aside>
-      </div>
-      <div className="chat-actions">
-        <button type="button" className="btn btn--primary">Add to journal</button>
-        <button type="button" className="btn btn--ghost">They were big slices</button>
-        <button type="button" className="btn btn--ghost">What should I eat for dinner to close out the day?</button>
-      </div>
-    </>
-  );
-}
-
-function ScanContent() {
-  const navigate = useNavigate();
-  const found = [
-    { text: 'yogurt 400 g · expires tomorrow', warn: true }, { text: 'spinach · 2 days' },
-    { text: 'zucchini · 6 days' }, { text: 'eggs ×6' }, { text: 'feta 200 g' },
-    { text: 'tomatoes ×3' }, { text: 'apple' },
-  ];
-  return (
-    <div className="scan">
-      <div className="scan__tabs">
-        <button type="button" className="btn btn--primary btn--sm">Ingredients</button>
-        <button type="button" className="btn btn--ghost btn--sm">Plate → calories</button>
-        <button type="button" className="btn btn--ghost btn--sm">Label → expiry</button>
-      </div>
-      <div className="scan__grid">
-        <div>
-          <div className="scan__photo ph">
-            <span style={{ color: '#b3a380', fontSize: 12 }}>user's photo · fridge shelf</span>
-            <span className="scan__box" style={{ top: '14%', left: '8%', width: '38%', height: '30%' }}>
-              <span className="scan__tag">yogurt · 97%</span>
-            </span>
-            <span className="scan__box" style={{ top: '46%', left: '52%', width: '34%', height: '32%' }}>
-              <span className="scan__tag">zucchini · 91%</span>
-            </span>
-            <span className="scan__box g" style={{ top: '54%', left: '14%', width: '28%', height: '22%' }}>
-              <span className="scan__tag">spinach · wilted</span>
-            </span>
-          </div>
-          <div className="chat-actions" style={{ marginTop: 12 }}>
-            <button type="button" className="btn btn--ghost btn--sm">Take another photo</button>
-            <button type="button" className="btn btn--ghost btn--sm">Add manually</button>
-          </div>
-          <div className="note" style={{ marginTop: 14 }}>
-            <h4>From the label</h4>
-            <p>I read "exp. 04.08.2026" on the yogurt. That's tomorrow — I put it first in the recipe.</p>
-          </div>
-        </div>
-        <div>
-          <strong style={{ fontFamily: 'var(--font-important), sans-serif', fontSize: 15 }}>I found 7 ingredients</strong>
-          <div className="scan__found">
-            {found.map((f) => (
-              <span className={`chat__pchip ${f.warn ? 'is-warn' : ''}`} key={f.text}>{f.text}</span>
-            ))}
-          </div>
-          <article className="card scan__reco">
-            <span className="scan__reco-kicker">Use the yogurt and spinach first</span>
-            <h3>Zucchini bake with spinach and feta</h3>
-            <span className="rec-card__meta">40 min · 4 servings · you have 7 of 8 ingredients</span>
-            <div className="scan__nutri">
-              <div><b>310</b><span>kcal / serving</span></div>
-              <div><b>21 g</b><span>protein</span></div>
-              <div><b>9 g</b><span>carbs</span></div>
-            </div>
-            <Ph className="scan__reco-photo" label="recipe photo" />
-            <p>You're only missing flour — you can use 3 tablespoons of semolina. The rest of the yogurt goes on breakfast tomorrow.</p>
-            <div className="chat-actions">
-              <button type="button" className="btn btn--primary" onClick={() => navigate(`/recipe/${RECIPE_IDS[0]}`)}>Cook with me</button>
-              <button type="button" className="btn btn--ghost">Another recipe</button>
-              <button type="button" className="btn btn--ghost">Save the ingredients</button>
-            </div>
-          </article>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
-const RICH = { recipes: RecipesContent, subs: SubsContent, menu: MenuContent, calorii: CaloriiContent, scan: ScanContent };
 
 /* ======================================================================== */
 /* MESSAGE                                                                   */
@@ -401,13 +224,15 @@ function Message({ msg }) {
     return (
       <div className="m-row m-row--user">
         <div className="m-user">
-          {msg.photo && <Ph className="m-user__photo" label="photo sent" />}
+          {msg.photo
+            ? <img className="m-user__img" src={msg.photo} alt="" />
+            : msg.has_photo && <span className="m-user__sent">Photo sent</span>}
           {msg.text}
         </div>
       </div>
     );
   }
-  if (msg.kind === 'typing') {
+  if (msg.typing) {
     return (
       <div className="m-row m-row--ai">
         <KookaAvatar size="sm" />
@@ -415,15 +240,20 @@ function Message({ msg }) {
       </div>
     );
   }
-  const Rich = RICH[msg.kind];
   return (
     <div className="m-row m-row--ai">
       <KookaAvatar size="sm" />
       <div className="m-ai">
         {/* Naming the speaker reads as a person answering, not as output */}
         <span className="m-ai__who">Kooka</span>
-        {(msg.intro || msg.text) && <p className="m-ai__text">{msg.intro || msg.text}</p>}
-        {Rich && <div className="m-ai__rich"><Rich /></div>}
+        <AiText text={msg.text} />
+        {msg.error && <p className="m-ai__error">{msg.error}</p>}
+        {(msg.recipes?.length > 0 || msg.nutrition) && (
+          <div className="m-ai__rich">
+            <RecipeCards recipes={msg.recipes} />
+            <NutritionCard nutrition={msg.nutrition} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -432,48 +262,139 @@ function Message({ msg }) {
 /* ======================================================================== */
 /* PAGE                                                                      */
 /* ======================================================================== */
-let idSeq = 1;
-const nextId = () => `m${idSeq++}`;
+let localSeq = 1;
+const localId = () => `local-${localSeq++}`;
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
+  const [convos, setConvos] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [draft, setDraft] = useState('');
+  const [photo, setPhoto] = useState(null);        // { dataUrl, name }
   const [busy, setBusy] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const fileRef = useRef(null);
   const isEmpty = messages.length === 0;
+
+  const refreshConvos = useCallback(() => {
+    listConversations().then(setConvos).catch(() => { /* sidebar is optional */ });
+  }, []);
+
+  useEffect(() => { refreshConvos(); }, [refreshConvos]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  const send = (text, { photo = false, preset = null } = {}) => {
-    const clean = text.trim();
-    if (!clean || busy) return;
-    const userMsg = { id: nextId(), role: 'user', text: clean, photo };
-    const typingMsg = { id: nextId(), role: 'ai', kind: 'typing' };
-    setMessages((m) => [...m, userMsg, typingMsg]);
-    setDraft('');
-    setBusy(true);
-    const settle = (reply) => {
-      setMessages((m) => m.filter((x) => x.id !== typingMsg.id).concat({ id: nextId(), role: 'ai', ...reply }));
-      setBusy(false);
-    };
-    if (preset) window.setTimeout(() => settle(preset), 650);
-    else fetchAssistantReply(clean).then((reply) => window.setTimeout(() => settle(reply), 650));
+  const openConversation = async (id) => {
+    if (id === activeId || busy) return;
+    setLoadingThread(true);
+    try {
+      const convo = await getConversation(id);
+      setActiveId(convo.id);
+      setMessages(convo.messages.map((m) => ({ ...m, key: `s${m.id}` })));
+    } catch {
+      setActiveId(null);
+      setMessages([]);
+    } finally {
+      setLoadingThread(false);
+    }
   };
 
-  const runTask = (task) => send(task.userText, { photo: !!task.userPhoto, preset: task.reply });
-  const onSubmit = (e) => { e.preventDefault(); send(draft); };
-  const newChat = () => { setMessages([]); setDraft(''); };
+  const removeConversation = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await deleteConversation(id);
+    } catch { /* already gone is fine — the refresh below settles it */ }
+    if (id === activeId) { setActiveId(null); setMessages([]); }
+    refreshConvos();
+  };
+
+  const newChat = () => {
+    setActiveId(null);
+    setMessages([]);
+    setDraft('');
+    setPhoto(null);
+    inputRef.current?.focus();
+  };
+
+  const send = async (text, attached = null) => {
+    const clean = (text || '').trim();
+    if ((!clean && !attached) || busy) return;
+
+    const userMsg = { key: localId(), role: 'user', text: clean, photo: attached?.dataUrl };
+    const typing = { key: localId(), role: 'ai', typing: true };
+    setMessages((m) => [...m, userMsg, typing]);
+    setDraft('');
+    setPhoto(null);
+    setBusy(true);
+
+    try {
+      const res = await sendChatMessage({
+        message: clean,
+        conversationId: activeId,
+        image: attached?.dataUrl || '',
+      });
+      setActiveId(res.conversation.id);
+      setMessages((m) => m
+        .filter((x) => x.key !== typing.key)
+        .concat({ ...res.message, key: `s${res.message.id}` }));
+      refreshConvos();
+    } catch (err) {
+      const status = err?.response?.status;
+      setMessages((m) => m.filter((x) => x.key !== typing.key).concat({
+        key: localId(),
+        role: 'ai',
+        text: '',
+        error: status === 400
+          ? "I couldn't read that — try a smaller photo, under 8 MB."
+          : "I couldn't get through just now. Check your connection and ask me again.",
+      }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* A task either fires a complete question or, when it needs your details,
+     drops the opening words into the box and lets you finish the sentence. */
+  const runTask = (task) => {
+    if (task.photo) { fileRef.current?.click(); return; }
+    if (task.needsMore) {
+      setDraft(task.prompt);
+      inputRef.current?.focus();
+      return;
+    }
+    send(task.prompt);
+  };
+
+  const pickPhoto = async (file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setPhoto({ dataUrl, name: file.name });
+      inputRef.current?.focus();
+    } catch { /* unreadable file — the picker simply stays empty */ }
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    send(draft, photo);
+  };
 
   return (
     <div className={`chat ${sidebarOpen ? '' : 'chat--collapsed'}`}>
       {/* ===== HISTORY SIDEBAR ===== */}
       <aside className="chat-sb">
         <div className="chat-sb__head">
-          <button type="button" className="chat-sb__icon" onClick={() => setSidebarOpen(false)} aria-label="Hide past questions">
+          <button
+            type="button" className="chat-sb__icon" onClick={() => setSidebarOpen(false)}
+            aria-label="Hide past questions"
+          >
             <IconSidebar className="chat-sb__icon-svg" />
           </button>
           <button type="button" className="chat-sb__new" onClick={newChat}>
@@ -483,16 +404,31 @@ export default function Chat() {
 
         <div className="chat-sb__scroll">
           <p className="chat-sb__label">Things you asked before</p>
-          <ul className="chat-sb__list">
-            {HISTORY.map((h, i) => (
-              <li key={h.title}>
-                <button type="button" className={`chat-sb__item ${i === 0 ? 'is-active' : ''}`}>
-                  <span className="chat-sb__item-title">{h.title}</span>
-                  <span className="chat-sb__item-when">{h.when}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {convos.length === 0 ? (
+            <p className="chat-sb__empty">Nothing yet. Your conversations show up here.</p>
+          ) : (
+            <ul className="chat-sb__list">
+              {convos.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    className={`chat-sb__item ${c.id === activeId ? 'is-active' : ''}`}
+                    onClick={() => openConversation(c.id)}
+                  >
+                    <span className="chat-sb__item-title">{c.title}</span>
+                    <span className="chat-sb__item-when">{whenLabel(c.updated_at)}</span>
+                  </button>
+                  <button
+                    type="button" className="chat-sb__del"
+                    onClick={(e) => removeConversation(e, c.id)}
+                    aria-label={`Delete "${c.title}"`}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="chat-sb__foot">
@@ -505,21 +441,24 @@ export default function Chat() {
       <div className="chat-main">
         <div className="chat-top">
           {!sidebarOpen && (
-            <button type="button" className="chat-top__icon" onClick={() => setSidebarOpen(true)} aria-label="Show past questions">
+            <button
+              type="button" className="chat-top__icon" onClick={() => setSidebarOpen(true)}
+              aria-label="Show past questions"
+            >
               <IconSidebar className="chat-sb__icon-svg" />
             </button>
           )}
           <span className="chat-top__title">Ask Kooka</span>
           <span className="chat-top__sub">Cooking questions, answered while you stand in the kitchen</span>
           {!isEmpty && (
-            <button type="button" className="chat-top__new" onClick={newChat}>
-              Start over
-            </button>
+            <button type="button" className="chat-top__new" onClick={newChat}>Start over</button>
           )}
         </div>
 
         <div className="chat-scroll" ref={scrollRef}>
-          {isEmpty ? (
+          {loadingThread ? (
+            <p className="chat-thread__state">Opening…</p>
+          ) : isEmpty ? (
             <div className="chat-welcome">
               <KookaAvatar size="lg" />
               <h1 className="chat-welcome__title">Hi! What are we cooking?</h1>
@@ -545,22 +484,17 @@ export default function Chat() {
                   );
                 })}
               </div>
-
-              <div className="chat-welcome__pantry">
-                <span className="chat-welcome__pantry-label">You told me you have:</span>
-                {PANTRY.map((p) => <span className="chat__pchip" key={p}>{p}</span>)}
-              </div>
             </div>
           ) : (
             <div className="chat-thread">
-              {messages.map((m) => <Message key={m.id} msg={m} />)}
+              {messages.map((m) => <Message key={m.key} msg={m} />)}
             </div>
           )}
         </div>
 
         <div className="chat-composer">
-          {/* Once the thread has started the welcome cards are scrolled away, so
-              the same five jobs stay reachable here as one-tap chips. */}
+          {/* Once the thread has started the welcome cards are scrolled away,
+              so the same five jobs stay reachable here as one-tap chips. */}
           {!isEmpty && (
             <div className="chat-quick">
               <span className="chat-quick__label">Ask for:</span>
@@ -574,21 +508,42 @@ export default function Chat() {
               ))}
             </div>
           )}
+
+          {photo && (
+            <div className="chat-attach">
+              <img src={photo.dataUrl} alt="" />
+              <span className="chat-attach__name">{photo.name}</span>
+              <button type="button" onClick={() => setPhoto(null)} aria-label="Remove photo">×</button>
+            </div>
+          )}
+
           <form onSubmit={onSubmit}>
+            <input
+              ref={fileRef} type="file" accept="image/*" hidden
+              onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }}
+            />
             <button
-              type="button" className="chat-composer__icon" aria-label="Send a photo"
-              onClick={() => runTask(TASKS.find((task) => task.key === 'scan'))}
+              type="button" className="chat-composer__icon" aria-label="Add a photo"
+              onClick={() => fileRef.current?.click()}
             >
               <IconCamera className="chat-composer__icon-svg" />
             </button>
             <input
-              type="text" value={draft} onChange={(e) => setDraft(e.target.value)}
-              placeholder="Write it however you'd say it out loud…" aria-label="Write your question"
+              ref={inputRef} type="text" value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter sends. A lone text input in a form submits implicitly,
+                // but that breaks the moment anyone adds a second field — and
+                // "my Enter did nothing" is fatal in a chat box.
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft, photo); }
+              }}
+              placeholder="Write it however you'd say it out loud…"
+              aria-label="Write your question"
             />
-            <button type="button" className="chat-composer__icon" aria-label="Speak instead of typing">
-              <IconMic className="chat-composer__icon-svg" />
-            </button>
-            <button type="submit" className="chat-composer__send" aria-label="Send" disabled={!draft.trim() || busy}>
+            <button
+              type="submit" className="chat-composer__send" aria-label="Send"
+              disabled={busy || (!draft.trim() && !photo)}
+            >
               <IconSend className="chat-composer__send-svg" />
             </button>
           </form>
@@ -599,4 +554,17 @@ export default function Chat() {
       </div>
     </div>
   );
+}
+
+/* "Today" / "Yesterday" / a date — how you recognise the thread you mean. */
+function whenLabel(iso) {
+  if (!iso) return '';
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return '';
+  const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOf(new Date()) - startOf(then)) / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return then.toLocaleDateString(undefined, { weekday: 'long' });
+  return then.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
