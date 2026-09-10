@@ -78,3 +78,21 @@
 .ctimer__btn--reset:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.24);
 }
+
+/* Compact face for the floating dock — same clock, no room for a label. */
+.ctimer--compact {
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 12px;
+}
+
+.ctimer--compact .ctimer__readout b { font-size: 18px; }
+.ctimer--compact .ctimer__controls { gap: 5px; }
+
+.ctimer--compact .ctimer__btn {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.ctimer--compact .ctimer__btn--reset { font-size: 14px; }

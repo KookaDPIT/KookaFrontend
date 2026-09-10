@@ -38,6 +38,16 @@ const ZOOM_MAX = 1.8;
    "Fit" is a button for when you want the whole board. */
 const ZOOM_START = 0.9;
 
+/* Every shipped lesson carries its own emoji, but a lesson written from the
+   admin console can arrive without one, and a blank hexagon is unreadable in a
+   board of fifty. Fall back to the branch's emoji, then to a plain marker —
+   never to nothing. */
+function lessonIcon(node, branches) {
+  if (node.icon) return node.icon;
+  const branch = branches.find((b) => b.id === node.branch);
+  return branch?.icon || '•';
+}
+
 function hexToPixel(q, r) {
   return { x: HEX_W * (q + r / 2), y: HEX_ROW * r };
 }
@@ -80,8 +90,18 @@ export default function Learn() {
   // canvas pan/zoom
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  /* Programmatic moves (the +/− buttons, "Fit", jumping to a node) glide;
+     dragging must not, or the board would lag a frame behind the pointer.
+     The flag is what puts the CSS transition on the canvas. */
+  const [animating, setAnimating] = useState(false);
   const dragRef = useRef(null);
   const viewportRef = useRef(null);
+  /* A mirror of the current view, so the zoom maths can read where we are
+     without making every caller a state updater. */
+  const viewRef = useRef({ zoom: 1, pan: { x: 0, y: 0 } });
+  useEffect(() => {
+    viewRef.current = { zoom, pan };
+  }, [zoom, pan]);
 
   const flash = useCallback((msg) => {
     setToast(msg);
@@ -192,6 +212,40 @@ export default function Learn() {
     centred.current = true;
   }, [layout, selected]);
 
+  /* Take the transition back off once the glide is over, so a drag that starts
+     a moment later is not interpolated. A timer rather than `transitionend`:
+     that event does not fire reliably here, and a flag stuck on would make
+     every subsequent drag feel like lag. */
+  useEffect(() => {
+    if (!animating) return undefined;
+    const id = window.setTimeout(() => setAnimating(false), 400);
+    return () => window.clearTimeout(id);
+  }, [animating]);
+
+  /* Zoom around a fixed point, the way a map does: whatever is under the
+     cursor (or, with no cursor, the middle of the viewport) stays exactly
+     where it is while everything grows around it. Scaling without this pins
+     the board's top-left corner instead, which throws the lesson you were
+     looking at off-screen on every step. */
+  const zoomTo = useCallback((next, anchor = null, smooth = true) => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const { zoom: z0, pan: p0 } = viewRef.current;
+    const z1 = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, typeof next === 'function' ? next(z0) : next));
+    if (Math.abs(z1 - z0) < 0.0005) return;
+
+    const rect = el.getBoundingClientRect();
+    const ax = anchor ? anchor.x - rect.left : rect.width / 2;
+    const ay = anchor ? anchor.y - rect.top : rect.height / 2;
+    // the board coordinate currently under the anchor
+    const bx = (ax - p0.x) / z0;
+    const by = (ay - p0.y) / z0;
+
+    setAnimating(smooth);
+    setZoom(z1);
+    setPan({ x: ax - bx * z1, y: ay - by * z1 });
+  }, []);
+
   /* Wheel zooms only with a modifier held. Plain wheel must keep scrolling the
      page: the tree sits mid-page, and hijacking the wheel traps you on it.
 
@@ -204,15 +258,17 @@ export default function Learn() {
     const handler = (e) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * (e.deltaY > 0 ? 0.9 : 1.1))));
+      zoomTo((z) => z * (e.deltaY > 0 ? 0.88 : 1.14), { x: e.clientX, y: e.clientY });
     };
     el.addEventListener('wheel', handler, { passive: false });
     return () => el.removeEventListener('wheel', handler);
-  }, []);
+  }, [zoomTo]);
 
   const onPointerDown = (e) => {
     // Only start a drag on the canvas background, never on a hexagon.
     if (e.target.closest('.lb-hex')) return;
+    // a transition here would make the board trail the pointer
+    setAnimating(false);
     dragRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -230,6 +286,7 @@ export default function Learn() {
     const { clientWidth, clientHeight } = viewportRef.current;
     const fit = Math.min(clientWidth / layout.width, clientHeight / layout.height, 1);
     const next = Math.max(ZOOM_MIN, fit);
+    setAnimating(true);
     setZoom(next);
     setPan({
       x: (clientWidth - layout.width * next) / 2,
@@ -242,6 +299,7 @@ export default function Learn() {
     const node = layout?.placed.find((n) => n.slug === slug);
     if (!node || !viewportRef.current) return;
     const { clientWidth, clientHeight } = viewportRef.current;
+    setAnimating(true);
     setPan({ x: clientWidth / 2 - node.x * zoom, y: clientHeight / 2 - node.y * zoom });
   };
 
@@ -525,7 +583,9 @@ export default function Learn() {
         <aside className="lb-side">
           {detail && !detailLoading ? (
             <div className={`lb-detail lb-detail--${detail.state}`}>
-              <div className="lb-detail__icon" aria-hidden="true">{detail.icon}</div>
+              <div className="lb-detail__icon" aria-hidden="true">
+                {lessonIcon(detail, tree?.branches || [])}
+              </div>
               <span className={`lb-state lb-state--${detail.state}`}>
                 {t(`learn.state.${detail.state}`)}
               </span>
@@ -625,13 +685,13 @@ export default function Learn() {
               <em className="lb-canvas-bar__hint">{t('learn.panHint')}</em>
             </span>
             <div className="lb-canvas-bar__zoom">
-              <button type="button" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z * 0.85))}
+              <button type="button" onClick={() => zoomTo((z) => z * 0.8)}
                       aria-label={t('learn.zoomOut')}>−</button>
               <button type="button" onClick={resetView}>{t('learn.fitView')}</button>
               <button type="button" onClick={() => centreOn(selected)} disabled={!selected}>
                 {t('learn.locate')}
               </button>
-              <button type="button" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.15))}
+              <button type="button" onClick={() => zoomTo((z) => z * 1.25)}
                       aria-label={t('learn.zoomIn')}>+</button>
             </div>
           </div>
@@ -646,7 +706,7 @@ export default function Learn() {
           >
             {layout && (
               <div
-                className="lb-canvas"
+                className={`lb-canvas ${animating ? 'is-animating' : ''}`}
                 style={{
                   width: layout.width,
                   height: layout.height,
@@ -683,7 +743,9 @@ export default function Learn() {
                       className="lb-hex__face"
                       style={{ width: HEX_W - HEX_GAP, height: HEX_H - HEX_GAP }}
                     >
-                      <span className="lb-hex__icon">{node.icon}</span>
+                      <span className="lb-hex__icon">
+                        {lessonIcon(node, tree?.branches || [])}
+                      </span>
                       {node.state === 'mastered' && <span className="lb-hex__crown" aria-hidden="true">★</span>}
                       {node.state === 'completed' && <span className="lb-hex__check" aria-hidden="true">✓</span>}
                       {node.state === 'locked' && <span className="lb-hex__lock" aria-hidden="true">🔒</span>}

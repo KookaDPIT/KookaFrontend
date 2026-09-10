@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
+import Onboarding from './pages/auth/Onboarding'
 import AppLayout from './pages/app/AppLayout'
 import Home from './pages/app/Home'
 import Chat from './pages/app/Chat'
@@ -72,6 +73,18 @@ function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        {/* The one question we ask a brand-new account, before the app opens:
+            what can't you eat? It sits outside the shell on purpose — there is
+            exactly one thing to do on it. */}
+        <Route
+          path="/welcome"
+          element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Suspended accounts are pinned here — outside the app shell, since
             none of its navigation would work for them anyway. */}

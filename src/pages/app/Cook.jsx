@@ -5,9 +5,10 @@ import { getRecipe } from '../../services/recipes';
 import { askWhileCooking } from '../../services/ai';
 import { verifyCook } from '../../services/reviews';
 import { refreshUser } from '../../user';
+import { armTimer, endCook, startCook, updateCook, useCookSession } from '../../cook';
 import Modal from '../../components/Modal';
 import CookTimer from '../../components/CookTimer';
-import { KookaAvatar, IconSparkle, IconSend, IconBack } from '../../components/Icons';
+import { KookaAvatar, IconSparkle, IconSend, IconHome, IconBack } from '../../components/Icons';
 import './Cook.css';
 
 /* ==========================================================================
@@ -20,6 +21,11 @@ import './Cook.css';
 
    `localCookReply` is the offline fallback: if the AI call fails we still say
    something useful from the recipe data we already have on the client.
+
+   Where you are in the recipe — and the step timer — live in the shared cook
+   session (src/cook.js), not in this component. That is what lets you leave
+   for the forum mid-braise and come back to step 4 with the clock still
+   honest, and what the corner dock reads while you are away.
    ========================================================================== */
 
 function localCookReply(text, { step, stepNo, title }) {
@@ -45,11 +51,23 @@ export default function Cook() {
   const { t } = useTranslation();
   const [recipe, setRecipe] = useState(undefined);
 
-  const [stepIndex, setStepIndex] = useState(0);
+  const session = useCookSession();
+  const recipeId = Number(id);
+  /* The session is the source of truth for the step, so leaving and coming
+     back lands where you were. Until it exists (first paint, or a session for
+     a different recipe) we show step 1. */
+  const stepIndex =
+    session && session.recipeId === recipeId ? session.stepIndex : 0;
+  const setStepIndex = (next) =>
+    updateCook({
+      stepIndex: typeof next === 'function' ? next(stepIndex) : next,
+    });
 
   // "I cooked it" verification flow — the photo is sent straight to the AI and
   // never stored (no ImageKit upload).
   const [showFinish, setShowFinish] = useState(false);
+  // giving up: the photo check is never reached, so the recipe's XP is not won
+  const [forfeitOpen, setForfeitOpen] = useState(false);
   const [cookFile, setCookFile] = useState(null);
   const [cookPreview, setCookPreview] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -57,7 +75,12 @@ export default function Cook() {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    getRecipe(id).then(setRecipe).catch(() => setRecipe(null));
+    getRecipe(id)
+      .then((r) => {
+        setRecipe(r);
+        startCook(r);
+      })
+      .catch(() => setRecipe(null));
   }, [id]);
 
   const steps = recipe?.steps || [];
@@ -66,6 +89,13 @@ export default function Cook() {
   const timedSteps = steps
     .map((s, i) => ({ ...s, no: i + 1 }))
     .filter((s) => s.timer);
+
+  /* Hand the current step's timer to the session. `armTimer` is a no-op when
+     the same spec is already loaded, so a re-render never resets a countdown
+     that is mid-boil. */
+  useEffect(() => {
+    armTimer(step.timer, step.label, stepIndex);
+  }, [step.timer, step.label, stepIndex]);
 
   const pickFile = (f) => {
     if (!f) return;
@@ -82,7 +112,11 @@ export default function Cook() {
     try {
       const res = await verifyCook(id, cookFile);
       setVerifyResult(res);
-      if (res.verified) refreshUser();
+      if (res.verified) {
+        // the pan is off the stove — clear the session so the dock goes away
+        endCook();
+        refreshUser();
+      }
     } catch {
       setVerifyResult({ verified: false, reason: t('common.error') });
     } finally {
@@ -166,6 +200,11 @@ export default function Cook() {
             <IconBack className="cook__exit-icon" /> {recipe.title}
           </button>
           <span className="cook__count">{t('cook.stepOf', { n: stepIndex + 1, total: steps.length })}</span>
+          {/* Leaving does not throw the cook away: the session keeps the step
+              and the timer, and the corner dock brings you back. */}
+          <button type="button" className="cook__home" onClick={() => navigate('/home')}>
+            <IconHome className="cook__home-icon" /> {t('cook.goHome')}
+          </button>
         </div>
 
         <div className="cook__progress">
@@ -178,9 +217,7 @@ export default function Cook() {
         <p className="cook__step">{step.text}</p>
 
         <div className="cook__timerrow">
-          {step.timer && (
-            <CookTimer key={stepIndex} timer={step.timer} label={step.label} />
-          )}
+          {step.timer && <CookTimer />}
           <div className="cook__voice">
             <button type="button" className="cook__vchip" onClick={() => openAssistant(t('cook.chipRepeat'))}>
               {t('cook.chipRepeat')}
@@ -267,6 +304,13 @@ export default function Cook() {
         </button>
         <button
           type="button"
+          className="cook__giveup"
+          onClick={() => setForfeitOpen(true)}
+        >
+          {t('cook.forfeit')}
+        </button>
+        <button
+          type="button"
           className="cook__ai"
           onClick={toggleAssistant}
           aria-label={t('cook.askTitle')}
@@ -276,6 +320,35 @@ export default function Cook() {
           <span>{t('cook.askShort')}</span>
         </button>
       </div>
+
+      {/* ===== GIVE UP ===== */}
+      <Modal
+        open={forfeitOpen}
+        onClose={() => setForfeitOpen(false)}
+        title={t('cook.forfeitTitle')}
+        footer={
+          <>
+            <button type="button" className="kbtn kbtn--ghost" onClick={() => setForfeitOpen(false)}>
+              {t('cook.keepCooking')}
+            </button>
+            <button
+              type="button"
+              className="kbtn kbtn--danger"
+              onClick={() => {
+                endCook();
+                setForfeitOpen(false);
+                navigate('/home');
+              }}
+            >
+              {t('cook.forfeitConfirm')}
+            </button>
+          </>
+        }
+      >
+        <p className="cook__forfeit-note">
+          {t('cook.forfeitNote', { title: recipe.title })}
+        </p>
+      </Modal>
 
       {/* ===== "I cooked it" verification (photo NOT stored) ===== */}
       <Modal open={showFinish} onClose={() => setShowFinish(false)} title={t('cook.verifyTitle')}>

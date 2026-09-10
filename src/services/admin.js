@@ -6,6 +6,14 @@ import api from '../api';
 
 export const ROLES = ['user', 'moderator', 'admin'];
 
+// ----- dashboard -----
+/* Totals, the last seven days, what is sitting in the queues, and a two-week
+   trend. One request — the console should not need six to draw a summary. */
+export async function getModerationStats() {
+  const { data } = await api.get('/admin/stats');
+  return data;
+}
+
 // ----- recipes -----
 export async function getModerationQueue(status = 'flagged') {
   const { data } = await api.get('/admin/recipes', { params: { status } });

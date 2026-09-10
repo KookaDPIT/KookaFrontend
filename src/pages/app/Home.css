@@ -82,6 +82,12 @@
       rgba(255, 255, 255, 0.02) 14px 28px
     ),
     #2c1d13;
+  /* The inline style sets only `background-image`, which replaces the stripe
+     pattern above but inherits none of its sizing — so the dish photo tiled
+     across the hero at its natural size. Cover it once, centred. */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%);
   mask-image: linear-gradient(90deg, transparent 0%, #000 42%);
   pointer-events: none;
@@ -492,16 +498,30 @@
 .home-reviews__add .home-btn { flex-shrink: 0; padding: 12px 20px; }
 
 /* ===== WIRED-UP CONTENT (real data) ==================================== */
-.home-level {
-  padding: 7px 14px;
+/* The rank pill carries its own colour (set inline from RANK_COLORS), so the
+   ladder reads the same here as on a recipe card or a badge. No border: the
+   fill is the signal, and an outline on top of it only muddies the hue. */
+.home-rank {
+  padding: 8px 16px;
+  border: none;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   font-family: var(--font-important), sans-serif;
   font-weight: 700;
   font-size: 13px;
-  color: #fff8ef;
+  letter-spacing: 0.2px;
+  color: #fff;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: transform 0.12s ease, box-shadow 0.2s ease;
 }
+
+.home-rank:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.34);
+}
+
+.home-rank:active { transform: none; }
 
 .home-avatar { background-size: cover; background-position: center; }
 
@@ -609,7 +629,10 @@
   font-weight: 700;
   font-size: 14px;
   color: #2a2016;
+  text-decoration: none;
 }
+
+.home-review__who:hover { text-decoration: underline; }
 
 .home-review__recipe {
   display: inline-block;
@@ -749,6 +772,20 @@
 [data-theme="dark"] .home-avatar:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* The empty-state panel kept its cream fill in dark mode, which now shows up
+   far more often — every chip has its own "nothing here yet" message. */
+[data-theme="dark"] .home-empty {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 245, 240, 0.62);
+}
+
+/* The reviewer's name was the one thing in this panel still painted with the
+   light-theme ink, so on a dark card it disappeared into the background. */
+[data-theme="dark"] .home-review__who { color: #f5f5f0; }
+[data-theme="dark"] .home-review__text { color: rgba(245, 245, 240, 0.72); }
+[data-theme="dark"] .home-review { border-bottom-color: rgba(255, 255, 255, 0.09); }
 
 [data-theme="dark"] .home-daily__badge {
   background: #ff6b35;
@@ -902,3 +939,140 @@
 [data-theme="dark"] .home-link:hover {
   color: #ffa070;
 }
+
+/* ==========================================================================
+   FILTER CHIPS THAT DO REAL WORK
+   Two of the five need something from the reader before they can answer: the
+   fridge wants your ingredients, the allergen filter wants your allergies.
+   Both ask inline rather than showing an empty grid.
+   ========================================================================== */
+.home-pantry {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fffaf1;
+  box-shadow: 0 6px 20px rgba(120, 80, 30, 0.08);
+}
+
+.home-pantry__label {
+  display: block;
+  margin-bottom: 9px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #2a2016;
+}
+
+.home-pantry__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-pantry__row input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px 16px;
+  border: 1px solid #eadfc6;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14.5px;
+  color: #2a2016;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-pantry__row input:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.14);
+}
+
+.home-pantry__row input::placeholder { color: #b3a888; }
+
+.home-pantry__clear {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(120, 80, 30, 0.09);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #6b5d43;
+  cursor: pointer;
+}
+
+.home-pantry__clear:hover { background: rgba(120, 80, 30, 0.16); }
+
+.home-pantry__hint {
+  margin: 9px 0 0;
+  font-size: 12.5px;
+  color: #8a7a5c;
+}
+
+.home-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 22px;
+  padding: 15px 18px;
+  border-radius: 18px;
+  background: #fffaf1;
+  box-shadow: 0 6px 20px rgba(120, 80, 30, 0.08);
+}
+
+.home-nudge p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b5d43;
+}
+
+/* per-card explanations: why this recipe is in front of you */
+.home-feed__item { display: flex; flex-direction: column; }
+
+.home-match {
+  margin: 7px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #6b5d43;
+}
+
+.home-match b { color: #c25317; }
+.home-match span { display: block; }
+
+.home-warn {
+  margin: 6px 2px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #c2452c;
+}
+
+[data-theme="dark"] .home-pantry,
+[data-theme="dark"] .home-nudge {
+  background: #241b14;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .home-pantry__label { color: #f5f5f0; }
+[data-theme="dark"] .home-pantry__hint,
+[data-theme="dark"] .home-nudge p,
+[data-theme="dark"] .home-match { color: rgba(245, 245, 240, 0.66); }
+
+[data-theme="dark"] .home-pantry__row input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .home-pantry__row input::placeholder {
+  color: rgba(255, 248, 239, 0.35);
+}
+
+[data-theme="dark"] .home-pantry__clear {
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(245, 245, 240, 0.8);
+}
+
+[data-theme="dark"] .home-match b { color: #ff9b6a; }
+[data-theme="dark"] .home-warn { color: #ff8a72; }

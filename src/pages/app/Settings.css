@@ -500,3 +500,63 @@
 }
 [data-theme="dark"] .st-field input.is-free,
 [data-theme="dark"] .st-prefix.is-free input { border-color: #7ec99b; }
+
+/* ==========================================================================
+   ALLERGIES — a grid of things to switch off, not a form to fill in.
+   Selected chips carry the brand accent; unselected ones stay quiet, so the
+   list reads as "these are the ones that matter to me" at a glance.
+   ========================================================================== */
+.st-allergens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.st-allergen {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  border: 1px solid #eadfc6;
+  border-radius: 13px;
+  background: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #2a2016;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.st-allergen:hover { border-color: #e0cda6; }
+
+.st-allergen.is-on {
+  border-color: #ff6b35;
+  background: rgba(255, 107, 53, 0.09);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.13);
+}
+
+.st-allergen span { font-size: 17px; line-height: 1; }
+
+.st-allergens__note {
+  margin: 0 0 4px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #6b5d43;
+}
+
+[data-theme="dark"] .st-allergen {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .st-allergen.is-on {
+  border-color: #ff8a5a;
+  background: rgba(255, 107, 53, 0.17);
+}
+
+[data-theme="dark"] .st-allergens__note { color: rgba(245, 245, 240, 0.72); }

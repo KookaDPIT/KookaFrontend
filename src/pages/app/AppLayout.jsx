@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme } from '../../settings';
 import { useUser, refreshUser } from '../../user';
+import CookDock from '../../components/CookDock';
 import kookaIcon from '../../assets/kooka-icon.png';
 import './AppLayout.css';
 
@@ -52,8 +53,19 @@ const ICONS = {
   ),
 };
 
+/* `owns` widens which routes light a rail item up. Recipes, search and the
+   recipe editor have no rail entry of their own — they are places you reach
+   *from* the feed — so opening someone's recipe should keep saying "you are in
+   Home", not blank the whole rail. */
 const NAV = [
-  { to: '/home', key: 'home', icon: ICONS.home },
+  {
+    to: '/home',
+    key: 'home',
+    icon: ICONS.home,
+    owns: (path) => ['/home', '/recipe', '/search', '/create'].some(
+      (p) => path === p || path.startsWith(`${p}/`),
+    ),
+  },
   { to: '/chat', key: 'chat', icon: ICONS.chat },
   { to: '/learn', key: 'learn', icon: ICONS.learn },
   { to: '/forum', key: 'forum', icon: ICONS.forum },
@@ -64,6 +76,7 @@ export default function AppLayout() {
   const { t, i18n } = useTranslation();
   const [settings, updateSettings] = useSettings();
   const [me] = useUser();
+  const { pathname } = useLocation();
 
   /* The cached user can be stale — someone suspended two minutes ago still has
      a clean copy in localStorage. Re-ask on mount, and again whenever the tab
@@ -115,7 +128,13 @@ export default function AppLayout() {
 
         <nav className="app-nav__links">
           {(isStaff ? [...NAV, { to: '/admin', key: 'admin', icon: ICONS.admin }] : NAV).map((item) => (
-            <NavLink key={item.to} to={item.to} className="app-nav__link">
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `app-nav__link${isActive || item.owns?.(pathname) ? ' active' : ''}`
+              }
+            >
               <span className="app-nav__icon">{item.icon}</span>
               <span className="app-nav__label">{t(`nav.${item.key}`)}</span>
             </NavLink>
@@ -148,6 +167,9 @@ export default function AppLayout() {
       <main className="app-main">
         <Outlet />
       </main>
+
+      {/* the pan you left on the stove — hidden on the cook-along itself */}
+      <CookDock />
     </div>
   );
 }

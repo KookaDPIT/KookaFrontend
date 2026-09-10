@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRecipe, moderateRecipe } from '../../services/recipes';
 import ModerationBar from '../../components/ModerationBar';
@@ -168,8 +168,11 @@ export default function Recipe() {
       )}
 
       <header className="recipe__hero">
-        <button type="button" className="recipe__back" onClick={() => navigate(-1)}>
-          <IconBack className="recipe__back-icon" /> {t('common.back')}
+        {/* Home, not history. Recipes are reached from the feed and left
+            through the cook-along, so `navigate(-1)` kept sending people back
+            into the steps they had just walked out of. */}
+        <button type="button" className="recipe__back" onClick={() => navigate('/home')}>
+          <IconBack className="recipe__back-icon" /> {t('recipe.backHome')}
         </button>
 
         <div className="recipe__hero-inner">
@@ -203,7 +206,14 @@ export default function Recipe() {
             </ul>
 
             {author && (
-              <div className="recipe__author">
+              /* Tapping the name or the picture is how people expect to reach
+                 a profile — it was the one place in the app where that did
+                 nothing. */
+              <Link
+                className="recipe__author"
+                to={`/profile/${author.id}`}
+                title={t('recipe.viewProfile', { name: author.full_name || author.username })}
+              >
                 <span className="recipe__author-avatar"
                   style={author.avatar_url ? { backgroundImage: `url(${author.avatar_url})` } : undefined}>
                   {!author.avatar_url && (author.full_name || author.username || '?')[0].toUpperCase()}
@@ -211,7 +221,15 @@ export default function Recipe() {
                 <span className="recipe__author-text">
                   {t('recipe.by')} <b>{author.full_name || author.username}</b>
                 </span>
-              </div>
+              </Link>
+            )}
+
+            {/* You told us to avoid these. Better here, before the shopping
+                list, than three steps into the method. */}
+            {recipe.allergen_conflicts?.length > 0 && (
+              <p className="recipe__allergy-warn">
+                ⚠️ {t('recipe.allergyWarning', { list: recipe.allergen_conflicts.join(', ') })}
+              </p>
             )}
 
             <div className="recipe__cta">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getForumMeta, listPosts, votePost } from '../../services/forum';
 import { languageName } from '../../lib/languages';
@@ -71,18 +71,29 @@ function Tile({ post, lead, onOpen, onVote, t }) {
           {lead && post.excerpt && <p className="fo-tile__excerpt">{post.excerpt}</p>}
         </span>
 
-        <span className="fo-tile__foot">
-          <span className="fo-tile__who">
-            @{post.author?.username || '—'} · {timeAgo(post.created_at, t)}
-          </span>
-          <span className="fo-tile__stat" title={t('forum.commentsLabel')}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
-            </svg>
-            {post.comment_count}
-          </span>
-        </span>
       </button>
+
+      {/* The byline floats over the tile face rather than sitting inside the
+          open-button: the handle has to be a link to the author's profile, and
+          a link nested in a button is neither valid nor clickable. The strip
+          itself ignores the pointer, so everything except the handle still
+          opens the post. */}
+      <div className="fo-tile__foot">
+        {post.author?.id ? (
+          <Link className="fo-tile__who" to={`/profile/${post.author.id}`}>
+            @{post.author.username}
+          </Link>
+        ) : (
+          <span className="fo-tile__who">@—</span>
+        )}
+        <span className="fo-tile__when">{timeAgo(post.created_at, t)}</span>
+        <span className="fo-tile__stat" title={t('forum.commentsLabel')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
+          </svg>
+          {post.comment_count}
+        </span>
+      </div>
 
       {/* the vote pill floats over the tile so the whole face stays clickable */}
       <div className="fo-tile__vote">

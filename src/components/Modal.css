@@ -97,6 +97,13 @@
 .kbtn--primary:hover { background: #f2591f; }
 .kbtn--ghost { background: rgba(120, 80, 30, 0.1); color: #6b5d43; }
 .kbtn--ghost:hover { background: rgba(120, 80, 30, 0.16); }
+/* destructive confirm — giving up on a cook, deleting for good */
+.kbtn--danger {
+  background: #d2452c;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(210, 69, 44, 0.26);
+}
+.kbtn--danger:hover { background: #b93a23; }
 
 /* form controls inside modals */
 .kfield { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }

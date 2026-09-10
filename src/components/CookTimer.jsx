@@ -1,74 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { formatTimer, resetTimer, timerRemaining, toggleTimer, useCookSession } from '../cook';
 import './CookTimer.css';
 
-/* Parse "M:SS", "MM:SS" or "H:MM:SS" into total seconds. */
-function parseTimer(str) {
-  if (!str) return 0;
-  const parts = String(str).split(':').map((n) => parseInt(n, 10) || 0);
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  return parts[0] || 0;
-}
+/* Countdown for the current cook step.
 
-function fmt(total) {
-  const s = Math.max(0, total);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  const pad = (n) => String(n).padStart(2, '0');
-  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
-}
+   The clock itself lives in the shared cook session (src/cook.js), not in this
+   component: the same timer has to keep running while you browse the rest of
+   the app and show up in the dock, so a component-local interval would be the
+   wrong owner. This is only the face. */
+export default function CookTimer({ compact = false }) {
+  const session = useCookSession();
+  const timer = session?.timer;
+  if (!timer) return null;
 
-/* Countdown timer for a cook step, with play/pause + reset.
-   Mount with a key tied to the step so it resets when the step changes. */
-export default function CookTimer({ timer, label }) {
-  const total = useMemo(() => parseTimer(timer), [timer]);
-  // Parent mounts this with key={stepIndex}, so a step change remounts the
-  // component and re-seeds state from `total` — no reset effect needed.
-  const [remaining, setRemaining] = useState(total);
-  const [running, setRunning] = useState(false);
-  const tickRef = useRef(null);
-
-  useEffect(() => {
-    if (!running) return undefined;
-    tickRef.current = window.setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          window.clearInterval(tickRef.current);
-          setRunning(false);
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(tickRef.current);
-  }, [running]);
-
+  const remaining = timerRemaining(timer);
   const done = remaining === 0;
 
   return (
-    <div className={`ctimer ${done ? 'is-done' : ''} ${running ? 'is-running' : ''}`}>
+    <div className={`ctimer ${done ? 'is-done' : ''} ${timer.running ? 'is-running' : ''} ${compact ? 'ctimer--compact' : ''}`}>
       <div className="ctimer__readout">
-        <b>{fmt(remaining)}</b>
-        {label && <small>{label}</small>}
+        <b>{formatTimer(remaining)}</b>
+        {timer.label && !compact && <small>{timer.label}</small>}
       </div>
       <div className="ctimer__controls">
         <button
           type="button"
           className="ctimer__btn"
-          onClick={() => setRunning((v) => !v)}
+          onClick={toggleTimer}
           disabled={done}
-          aria-label={running ? 'Pause' : 'Play'}
+          aria-label={timer.running ? 'Pause' : 'Play'}
         >
-          {running ? '⏸' : '▶'}
+          {timer.running ? '⏸' : '▶'}
         </button>
         <button
           type="button"
           className="ctimer__btn ctimer__btn--reset"
-          onClick={() => {
-            setRunning(false);
-            setRemaining(total);
-          }}
+          onClick={resetTimer}
           aria-label="Reset"
         >
           ↺

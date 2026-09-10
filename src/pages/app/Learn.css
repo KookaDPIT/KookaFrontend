@@ -616,6 +616,21 @@
   top: 0;
   left: 0;
   transform-origin: 0 0;
+  /* GPU-friendly, and it stops text re-rastering on every frame of a zoom */
+  will-change: transform;
+}
+
+/* Only for moves the board makes on its own — a step of the +/− buttons, a
+   wheel notch, "Fit", jumping to a lesson. Dragging clears the class, because
+   an interpolated drag reads as lag rather than as smoothness. The curve
+   decelerates hard, which is what makes a zoom feel like a map rather than a
+   slide changing. */
+.lb-canvas.is-animating {
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-canvas.is-animating { transition: none; }
 }
 
 .lb-links {

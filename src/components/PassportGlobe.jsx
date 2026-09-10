@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 import WorldGlobe from './WorldGlobe';
@@ -10,8 +9,6 @@ import './PassportGlobe.css';
 export default function PassportGlobe({ open, onClose, countries = [] }) {
   const { t } = useTranslation();
 
-  const visited = useMemo(() => countries.map((c) => c.country), [countries]);
-
   // Mounting the globe (and its geojson) only when open keeps the modal light.
   if (!open) return null;
 
@@ -20,7 +17,9 @@ export default function PassportGlobe({ open, onClose, countries = [] }) {
       <p className="pglobe__sub">{t('passport.subtitle', { count: countries.length })}</p>
 
       <div className="pglobe__map">
-        <WorldGlobe visited={visited} />
+        {/* the whole payload, counts included — the globe deepens each
+            stamp with how many dishes came from there */}
+        <WorldGlobe visited={countries} />
       </div>
       <p className="pglobe__hint">{t('passport.spin')}</p>
 

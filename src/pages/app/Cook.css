@@ -52,6 +52,27 @@
 .cook__exit:hover { background: rgba(255, 255, 255, 0.16); }
 .cook__exit-icon { width: 16px; height: 16px; }
 
+/* Way out that is not "finish or lose it" — the session survives, and the
+   corner dock brings you back to this exact step. */
+.cook__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff8ef;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cook__home:hover { background: rgba(255, 255, 255, 0.16); }
+.cook__home-icon { width: 15px; height: 15px; }
+
 .cook__count {
   margin-left: auto;
   font-size: 13px;
@@ -383,6 +404,26 @@
 .cook__ai:hover { background: rgba(255, 107, 53, 0.26); color: #ffd0b6; }
 .cook__ai-icon { width: 18px; height: 18px; }
 
+/* Giving up is a real option, but a quiet one — the same weight as the
+   secondary controls, never louder than "next step". */
+.cook__giveup {
+  padding: 13px 18px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255, 248, 239, 0.6);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.cook__giveup:hover { color: #ff9b7a; border-color: rgba(255, 107, 53, 0.5); }
+
+.cook__forfeit-note { margin: 0; font-size: 14.5px; line-height: 1.55; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 980px) {
   .cook {
@@ -405,6 +446,7 @@
   .cook__stage { padding: 16px 18px 20px; }
   .cook__step { font-size: 24px; }
   .cook__foot { flex-wrap: wrap; padding: 12px 18px; }
+  .cook__giveup { padding: 11px 14px; font-size: 12.5px; }
   .cook__ai span { display: none; }
   .cook__ai { padding: 13px 16px; }
 }

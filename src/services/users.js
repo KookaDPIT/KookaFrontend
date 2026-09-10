@@ -88,3 +88,17 @@ export async function checkAvailability({ username, email } = {}) {
   const { data } = await api.get('/auth/availability', { params });
   return data; // { username_taken?: bool, email_taken?: bool }
 }
+
+/* The XP leaderboard. `scope` is 'global' or 'friends' (mutual follows only).
+   The response always carries `me`, even when your row is off the page — the
+   whole point is answering "where am I?". */
+export async function getLeaderboard(scope = 'global', limit = 50) {
+  const { data } = await api.get('/leaderboard', { params: { scope, limit } });
+  return data; // { scope, total, entries: [...], me }
+}
+
+/* The allergen vocabulary the backend matches recipes against. */
+export async function getAllergenCatalog() {
+  const { data } = await api.get('/allergens');
+  return data.allergens || [];
+}

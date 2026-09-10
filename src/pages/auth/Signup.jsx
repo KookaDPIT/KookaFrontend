@@ -132,7 +132,9 @@ export default function Signup() {
       if (token) localStorage.setItem('kooka_token', token);
       if (data?.user) localStorage.setItem('kooka_user', JSON.stringify(data.user));
 
-      navigate('/home');
+      // straight to the allergy question, not the feed: the feed's filters
+      // have nothing to work with until it is answered
+      navigate('/welcome', { replace: true });
     } catch (err) {
       const detail = err.response?.data?.detail;
       setError(typeof detail === 'string' ? detail : t('auth.signup.errFailed'));

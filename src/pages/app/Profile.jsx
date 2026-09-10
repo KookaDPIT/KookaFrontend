@@ -5,8 +5,9 @@ import { useSettings } from '../../settings';
 import { useUser, refreshUser } from '../../user';
 import {
   updateProfile, getUser, getUserRecipes, getPassport, getUserActivity,
-  getPassportCountry, hideActivity, follow, unfollow,
+  getPassportCountry, hideActivity, follow, unfollow, getLeaderboard,
 } from '../../services/users';
+import { RANK_COLORS } from '../../lib/ranks';
 import { countryOf } from '../../data/countries';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
@@ -79,6 +80,12 @@ export default function Profile() {
   const [countryRecipes, setCountryRecipes] = useState(null);
 
   // live backend data
+  // ranking tab — loaded on demand, one scope at a time
+  const [rankScope, setRankScope] = useState('global');
+  const [board, setBoard] = useState(null);
+  const [boardFor, setBoardFor] = useState(null);
+  const boardLoading = tab === 'ranking' && boardFor !== rankScope;
+
   const [liveRecipes, setLiveRecipes] = useState([]);
   const [passport, setPassport] = useState({ countries: [], total: 0 });
   const [activity, setActivity] = useState([]);
@@ -127,6 +134,27 @@ export default function Profile() {
     run();
     return () => { alive = false; };
   }, [targetId, isSelf, reloadTick]);
+
+  /* The leaderboard is your own standing, so it is only fetched when you open
+     the tab — and re-fetched when you flip between everyone and friends.
+     `boardFor` is what the held data answers, which makes "loading" derivable
+     instead of a second flag that can drift. */
+  useEffect(() => {
+    if (tab !== 'ranking' || boardFor === rankScope) return undefined;
+    let alive = true;
+    getLeaderboard(rankScope, 50)
+      .then((data) => {
+        if (!alive) return;
+        setBoard(data);
+        setBoardFor(rankScope);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setBoard({ entries: [], total: 0, me: null });
+        setBoardFor(rankScope);
+      });
+    return () => { alive = false; };
+  }, [tab, rankScope, boardFor]);
 
   // close the kebab menu on an outside click
   useEffect(() => {
@@ -271,7 +299,12 @@ export default function Profile() {
     }
   };
 
-  const TABS = ['activity', 'recipes', 'passport', 'badges'];
+  /* Ranking is about where *you* stand, so it is not offered on somebody
+     else's profile — the API would answer with the viewer's board anyway,
+     which under someone else's name would be a lie. */
+  const TABS = isSelf
+    ? ['activity', 'recipes', 'passport', 'ranking', 'badges']
+    : ['activity', 'recipes', 'passport', 'badges'];
   const isStaff = me?.role === 'admin' || me?.role === 'moderator';
   const initials = (p.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2);
   const aboutText = p.bio || (isSelf ? t('profile.about') : '');
@@ -300,7 +333,8 @@ export default function Profile() {
       const info = countryOf(c.country);
       return { code: c.country, flag: info.flag, name: info.name, dishes: c.count };
     });
-  const visitedCodes = passportList.map((c) => c.code);
+  // counts and all: the globe uses them to deepen the busier countries
+  const visitedStamps = passportList.map((c) => ({ country: c.code, count: c.dishes }));
 
   const avatarNode = p.avatar
     ? <img className="pf-avatar__img" src={p.avatar} alt="" />
@@ -512,7 +546,7 @@ export default function Profile() {
           {tab === 'passport' && (
             <div className="pf-passport-tab">
               <div className="pf-globe">
-                <WorldGlobe visited={visitedCodes} size={320} />
+                <WorldGlobe visited={visitedStamps} size={320} />
                 <p className="pf-globe__hint">{t('passport.spin')}</p>
               </div>
               {passportList.length === 0 ? (
@@ -532,6 +566,83 @@ export default function Profile() {
                     </button>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'ranking' && (
+            <div className="pf-rankboard">
+              <div className="pf-rankboard__scopes" role="tablist">
+                {['global', 'friends'].map((sc) => (
+                  <button
+                    key={sc}
+                    type="button"
+                    role="tab"
+                    aria-selected={rankScope === sc}
+                    className={`pf-rankscope ${rankScope === sc ? 'is-active' : ''}`}
+                    onClick={() => setRankScope(sc)}
+                  >
+                    {t(`profile.ranking.${sc}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="pf-rankboard__sub">
+                {t(`profile.ranking.${rankScope}Sub`)}
+              </p>
+
+              {boardLoading ? (
+                <p className="pf-empty">{t('common.loading')}…</p>
+              ) : (board?.entries?.length || 0) === 0 ? (
+                <p className="pf-empty">
+                  {rankScope === 'friends'
+                    ? t('profile.ranking.friendsEmpty')
+                    : t('profile.ranking.unranked')}
+                </p>
+              ) : (
+                <>
+                  {board.me && (
+                    <p className="pf-rankboard__you">
+                      {t('profile.ranking.youAre', {
+                        position: board.me.position,
+                        total: board.total,
+                      })}
+                    </p>
+                  )}
+                  <ol className="pf-ranklist">
+                    {board.entries.map((row) => {
+                      const colors = RANK_COLORS[row.rank?.rank] || RANK_COLORS.copper;
+                      return (
+                        <li
+                          key={row.id}
+                          className={`pf-rankrow ${row.is_self ? 'is-me' : ''}`}
+                          onClick={() => !row.is_self && navigate(`/profile/${row.id}`)}
+                        >
+                          <span className="pf-rankrow__pos">{row.position}</span>
+                          <span
+                            className="pf-rankrow__avatar"
+                            aria-hidden="true"
+                            style={row.avatar_url ? { backgroundImage: `url(${row.avatar_url})` } : undefined}
+                          >
+                            {!row.avatar_url && (row.full_name || row.username || '?')[0].toUpperCase()}
+                          </span>
+                          <span className="pf-rankrow__who">
+                            <b>{row.full_name || row.username}</b>
+                            <small>@{row.username}</small>
+                          </span>
+                          <span
+                            className="pf-rankrow__rank"
+                            style={{ background: colors.vibrant }}
+                          >
+                            {row.rank?.tier_label}
+                          </span>
+                          <span className="pf-rankrow__xp">
+                            {t('profile.ranking.xp', { xp: row.xp_total.toLocaleString() })}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </>
               )}
             </div>
           )}

@@ -123,13 +123,20 @@
 .recipe__cook:hover { background: #f2591f; }
 .recipe__cook:active { transform: translateY(1px); }
 
-/* author line */
+/* author line — a link to their profile since the redesign */
 .recipe__author {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.18s ease;
 }
+
+.recipe__author:hover { background: rgba(255, 255, 255, 0.1); }
+.recipe__author:hover .recipe__author-text b { text-decoration: underline; }
 
 .recipe__author-avatar {
   width: 34px;
@@ -154,6 +161,18 @@
 }
 
 .recipe__author-text b { color: #fff8ef; font-weight: 700; }
+
+/* You told us to avoid this — said once, plainly, before the ingredients. */
+.recipe__allergy-warn {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(226, 84, 58, 0.18);
+  border-left: 3px solid #e2543a;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffd8ce;
+}
 
 /* CTA: full-width cook button, with an optional edit button stacked below */
 .recipe__cta {

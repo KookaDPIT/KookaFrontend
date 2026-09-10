@@ -216,7 +216,11 @@
   font-family: var(--font-important), sans-serif;
   font-weight: 700;
   flex-shrink: 0;
+  text-decoration: none;
+  transition: box-shadow 0.18s ease;
 }
+
+.reviews__item-avatar:hover { box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.3); }
 
 .reviews__item-body {
   flex: 1;
@@ -234,7 +238,10 @@
   font-family: var(--font-important), sans-serif;
   font-weight: 700;
   color: var(--k-text);
+  text-decoration: none;
 }
+
+.reviews__item-name:hover { text-decoration: underline; }
 
 .reviews__item-text {
   margin: 0;

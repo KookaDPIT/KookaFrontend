@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme, settingsBlob } from '../../settings';
-import { refreshUser, logout as logoutUser } from '../../user';
+import { refreshUser, logout as logoutUser, useUser } from '../../user';
 import {
   updateProfile, changePassword, checkAvailability, getBlocked, unblockUser,
+  getAllergenCatalog,
 } from '../../services/users';
+import { ALLERGENS } from '../../lib/allergens';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import './Settings.css';
@@ -19,10 +21,14 @@ import './Settings.css';
    remain local for now.
    ========================================================================== */
 
-const SECTIONS = ['account', 'privacy', 'notifications', 'appearance', 'security', 'blocked'];
+const SECTIONS = [
+  'account', 'allergies', 'privacy', 'notifications', 'appearance',
+  'security', 'blocked',
+];
 
 const SECTION_ICONS = {
   account: '👤',
+  allergies: '🥜',
   privacy: '🔒',
   notifications: '🔔',
   appearance: '🎨',
@@ -68,12 +74,28 @@ export default function Settings() {
   const navigate = useNavigate();
   const [settings, update] = useSettings();
 
-  const [active, setActive] = useState('account');
+  /* `?section=` lets other screens land you on the right pane — the allergen
+     filter on Home sends you straight to the form it needs filled in, rather
+     than to Settings in general. */
+  const [params] = useSearchParams();
+  const requested = params.get('section');
+  const [active, setActive] = useState(
+    SECTIONS.includes(requested) ? requested : 'account',
+  );
   const [toast, setToast] = useState('');
   const [sessions, setSessions] = useState(SEED_SESSIONS);
   const [blocked, setBlocked] = useState([]);
   const [blockedLoaded, setBlockedLoaded] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
+
+  /* Allergies are a column on the account, not part of the client-preference
+     blob — the backend matches recipe allergens against them, so they have to
+     be real data rather than a display setting. `picked` is the working copy;
+     nothing is sent until Save. */
+  const [me] = useUser();
+  const [catalog, setCatalog] = useState(ALLERGENS);
+  const [picked, setPicked] = useState([]);
+  const [savingAllergies, setSavingAllergies] = useState(false);
 
   // password modal
   const [pwOpen, setPwOpen] = useState(false);
@@ -155,6 +177,26 @@ export default function Settings() {
     refreshUser();
   }, []);
 
+  // the catalogue is the same list the backend matches against; the local
+  // mirror in lib/allergens.js paints first and covers a failed call
+  useEffect(() => {
+    let alive = true;
+    getAllergenCatalog()
+      .then((list) => { if (alive && list.length) setCatalog(list); })
+      .catch(() => { /* mirror already on screen */ });
+    return () => { alive = false; };
+  }, []);
+
+  /* Re-seed the working copy whenever the saved list changes — the same
+     adjust-during-render pattern the account form uses, so a fresh GET /me
+     never fights with what is on screen. */
+  const savedAllergies = (me?.allergies || []).join(',');
+  const [seededAllergies, setSeededAllergies] = useState(null);
+  if (savedAllergies !== seededAllergies) {
+    setSeededAllergies(savedAllergies);
+    setPicked(me?.allergies || []);
+  }
+
   // the blocked list is real data now, so load it when that section is opened
   useEffect(() => {
     if (active !== 'blocked' || blockedLoaded) return undefined;
@@ -219,6 +261,22 @@ export default function Settings() {
       flash(errText(err, t('common.error')));
     } finally {
       setSavingAccount(false);
+    }
+  };
+
+  const toggleAllergy = (id) =>
+    setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+
+  const saveAllergies = async () => {
+    setSavingAllergies(true);
+    try {
+      await updateProfile({ allergies: picked });
+      await refreshUser(); // the feed filters read this off the cached account
+      flash(t('settings.allergies.saved'));
+    } catch (err) {
+      flash(errText(err, t('common.error')));
+    } finally {
+      setSavingAllergies(false);
     }
   };
 
@@ -371,6 +429,53 @@ export default function Settings() {
               <div className="st-actions">
                 <button type="button" className="st-save" onClick={saveAccount} disabled={savingAccount || accountBlocked}>
                   {savingAccount ? t('common.saving') : t('settings.account.save')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ALLERGIES */}
+          {active === 'allergies' && (
+            <div className="st-rows">
+              <div className="st-sub">{t('settings.allergies.title')}</div>
+              <div className="st-allergens">
+                {catalog.map((a) => {
+                  const on = picked.includes(a.id);
+                  return (
+                    <button
+                      type="button"
+                      key={a.id}
+                      className={`st-allergen ${on ? 'is-on' : ''}`}
+                      aria-pressed={on}
+                      onClick={() => toggleAllergy(a.id)}
+                    >
+                      <span aria-hidden="true">{a.emoji}</span>
+                      {a.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="st-allergens__note">
+                {picked.length === 0
+                  ? t('settings.allergies.none')
+                  : t('settings.allergies.selected', { count: picked.length })}
+              </p>
+              <p className="st-row__hint">{t('settings.allergies.hint')}</p>
+
+              <div className="st-actions st-actions--start">
+                {picked.length > 0 && (
+                  <button type="button" className="st-ghost" onClick={() => setPicked([])}>
+                    {t('settings.allergies.clear')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="st-save"
+                  onClick={saveAllergies}
+                  disabled={savingAllergies}
+                >
+                  {savingAllergies ? t('common.saving') : t('settings.allergies.save')}
                 </button>
               </div>
             </div>

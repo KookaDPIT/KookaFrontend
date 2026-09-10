@@ -11,8 +11,10 @@ import {
 import './Chat.css';
 
 /* ==========================================================================
-   ASK KOOKA — a real conversation with the assistant, written for people who
-   have never used a chatbot.
+   AI CHAT — a real conversation with the assistant, written for people who
+   have never used a chatbot. Kooka is still the one answering; the screen is
+   named for what it is, so it is findable by someone who has not met Kooka
+   yet.
 
    Deliberately NOT a bare prompt box: the five things Kooka is good at are
    named in plain language as cards on the welcome screen and as chips above
@@ -273,7 +275,11 @@ export default function Chat() {
   const [photo, setPhoto] = useState(null);        // { dataUrl, name }
   const [busy, setBusy] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  /* Closed on arrival. The history panel is for going back to something you
+     asked before — a minority of visits — and opening on top of the welcome
+     screen every time buried the thing people actually came for. The toggle
+     is one tap away, in the same place either way. */
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -448,7 +454,7 @@ export default function Chat() {
               <IconSidebar className="chat-sb__icon-svg" />
             </button>
           )}
-          <span className="chat-top__title">Ask Kooka</span>
+          <span className="chat-top__title">AI Chat</span>
           <span className="chat-top__sub">Cooking questions, answered while you stand in the kitchen</span>
           {!isEmpty && (
             <button type="button" className="chat-top__new" onClick={newChat}>Start over</button>

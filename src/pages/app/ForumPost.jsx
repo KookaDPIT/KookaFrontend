@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getPost, votePost, addComment, deleteComment, deletePost, moderatePost,
@@ -192,7 +192,15 @@ export default function ForumPost() {
           <h1 className="fp-title">{post.title}</h1>
 
           <p className="fp-byline">
-            @{post.author?.username || '—'} · {when(post.created_at)} · {post.views} {t('forum.views')}
+            {/* the handle is the way to the person who wrote this */}
+            {post.author?.id ? (
+              <Link className="fp-byline__who" to={`/profile/${post.author.id}`}>
+                @{post.author.username}
+              </Link>
+            ) : (
+              <span className="fp-byline__who">@—</span>
+            )}
+            {' · '}{when(post.created_at)} · {post.views} {t('forum.views')}
           </p>
 
           {post.body && <div className="fp-body">{post.body}</div>}
@@ -272,7 +280,13 @@ export default function ForumPost() {
               {post.comments.map((c) => (
                 <li key={c.id} className="fp-comment">
                   <div className="fp-comment__head">
-                    <b>@{c.author?.username || '—'}</b>
+                    {c.author?.id ? (
+                      <Link className="fp-comment__who" to={`/profile/${c.author.id}`}>
+                        @{c.author.username}
+                      </Link>
+                    ) : (
+                      <b>@—</b>
+                    )}
                     <span>{when(c.created_at)}</span>
                     {(c.is_mine || isStaff) && (
                       <button

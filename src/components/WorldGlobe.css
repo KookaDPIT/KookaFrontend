@@ -32,9 +32,13 @@
   transition: fill 0.2s ease;
 }
 
+/* The fill is set per country from the passport counts, so the outline can no
+   longer be a fixed brand tone — a light stroke around a deep stamp reads as a
+   halo. A translucent dark edge works against every step of the ramp. */
 .wglobe__land.is-on {
   fill: var(--k-accent);
-  stroke: var(--k-accent-hover);
+  stroke: rgba(60, 22, 6, 0.45);
+  stroke-width: 0.5;
 }
 
 /* dark mode */
@@ -50,5 +54,5 @@
 
 [data-theme="dark"] .wglobe__land.is-on {
   fill: var(--k-accent);
-  stroke: var(--k-accent-hover);
+  stroke: rgba(0, 0, 0, 0.5);
 }

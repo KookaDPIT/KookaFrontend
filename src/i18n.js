@@ -21,7 +21,7 @@ const resources = {
 
       nav: {
         home: 'Home',
-        chat: 'Ask Kooka',
+        chat: 'AI Chat',
         learn: 'Learn',
         forum: 'Forum',
         profile: 'Profile',
@@ -74,6 +74,18 @@ const resources = {
         emailPh: 'name@example.com',
       },
 
+      onboarding: {
+        title: 'Before we start — anything you cannot eat?',
+        subtitle:
+          'Tick what you react to. We use it to keep those recipes out of your feed and to warn you before you open one. You can change it any time in Settings.',
+        skip: 'Skip for now',
+        save: 'Save and start cooking',
+        saving: 'Saving…',
+        noneTitle: 'No allergies',
+        noneHint: 'Nothing to avoid — show me everything.',
+        later: 'You can add these later under Settings › Allergies & diet.',
+      },
+
       home: {
         searchPh: 'Search · ingredient, country, time',
         searchAria: 'Search recipes',
@@ -104,6 +116,29 @@ const resources = {
         createRecipe: 'Create recipe',
         dailyEmpty: 'No dish of the day yet — publish a recipe to get things cooking.',
         seeRecipe: 'See recipe',
+        subs: {
+          recommended: 'picked from who you follow, what you cook and your rank',
+          under30: 'on the table in half an hour or less',
+          fridge: 'ranked by how much of it you already have',
+          allergyFree: 'nothing here contains what you told us to avoid',
+          topRated: 'the best reviewed, by the people who cooked them',
+        },
+        fridge: {
+          label: "What's in your fridge?",
+          placeholder: 'eggs, spinach, feta, lemon…',
+          hint: 'Separate ingredients with commas. Staples like salt, oil and water are assumed.',
+          search: 'Find recipes',
+          clear: 'Clear',
+          empty: 'Nothing matches closely enough yet. Add another ingredient or two.',
+          prompt: 'Tell me what you have and I will rank recipes by how much of it you already own.',
+          match: '{{percent}}% of the ingredients',
+          missing: 'You still need: {{list}}',
+          missingMore: 'and more',
+        },
+        allergyEmpty: 'You have not told us about any allergies yet, so there is nothing to filter out.',
+        allergySet: 'Set your allergies',
+        allergyWarn: 'Contains {{list}}',
+        recommendedEmpty: 'Nothing to recommend yet — cook or follow someone and this fills up fast.',
       },
 
       create: {
@@ -205,6 +240,15 @@ const resources = {
         chipWrong: 'Something went wrong',
         timersTitle: 'Step timers',
         noTimers: 'No timers in this recipe.',
+        goHome: 'Go home',
+        dockTitle: 'Still cooking',
+        resume: 'Back to it',
+        forfeit: 'Give up',
+        forfeitTitle: 'Give up on this cook?',
+        forfeitConfirm: 'Yes, give up',
+        keepCooking: 'Keep cooking',
+        forfeitNote:
+          'You will lose your place in {{title}} and the XP for this recipe — it is only awarded once the photo check passes. Nothing else is deleted, and you can start it again any time.',
       },
 
       recipe: {
@@ -225,6 +269,9 @@ const resources = {
         freeFrom: 'Free from',
         ingredients: 'Ingredients',
         method: 'Method',
+        backHome: 'Home',
+        allergyWarning: 'Heads up — this contains {{list}}, which you told us to avoid.',
+        viewProfile: "See {{name}}'s profile",
       },
 
       passport: {
@@ -291,7 +338,41 @@ const resources = {
       admin: {
         title: 'Moderation',
         subtitle: 'Roles, accounts and the flagged recipe queue.',
-        panes: { users: 'People', recipes: 'Recipes', forum: 'Forum', lessons: 'Lessons' },
+        panes: {
+          dashboard: 'Dashboard', users: 'People', recipes: 'Recipes',
+          forum: 'Forum', lessons: 'Lessons',
+        },
+        dash: {
+          sub: 'What is happening right now, and what is waiting for you.',
+          needsYou: 'Waiting on moderation',
+          flaggedRecipes: 'Flagged recipes',
+          hiddenRecipes: 'Hidden recipes',
+          hiddenPosts: 'Hidden posts',
+          allClear: 'Nothing in the queues. Good week.',
+          community: 'Community',
+          people: 'Accounts',
+          recipes: 'Recipes',
+          posts: 'Forum posts',
+          comments: 'Comments',
+          reviews: 'Reviews',
+          cooks: 'Verified cooks',
+          thisWeek: '+{{count}} this week',
+          activePeople: '{{count}} people posted something in the last 7 days',
+          sanctions: 'Sanctions in force',
+          suspended: 'Suspended',
+          deactivated: 'Deactivated',
+          staff: 'Staff accounts',
+          trend: 'Last 14 days',
+          trendSignups: 'New accounts',
+          trendRecipes: 'New recipes',
+          trendPosts: 'New posts',
+          topRecipes: 'Best reviewed',
+          newest: 'Newest accounts',
+          reviewsCount: '{{count}} reviews',
+          empty: 'Not enough data yet.',
+          refresh: 'Refresh',
+          updated: 'Updated {{time}}',
+        },
         lessons: {
           all: 'All branches',
           edited: 'edited',
@@ -504,7 +585,10 @@ const resources = {
           countries: 'Countries',
           followers: 'Followers',
         },
-        tabs: { activity: 'Activity', recipes: 'Recipes', passport: 'Passport', badges: 'Badges' },
+        tabs: {
+          activity: 'Activity', recipes: 'Recipes', passport: 'Passport',
+          ranking: 'Ranking', badges: 'Badges',
+        },
         aboutTitle: 'About',
         about:
           'Weeknight cook chasing the perfect emulsion. Fan of one-pan dinners, loud spices and quiet Sunday braises.',
@@ -534,6 +618,18 @@ const resources = {
         privateTitle: 'This account is private',
         privateNote: 'Follow to see their recipes, passport and activity.',
         removeActivity: 'Remove from my activity',
+        ranking: {
+          global: 'Everyone',
+          friends: 'Friends',
+          globalSub: 'Every cook on Kooka, ordered by XP.',
+          friendsSub: 'People you follow who follow you back — the only leaderboard you cannot pad.',
+          you: 'You',
+          youAre: 'You are #{{position}} of {{total}}',
+          unranked: 'Cook or finish a lesson to join the leaderboard.',
+          friendsEmpty: 'No mutual follows yet. Follow a few cooks — when they follow back, they show up here.',
+          xp: '{{xp}} XP',
+          othersOnly: 'The ranking tab only shows on your own profile.',
+        },
       },
 
       settings: {
@@ -542,11 +638,23 @@ const resources = {
         logout: 'Log out',
         sections: {
           account: 'Account',
+          allergies: 'Allergies & diet',
           privacy: 'Privacy & safety',
           notifications: 'Notifications',
           appearance: 'Appearance',
           security: 'Security',
           blocked: 'Blocked accounts',
+        },
+        allergies: {
+          sub: 'What to keep off your plate. We use it to filter the feed and to warn you on a recipe page.',
+          title: 'Select everything you react to',
+          hint: 'Nothing here is shared with other cooks — it only changes what you are shown.',
+          none: 'Nothing selected. The allergen filter has nothing to work with yet.',
+          selected_one: '{{count}} allergen selected',
+          selected_other: '{{count}} allergens selected',
+          save: 'Save allergies',
+          saved: 'Allergies saved',
+          clear: 'Clear all',
         },
         account: {
           sub: 'The basics other cooks see.',
@@ -644,7 +752,7 @@ const resources = {
 
       nav: {
         home: 'Acasă',
-        chat: 'Întreabă Kooka',
+        chat: 'AI Chat',
         learn: 'Învață',
         forum: 'Forum',
         profile: 'Profil',
@@ -697,6 +805,18 @@ const resources = {
         emailPh: 'nume@exemplu.ro',
       },
 
+      onboarding: {
+        title: 'Înainte să începem — e ceva ce nu poți mânca?',
+        subtitle:
+          'Bifează ce îți face rău. Ținem rețetele acelea în afara feed-ului tău și te avertizăm înainte să deschizi una. Poți schimba oricând din Setări.',
+        skip: 'Mai târziu',
+        save: 'Salvează și hai la gătit',
+        saving: 'Se salvează…',
+        noneTitle: 'Nicio alergie',
+        noneHint: 'N-am ce evita — arată-mi tot.',
+        later: 'Le poți adăuga oricând din Setări › Alergii și dietă.',
+      },
+
       home: {
         searchPh: 'Caută · ingredient, țară, timp',
         searchAria: 'Caută rețete',
@@ -727,6 +847,29 @@ const resources = {
         createRecipe: 'Creează rețetă',
         dailyEmpty: 'Încă nu există felul zilei — publică o rețetă ca să pornim.',
         seeRecipe: 'Vezi rețeta',
+        subs: {
+          recommended: 'alese după cine urmărești, ce gătești și rank-ul tău',
+          under30: 'pe masă în cel mult o jumătate de oră',
+          fridge: 'ordonate după cât ai deja din ele',
+          allergyFree: 'nimic de aici nu conține ce ne-ai spus să evităm',
+          topRated: 'cele mai bine notate, de cei care le-au gătit',
+        },
+        fridge: {
+          label: 'Ce ai în frigider?',
+          placeholder: 'ouă, spanac, telemea, lămâie…',
+          hint: 'Separă ingredientele prin virgulă. Sarea, uleiul și apa se subînțeleg.',
+          search: 'Caută rețete',
+          clear: 'Golește',
+          empty: 'Încă nu se potrivește nimic destul de bine. Mai adaugă un ingredient-două.',
+          prompt: 'Spune-mi ce ai și îți ordonez rețetele după cât ai deja din ele.',
+          match: '{{percent}}% din ingrediente',
+          missing: 'Îți mai trebuie: {{list}}',
+          missingMore: 'și altele',
+        },
+        allergyEmpty: 'Încă nu ne-ai spus despre nicio alergie, deci nu avem ce filtra.',
+        allergySet: 'Setează-ți alergiile',
+        allergyWarn: 'Conține {{list}}',
+        recommendedEmpty: 'Încă nu avem ce recomanda — gătește sau urmărește pe cineva și se umple repede.',
       },
 
       create: {
@@ -828,6 +971,15 @@ const resources = {
         chipWrong: 'Ceva n-a mers',
         timersTitle: 'Timere pași',
         noTimers: 'Rețeta nu are timere.',
+        goHome: 'Acasă',
+        dockTitle: 'Gătești acum',
+        resume: 'Continuă',
+        forfeit: 'Renunță',
+        forfeitTitle: 'Renunți la rețeta asta?',
+        forfeitConfirm: 'Da, renunț',
+        keepCooking: 'Continui să gătesc',
+        forfeitNote:
+          'Pierzi locul în {{title}} și XP-ul rețetei — se dă doar după ce trece verificarea pozei. Nimic altceva nu se șterge și o poți relua oricând.',
       },
 
       recipe: {
@@ -848,6 +1000,9 @@ const resources = {
         freeFrom: 'Fără',
         ingredients: 'Ingrediente',
         method: 'Preparare',
+        backHome: 'Acasă',
+        allergyWarning: 'Atenție — conține {{list}}, pe care ne-ai spus să le eviți.',
+        viewProfile: 'Vezi profilul lui {{name}}',
       },
 
       passport: {
@@ -915,7 +1070,41 @@ const resources = {
       admin: {
         title: 'Moderare',
         subtitle: 'Roluri, conturi și coada de rețete semnalate.',
-        panes: { users: 'Utilizatori', recipes: 'Rețete', forum: 'Forum', lessons: 'Lecții' },
+        panes: {
+          dashboard: 'Tablou de bord', users: 'Utilizatori', recipes: 'Rețete',
+          forum: 'Forum', lessons: 'Lecții',
+        },
+        dash: {
+          sub: 'Ce se întâmplă acum și ce te așteaptă.',
+          needsYou: 'Așteaptă moderare',
+          flaggedRecipes: 'Rețete semnalate',
+          hiddenRecipes: 'Rețete ascunse',
+          hiddenPosts: 'Postări ascunse',
+          allClear: 'Nimic în cozi. Săptămână bună.',
+          community: 'Comunitate',
+          people: 'Conturi',
+          recipes: 'Rețete',
+          posts: 'Postări pe forum',
+          comments: 'Comentarii',
+          reviews: 'Recenzii',
+          cooks: 'Gătituri verificate',
+          thisWeek: '+{{count}} săptămâna asta',
+          activePeople: '{{count}} oameni au scris ceva în ultimele 7 zile',
+          sanctions: 'Sancțiuni active',
+          suspended: 'Suspendați',
+          deactivated: 'Dezactivați',
+          staff: 'Conturi din echipă',
+          trend: 'Ultimele 14 zile',
+          trendSignups: 'Conturi noi',
+          trendRecipes: 'Rețete noi',
+          trendPosts: 'Postări noi',
+          topRecipes: 'Cele mai bine notate',
+          newest: 'Cele mai noi conturi',
+          reviewsCount: '{{count}} recenzii',
+          empty: 'Încă nu sunt destule date.',
+          refresh: 'Reîmprospătează',
+          updated: 'Actualizat {{time}}',
+        },
         lessons: {
           all: 'Toate ramurile',
           edited: 'editată',
@@ -1131,7 +1320,10 @@ const resources = {
           countries: 'Țări',
           followers: 'Urmăritori',
         },
-        tabs: { activity: 'Activitate', recipes: 'Rețete', passport: 'Pașaport', badges: 'Insigne' },
+        tabs: {
+          activity: 'Activitate', recipes: 'Rețete', passport: 'Pașaport',
+          ranking: 'Clasament', badges: 'Insigne',
+        },
         aboutTitle: 'Despre',
         about:
           'Bucătar de seară în căutarea emulsiei perfecte. Fan al cinelor într-o singură tigaie, al condimentelor tari și al tocănițelor liniștite de duminică.',
@@ -1161,6 +1353,18 @@ const resources = {
         privateTitle: 'Acest cont este privat',
         privateNote: 'Urmărește pentru a-i vedea rețetele, pașaportul și activitatea.',
         removeActivity: 'Scoate din activitatea mea',
+        ranking: {
+          global: 'Toți',
+          friends: 'Prieteni',
+          globalSub: 'Toți bucătarii de pe Kooka, după XP.',
+          friendsSub: 'Cei pe care îi urmărești și te urmăresc înapoi — singurul clasament pe care nu ți-l poți umfla.',
+          you: 'Tu',
+          youAre: 'Ești pe locul {{position}} din {{total}}',
+          unranked: 'Gătește sau termină o lecție ca să intri în clasament.',
+          friendsEmpty: 'Încă niciun follow reciproc. Urmărește câțiva bucătari — când te urmăresc înapoi, apar aici.',
+          xp: '{{xp}} XP',
+          othersOnly: 'Clasamentul se vede doar pe profilul tău.',
+        },
       },
 
       settings: {
@@ -1169,11 +1373,23 @@ const resources = {
         logout: 'Deconectare',
         sections: {
           account: 'Cont',
+          allergies: 'Alergii și dietă',
           privacy: 'Confidențialitate',
           notifications: 'Notificări',
           appearance: 'Aspect',
           security: 'Securitate',
           blocked: 'Conturi blocate',
+        },
+        allergies: {
+          sub: 'Ce trebuie să nu ajungă în farfurie. Filtrăm feed-ul după asta și te avertizăm pe pagina rețetei.',
+          title: 'Bifează tot ce îți face rău',
+          hint: 'Nimic de aici nu se vede la ceilalți bucătari — schimbă doar ce ți se arată ție.',
+          none: 'Nimic bifat. Filtrul de alergeni n-are încă la ce să se uite.',
+          selected_one: '{{count}} alergen bifat',
+          selected_other: '{{count}} alergeni bifați',
+          save: 'Salvează alergiile',
+          saved: 'Alergii salvate',
+          clear: 'Șterge tot',
         },
         account: {
           sub: 'Datele de bază pe care le văd ceilalți.',

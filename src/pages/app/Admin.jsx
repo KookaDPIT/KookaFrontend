@@ -12,12 +12,14 @@ import RoleBadge from '../../components/RoleBadge';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import AdminLessons from './AdminLessons';
+import AdminDashboard from './AdminDashboard';
 import './Admin.css';
 
 /* ==========================================================================
    MODERATION — the staff console behind /admin.
 
-   Two panes, matching what the backend exposes:
+   Panes, matching what the backend exposes:
+     · Dashboard — totals, the last week, the open queues (GET /admin/stats).
      · Recipes — the AI-flagged queue (GET /admin/recipes), hide or delete.
      · People  — search accounts, change roles, suspend, deactivate.
 
@@ -53,7 +55,8 @@ export default function Admin() {
   const isStaff = role === 'admin' || role === 'moderator';
   const isAdmin = role === 'admin';
 
-  const [pane, setPane] = useState('users');
+  // opens on the summary: what needs a moderator comes before who to search for
+  const [pane, setPane] = useState('dashboard');
   const [toast, setToast] = useState('');
   const [busyId, setBusyId] = useState(null);
 
@@ -200,7 +203,7 @@ export default function Admin() {
       </header>
 
       <div className="adm-panes" role="tablist">
-        {['users', 'recipes', 'forum', 'lessons'].map((k) => (
+        {['dashboard', 'users', 'recipes', 'forum', 'lessons'].map((k) => (
           <button
             key={k}
             type="button"
@@ -215,6 +218,10 @@ export default function Admin() {
       </div>
 
       {/* ===================== PEOPLE ===================== */}
+      {/* The queue cards link straight through to the pane that can act on
+          them, so the summary is a way in rather than a dead end. */}
+      {pane === 'dashboard' && <AdminDashboard onOpenPane={setPane} />}
+
       {pane === 'users' && (
         <section className="adm-section">
           <div className="adm-filters">

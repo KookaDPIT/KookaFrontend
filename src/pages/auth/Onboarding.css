@@ -1,0 +1,211 @@
+/* ==========================================================================
+   ONBOARDING — the allergy question, on its own screen between signing up and
+   the app. Same warm ground as the auth screens, one card, no navigation:
+   there is exactly one thing to do here.
+   ========================================================================== */
+.onb {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background:
+    radial-gradient(120% 120% at 20% 0%, #fff6e8 0%, #f7ead4 55%, #f0dfc2 100%);
+}
+
+.onb__card {
+  width: 100%;
+  max-width: 620px;
+  padding: 34px 34px 26px;
+  border-radius: 26px;
+  background: #fffdf8;
+  box-shadow: 0 24px 60px rgba(96, 62, 24, 0.16);
+}
+
+.onb__logo {
+  display: block;
+  height: 34px;
+  width: auto;
+  margin-bottom: 20px;
+}
+
+.onb__title {
+  margin: 0 0 10px;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.1;
+  color: #2a2016;
+}
+
+.onb__sub {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #6b5d43;
+}
+
+.onb__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.onb__chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #eadfc6;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.onb__chip:hover { border-color: #e0cda6; }
+
+.onb__chip.is-on {
+  border-color: #ff6b35;
+  background: rgba(255, 107, 53, 0.08);
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.14);
+}
+
+.onb__chip-emoji { font-size: 19px; line-height: 1; }
+
+.onb__chip-label {
+  flex: 1;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #2a2016;
+}
+
+/* the tick only exists once the chip is on — an empty box on every row would
+   read as a form to fill in rather than a set of things to notice */
+.onb__chip-tick {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b35;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.onb__chip.is-on .onb__chip-tick { opacity: 1; transform: none; }
+
+.onb__none {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 15px;
+  border: 1px dashed #dfd0b0;
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.onb__none.is-on {
+  border-style: solid;
+  border-color: #7d9a5a;
+  background: rgba(125, 154, 90, 0.09);
+}
+
+.onb__none b {
+  font-family: var(--font-important), sans-serif;
+  font-size: 14px;
+  color: #2a2016;
+}
+
+.onb__none small { font-size: 12.5px; color: #8a7a5c; }
+
+.onb__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.onb__skip {
+  padding: 13px 18px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #8a7a5c;
+  cursor: pointer;
+}
+
+.onb__skip:hover { color: #2a2016; }
+
+.onb__save {
+  flex: 1;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(255, 107, 53, 0.3);
+  transition: background 0.18s ease;
+}
+
+.onb__save:hover:not(:disabled) { background: #f2591f; }
+.onb__save:disabled { opacity: 0.65; cursor: default; }
+
+.onb__later {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: #a0906f;
+}
+
+/* ---- dark ---- */
+[data-theme="dark"] .onb {
+  background: radial-gradient(120% 120% at 20% 0%, #241b14 0%, #17110c 60%, #100b07 100%);
+}
+
+[data-theme="dark"] .onb__card {
+  background: #241b14;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .onb__title,
+[data-theme="dark"] .onb__chip-label,
+[data-theme="dark"] .onb__none b { color: #f5f5f0; }
+
+[data-theme="dark"] .onb__sub,
+[data-theme="dark"] .onb__none small,
+[data-theme="dark"] .onb__later { color: rgba(245, 245, 240, 0.62); }
+
+[data-theme="dark"] .onb__chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .onb__chip.is-on {
+  border-color: #ff8a5a;
+  background: rgba(255, 107, 53, 0.16);
+}
+
+[data-theme="dark"] .onb__none { border-color: rgba(255, 255, 255, 0.16); }
+[data-theme="dark"] .onb__skip { color: rgba(245, 245, 240, 0.6); }
+[data-theme="dark"] .onb__skip:hover { color: #f5f5f0; }
+
+@media (max-width: 520px) {
+  .onb__card { padding: 26px 20px 20px; }
+  .onb__title { font-size: 26px; }
+  .onb__actions { flex-direction: column-reverse; }
+  .onb__save, .onb__skip { width: 100%; }
+}

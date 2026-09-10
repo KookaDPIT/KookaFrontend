@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listReviews, addReview, editReview, deleteReview } from '../services/reviews';
 import { refreshUser } from '../user';
@@ -132,12 +133,25 @@ export default function Reviews({ recipeId }) {
         <ul className="reviews__list">
           {others.map((r) => (
             <li className="reviews__item" key={r.id}>
-              <div className="reviews__item-avatar">
+              {/* avatar and name both lead to the reviewer's profile — this is
+                  where people expect to find out who is telling them this */}
+              <Link
+                className="reviews__item-avatar"
+                to={r.user?.id ? `/profile/${r.user.id}` : '#'}
+                aria-hidden={!r.user?.id}
+                tabIndex={r.user?.id ? undefined : -1}
+              >
                 {(r.user?.full_name || r.user?.username || '?')[0].toUpperCase()}
-              </div>
+              </Link>
               <div className="reviews__item-body">
                 <div className="reviews__item-head">
-                  <span className="reviews__item-name">{r.user?.full_name || r.user?.username}</span>
+                  {r.user?.id ? (
+                    <Link className="reviews__item-name" to={`/profile/${r.user.id}`}>
+                      {r.user.full_name || r.user.username}
+                    </Link>
+                  ) : (
+                    <span className="reviews__item-name">—</span>
+                  )}
                   <Stars value={r.rating} size={14} />
                 </div>
                 {r.comment && <p className="reviews__item-text">{r.comment}</p>}

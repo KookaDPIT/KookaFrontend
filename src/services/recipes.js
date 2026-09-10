@@ -2,8 +2,14 @@ import api from '../api';
 
 /* Recipes API wrappers over the shared axios instance. */
 
-export async function listRecipes({ q = '', filter = '', limit = 20, offset = 0 } = {}) {
-  const { data } = await api.get('/recipes', { params: { q, filter, limit, offset } });
+/* `pantry` only matters for the fridge filter: a comma-separated list of what
+   the cook actually has, which the backend scores each recipe against. */
+export async function listRecipes({
+  q = '', filter = '', pantry = '', limit = 20, offset = 0,
+} = {}) {
+  const { data } = await api.get('/recipes', {
+    params: { q, filter, pantry, limit, offset },
+  });
   return data;
 }
 

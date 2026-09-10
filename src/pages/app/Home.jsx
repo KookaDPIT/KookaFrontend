@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listRecipes, getDailyDish } from '../../services/recipes';
@@ -6,6 +6,7 @@ import { recentReviews } from '../../services/reviews';
 import { getPassport } from '../../services/users';
 import { useUser } from '../../user';
 import { countryOf } from '../../data/countries';
+import { RANK_COLORS } from '../../lib/ranks';
 import RecipeCard from '../../components/RecipeCard';
 import PassportGlobe from '../../components/PassportGlobe';
 import Stars from '../../components/Stars';
@@ -15,13 +16,29 @@ function Skeleton({ className = '', style }) {
   return <span className={`skl ${className}`} style={style} aria-hidden="true" />;
 }
 
+/* The chips are five different questions, not five sorts of one list.
+   `filter` is what the backend is asked for; recommended, fridge and
+   allergy_free are resolved server-side in services/feed.py, because they need
+   the deserialised ingredients, the allergen list, or the follow graph. */
 const FILTERS = [
-  { key: 'recommended', filter: '' },
+  { key: 'recommended', filter: 'recommended' },
   { key: 'under30', filter: 'under30' },
-  { key: 'fridge', filter: '' },
-  { key: 'allergyFree', filter: '' },
+  { key: 'fridge', filter: 'fridge' },
+  { key: 'allergyFree', filter: 'allergy_free' },
   { key: 'topRated', filter: 'top_rated' },
 ];
+
+/* Remembered between visits: retyping the contents of your fridge every time
+   would make the filter not worth using. */
+const PANTRY_KEY = 'kooka_pantry';
+
+function readPantry() {
+  try {
+    return localStorage.getItem(PANTRY_KEY) || '';
+  } catch {
+    return '';
+  }
+}
 
 export default function Home() {
   const { t } = useTranslation();
@@ -31,32 +48,64 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState(0);
 
+  // the fridge filter: the draft in the box vs. the list actually searched
+  const [pantryDraft, setPantryDraft] = useState(readPantry);
+  const [pantry, setPantry] = useState(readPantry);
+
   const [daily, setDaily] = useState(undefined); // undefined = loading, null = none
   const [feed, setFeed] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [passport, setPassport] = useState([]);
   const [showGlobe, setShowGlobe] = useState(false);
 
+  const current = FILTERS[activeFilter];
+  const isFridge = current.key === 'fridge';
+  const isAllergyFree = current.key === 'allergyFree';
+  const hasAllergies = (user?.allergies || []).length > 0;
+
   // daily dish (once)
   useEffect(() => {
     getDailyDish().then(setDaily).catch(() => setDaily(null));
   }, []);
 
-  // feed (on filter change) — reset happens in the chip handler, so the effect
-  // never calls setState synchronously (react-hooks/set-state-in-effect).
+  /* The fridge chip is the one that cannot answer on its own: with an empty
+     pantry there is nothing to match against. That is a render-time fact, not
+     a fetch result, so it short-circuits below rather than being written into
+     `feed` from inside the effect. */
+  const needsPantry = isFridge && !pantry.trim();
+
   useEffect(() => {
+    if (needsPantry) return undefined;
     let alive = true;
-    listRecipes({ filter: FILTERS[activeFilter].filter, limit: 8 })
+    listRecipes({ filter: current.filter, pantry: isFridge ? pantry : '', limit: 12 })
       .then((r) => alive && setFeed(r))
       .catch(() => alive && setFeed([]));
     return () => {
       alive = false;
     };
-  }, [activeFilter]);
+  }, [current.filter, isFridge, pantry, needsPantry]);
 
   const pickFilter = (i) => {
     setActiveFilter(i);
     setFeed(null); // show skeletons while the new filter loads
+  };
+
+  const searchPantry = (e) => {
+    e.preventDefault();
+    const clean = pantryDraft.trim();
+    try {
+      localStorage.setItem(PANTRY_KEY, clean);
+    } catch { /* storage may be unavailable — the search still runs */ }
+    setFeed(null);
+    setPantry(clean);
+  };
+
+  const clearPantry = () => {
+    setPantryDraft('');
+    setPantry('');
+    try {
+      localStorage.removeItem(PANTRY_KEY);
+    } catch { /* nothing to clean up */ }
   };
 
   // fresh reviews across all recipes (each carries its recipe)
@@ -84,7 +133,28 @@ export default function Home() {
 
   const dailyCountry = daily?.origin ? countryOf(daily.origin) : null;
   // the daily dish is featured in the hero, so keep it out of the feed grid
-  const feedItems = feed ? feed.filter((r) => r.id !== daily?.id) : feed;
+  const feedItems = needsPantry
+    ? []
+    : feed ? feed.filter((r) => r.id !== daily?.id) : feed;
+
+  /* The rank replaces the old "Lvl 3" pill: a level was a number nobody could
+     place, while a rank has a name and a colour that also show up on recipes,
+     badges and the ladder in Learn. RANK_COLORS mirrors services/ranks.py. */
+  const rank = user?.rank;
+  const rankColors = RANK_COLORS[rank?.rank] || RANK_COLORS.copper;
+  const rankStyle = useMemo(
+    () => ({
+      background: `linear-gradient(135deg, ${rankColors.vibrant}, ${rankColors.shadow})`,
+    }),
+    [rankColors],
+  );
+
+  const emptyMessage = () => {
+    if (isFridge) return pantry.trim() ? t('home.fridge.empty') : t('home.fridge.prompt');
+    if (isAllergyFree && !hasAllergies) return t('home.allergyEmpty');
+    if (current.key === 'recommended') return t('home.recommendedEmpty');
+    return t('home.feedEmpty');
+  };
 
   return (
     <div className="home">
@@ -118,7 +188,19 @@ export default function Home() {
             </form>
 
             <div className="home-topbar__meta">
-              <span className="home-level">Lvl {user?.level ?? 1}</span>
+              <button
+                type="button"
+                className="home-rank"
+                style={rankStyle}
+                onClick={() => navigate('/learn')}
+                title={
+                  rank && !rank.is_max
+                    ? t('recipe.xpToGo', { xp: rank.xp_to_next?.toLocaleString() })
+                    : undefined
+                }
+              >
+                {rank?.tier_label || 'Copper I'}
+              </button>
               <button
                 type="button"
                 className="home-create-plus"
@@ -198,11 +280,48 @@ export default function Home() {
           ))}
         </div>
 
+        {/* the fridge chip needs an answer from you before it can answer back */}
+        {isFridge && (
+          <form className="home-pantry" onSubmit={searchPantry}>
+            <label className="home-pantry__label" htmlFor="home-pantry-input">
+              {t('home.fridge.label')}
+            </label>
+            <div className="home-pantry__row">
+              <input
+                id="home-pantry-input"
+                type="text"
+                value={pantryDraft}
+                onChange={(e) => setPantryDraft(e.target.value)}
+                placeholder={t('home.fridge.placeholder')}
+              />
+              <button type="submit" className="home-btn home-btn--primary">
+                {t('home.fridge.search')}
+              </button>
+              {pantry && (
+                <button type="button" className="home-pantry__clear" onClick={clearPantry}>
+                  {t('home.fridge.clear')}
+                </button>
+              )}
+            </div>
+            <p className="home-pantry__hint">{t('home.fridge.hint')}</p>
+          </form>
+        )}
+
+        {/* nothing to filter by yet — offer the fix rather than an empty grid */}
+        {isAllergyFree && !hasAllergies && (
+          <div className="home-nudge">
+            <p>{t('home.allergyEmpty')}</p>
+            <button type="button" className="home-btn home-btn--primary" onClick={() => navigate('/settings?section=allergies')}>
+              {t('home.allergySet')}
+            </button>
+          </div>
+        )}
+
         {/* ===== FEED ================================================= */}
         <section className="home-section">
           <div className="home-section__head">
             <h2 className="home-section__title">{t('home.feedTitle')}</h2>
-            <p className="home-section__sub">{t('home.feedSub')}</p>
+            <p className="home-section__sub">{t(`home.subs.${current.key}`)}</p>
           </div>
 
           {feedItems === null ? (
@@ -218,11 +337,33 @@ export default function Home() {
               ))}
             </div>
           ) : feedItems.length === 0 ? (
-            <p className="home-empty">{t('home.feedEmpty')}</p>
+            <p className="home-empty">{emptyMessage()}</p>
           ) : (
             <div className="home-feed">
               {feedItems.map((r) => (
-                <RecipeCard key={r.id} recipe={r} />
+                <div className="home-feed__item" key={r.id}>
+                  <RecipeCard recipe={r} />
+                  {/* Why this card is here — only when the card itself does
+                      not already say it. */}
+                  {isFridge && r.match_percent != null && (
+                    <p className="home-match">
+                      <b>{t('home.fridge.match', { percent: r.match_percent })}</b>
+                      {r.missing?.length > 0 && (
+                        <span>
+                          {t('home.fridge.missing', { list: r.missing.slice(0, 3).join(', ') })}
+                          {r.need_count - r.have_count > r.missing.length
+                            ? ` ${t('home.fridge.missingMore')}`
+                            : ''}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {r.allergen_conflicts?.length > 0 && (
+                    <p className="home-warn">
+                      ⚠️ {t('home.allergyWarn', { list: r.allergen_conflicts.join(', ') })}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -259,7 +400,14 @@ export default function Home() {
                 {reviews.slice(0, 3).map((rv) => (
                   <li className="home-review" key={rv.id}>
                     <div className="home-review__head">
-                      <span className="home-review__who">{rv.user?.full_name || rv.user?.username}</span>
+                      {/* the name is the way to the person who wrote it */}
+                      {rv.user?.id ? (
+                        <Link className="home-review__who" to={`/profile/${rv.user.id}`}>
+                          {rv.user.full_name || rv.user.username}
+                        </Link>
+                      ) : (
+                        <span className="home-review__who">—</span>
+                      )}
                       <Stars value={rv.rating} size={14} />
                     </div>
                     {rv.recipe && (
