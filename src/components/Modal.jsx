@@ -4,7 +4,7 @@ import './Modal.css';
 /* ==========================================================================
    Modal — lightweight overlay dialog. Closes on backdrop click or Escape.
    ========================================================================== */
-export default function Modal({ open, onClose, title, children, footer }) {
+export default function Modal({ open, onClose, title, children, footer, className = '' }) {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -16,7 +16,7 @@ export default function Modal({ open, onClose, title, children, footer }) {
 
   return (
     <div className="kmodal" role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className="kmodal__card" onMouseDown={(e) => e.stopPropagation()}>
+      <div className={`kmodal__card ${className}`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="kmodal__head">
           <h2 className="kmodal__title">{title}</h2>
           <button type="button" className="kmodal__x" onClick={onClose} aria-label="Close">

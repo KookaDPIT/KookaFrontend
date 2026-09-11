@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAllergenCatalog, updateProfile } from '../../services/users';
-import { refreshUser } from '../../user';
+import { refreshUser, markAllergiesAnswered } from '../../user';
 import { ALLERGENS } from '../../lib/allergens';
 import kookaLogo from '../../assets/kooka-logo-clean.png';
 import './Onboarding.css';
@@ -45,6 +45,7 @@ export default function Onboarding() {
     try {
       await updateProfile({ allergies: picked });
       await refreshUser();
+      markAllergiesAnswered();
     } catch {
       /* Not worth blocking the door over — Settings offers the same form, and
          an empty allergy list is the same as never having answered. */

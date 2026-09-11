@@ -3,8 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRecipe, moderateRecipe } from '../../services/recipes';
 import ModerationBar from '../../components/ModerationBar';
+import Modal from '../../components/Modal';
 import { countryOf } from '../../data/countries';
-import { useUser } from '../../user';
+import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import Reviews from '../../components/Reviews';
 import { IconBack, IconClock } from '../../components/Icons';
 import RankBadge, { RankPill } from '../../components/RankBadge';
@@ -36,24 +37,16 @@ function gaugeArc(f0, f1, rr = G.r) {
 
 function Gauge({ value, unit, label, pct }) {
   const p = Math.max(0, Math.min(1, pct));
-  const zone = p < 0.55 ? '#3fae6f' : p < 0.8 ? '#ef9f3c' : '#e5533a';
+  const zone = p < 1 / 3 ? '#3fae6f' : p < 2 / 3 ? '#efb341' : '#e5533a';
   const [nx, ny] = gaugePoint(p, G.r - 7);
-  const ticks = [0, 0.25, 0.5, 0.75, 1];
 
   return (
     <div className="gauge">
       <svg viewBox="0 0 100 58" className="gauge__svg" aria-hidden="true">
-        <path className="gauge__track" d={gaugeArc(0, 1)} />
-        <path className="gauge__zone gauge__zone--green" d={gaugeArc(0, 0.55)} />
-        <path className="gauge__zone gauge__zone--amber" d={gaugeArc(0.55, 0.8)} />
-        <path className="gauge__zone gauge__zone--red" d={gaugeArc(0.8, 1)} />
-        {ticks.map((f) => {
-          const [x1, y1] = gaugePoint(f, G.r);
-          const [x2, y2] = gaugePoint(f, G.r - 5);
-          return <line key={f} x1={x1} y1={y1} x2={x2} y2={y2} className="gauge__tick" />;
-        })}
+        <path className="gauge__zone gauge__zone--green" d={gaugeArc(0, 1 / 3)} />
+        <path className="gauge__zone gauge__zone--amber" d={gaugeArc(1 / 3, 2 / 3)} />
+        <path className="gauge__zone gauge__zone--red" d={gaugeArc(2 / 3, 1)} />
         <line x1={G.cx} y1={G.cy} x2={nx.toFixed(2)} y2={ny.toFixed(2)} className="gauge__needle" />
-        <circle cx={G.cx} cy={G.cy} r="4" className="gauge__hub" />
       </svg>
       <div className="gauge__readout">
         <b style={{ color: zone }}>{value}</b>
@@ -62,6 +55,10 @@ function Gauge({ value, unit, label, pct }) {
       <span className="gauge__label">{label}</span>
     </div>
   );
+}
+
+function normalized(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 export default function Recipe() {
@@ -76,6 +73,11 @@ export default function Recipe() {
      Recipes above your rank come back as a 403 carrying what you'd need to
      reach, which we render as its own screen rather than a generic error. */
   const [view, setView] = useState({ status: 'loading' });
+  const [ingredientsAdded, setIngredientsAdded] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date().toISOString().slice(0, 10));
+  const [calendarAdded, setCalendarAdded] = useState(false);
+  const [cookWarning, setCookWarning] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -145,6 +147,58 @@ export default function Recipe() {
   const allergens = recipe.allergens || { contains: [], free: [] };
   const author = recipe.author;
   const isAuthor = user && author && user.id === author.id;
+  const containedAllergens = allergens.contains || [];
+  const userAllergies = user?.allergies || [];
+  const allergyConflicts = recipe.allergen_conflicts?.length
+    ? recipe.allergen_conflicts
+    : containedAllergens.filter((allergen) => userAllergies.some((allergy) => {
+      const mealValue = normalized(allergen);
+      const userValue = normalized(allergy);
+      return mealValue === userValue || mealValue.includes(userValue) || userValue.includes(mealValue);
+    }));
+  const hasAllergens = containedAllergens.length > 0 || recipe.allergen_conflicts?.length > 0;
+
+  const startCooking = () => {
+    if (hasAllergens && userAllergies.length === 0 && !allergiesHaveBeenAnswered()) {
+      setCookWarning({ type: 'setup' });
+      return;
+    }
+    if (allergyConflicts.length > 0) {
+      setCookWarning({ type: 'conflict', allergens: allergyConflicts });
+      return;
+    }
+    navigate(`/recipe/${recipe.id}/cook`);
+  };
+
+  const addIngredientsToShoppingList = () => {
+    let shopping = [];
+    try {
+      shopping = JSON.parse(localStorage.getItem('kooka_shopping_list')) || [];
+    } catch { /* unavailable storage leaves the in-memory list empty */ }
+    const next = [...shopping];
+    (recipe.ingredients || []).forEach((ingredient) => {
+      const name = ingredient.trim();
+      const existing = next.find((item) => item.name.toLowerCase() === name.toLowerCase() && item.quantity == null);
+      if (!existing) next.push({ id: `${name}-${Date.now()}-${next.length}`, name, quantity: null });
+    });
+    localStorage.setItem('kooka_shopping_list', JSON.stringify(next));
+    setIngredientsAdded(true);
+  };
+
+  const addRecipeToCalendar = () => {
+    if (!calendarDate) return;
+    let meals = {};
+    try {
+      meals = JSON.parse(localStorage.getItem('kooka_meal_plan')) || {};
+    } catch { /* unavailable storage leaves the calendar in memory only */ }
+    const next = {
+      ...meals,
+      [calendarDate]: [...(meals[calendarDate] || []), { id: recipe.id, title: recipe.title }],
+    };
+    localStorage.setItem('kooka_meal_plan', JSON.stringify(next));
+    setCalendarAdded(true);
+    setCalendarOpen(false);
+  };
 
   /* A moderator who lands on a recipe should be able to act on it here rather
      than memorising the id and walking over to the console. */
@@ -228,7 +282,8 @@ export default function Recipe() {
                 list, than three steps into the method. */}
             {recipe.allergen_conflicts?.length > 0 && (
               <p className="recipe__allergy-warn">
-                ⚠️ {t('recipe.allergyWarning', { list: recipe.allergen_conflicts.join(', ') })}
+                <span className="recipe__allergy-warn-icon" aria-hidden="true">⚠️</span>
+                <span>{t('recipe.allergyWarning', { list: recipe.allergen_conflicts.join(', ') })}</span>
               </p>
             )}
 
@@ -236,7 +291,7 @@ export default function Recipe() {
               <button
                 type="button"
                 className="recipe__cook recipe__cook--full"
-                onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
+                onClick={startCooking}
               >
                 {t('recipe.cook')}
               </button>
@@ -248,6 +303,27 @@ export default function Recipe() {
                 >
                   ✎ {t('recipe.edit')}
                 </button>
+              )}
+              <button
+                type="button"
+                className="recipe__shopping recipe__calendar-button"
+                onClick={() => setCalendarOpen((open) => !open)}
+              >
+                {calendarAdded ? `✓ ${t('recipe.calendarAdded')}` : `📅 ${t('recipe.addToCalendar')}`}
+              </button>
+              {calendarOpen && (
+                <div className="recipe__calendar-popover">
+                  <label htmlFor="recipe-calendar-date">{t('recipe.addToCalendar')}</label>
+                  <input
+                    id="recipe-calendar-date"
+                    type="date"
+                    value={calendarDate}
+                    onChange={(event) => setCalendarDate(event.target.value)}
+                  />
+                  <button type="button" className="recipe__calendar-confirm" onClick={addRecipeToCalendar}>
+                    {t('mealPlan.schedule')}
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -300,6 +376,13 @@ export default function Recipe() {
               <li key={i}>{ing}</li>
             ))}
           </ul>
+          <button
+            type="button"
+            className="recipe__shopping recipe__shopping--body"
+            onClick={addIngredientsToShoppingList}
+          >
+            {ingredientsAdded ? `✓ ${t('recipe.ingredientsAdded')}` : `🛒 ${t('recipe.addIngredients')}`}
+          </button>
         </section>
 
         <section className="recipe__col recipe__col--method">
@@ -316,7 +399,7 @@ export default function Recipe() {
           <button
             type="button"
             className="recipe__cook recipe__cook--wide"
-            onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
+            onClick={startCooking}
           >
             {t('recipe.cook')}
           </button>
@@ -326,6 +409,54 @@ export default function Recipe() {
       <div className="recipe__reviews">
         <Reviews recipeId={recipe.id} />
       </div>
+
+      <Modal
+        open={Boolean(cookWarning)}
+        onClose={() => setCookWarning(null)}
+        className="recipe__allergy-modal"
+        title={cookWarning?.type === 'setup'
+          ? t('recipe.allergySetupTitle')
+          : t('recipe.allergyConflictTitle')}
+        footer={(
+          <>
+            <button type="button" className="kbtn kbtn--ghost" onClick={() => setCookWarning(null)}>
+              {t('recipe.allergyCancel')}
+            </button>
+            {cookWarning?.type === 'setup' ? (
+              <>
+                <button type="button" className="kbtn kbtn--ghost" onClick={() => navigate('/settings?section=allergies')}>
+                  {t('recipe.goToAllergySettings')}
+                </button>
+                <button type="button" className="kbtn kbtn--primary" onClick={() => {
+                  setCookWarning(null);
+                  navigate(`/recipe/${recipe.id}/cook`);
+                }}>
+                  {t('recipe.cookAnyway')}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="kbtn kbtn--danger" onClick={() => {
+                setCookWarning(null);
+                navigate(`/recipe/${recipe.id}/cook`);
+              }}>
+                {t('recipe.cookAnyway')}
+              </button>
+            )}
+          </>
+        )}
+      >
+        {cookWarning?.type === 'setup' ? (
+          <p className="recipe__allergy-dialog">
+            <span className="recipe__allergy-warning-icon" aria-hidden="true">⚠️</span>
+            {t('recipe.allergySetupMessage', { list: containedAllergens.join(', ') })}
+          </p>
+        ) : (
+          <p className="recipe__allergy-dialog recipe__allergy-dialog--danger">
+            <span className="recipe__allergy-warning-icon" aria-hidden="true">⚠️</span>
+            {t('recipe.allergyConflictMessage', { list: allergyConflicts.join(', ') })}
+          </p>
+        )}
+      </Modal>
     </div>
   );
 }
