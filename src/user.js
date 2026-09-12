@@ -12,6 +12,7 @@ import { hydrateFromUser, applyTheme } from './settings';
 const KEY = 'kooka_user';
 const TOKEN_KEY = 'kooka_token';
 const EVENT = 'kooka:user';
+const ALLERGY_ANSWERED_KEY = 'kooka_allergies_answered';
 
 function read() {
   try {
@@ -39,6 +40,22 @@ export function isLoggedIn() {
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
   write(null);
+}
+
+export function markAllergiesAnswered() {
+  try {
+    localStorage.setItem(ALLERGY_ANSWERED_KEY, 'true');
+  } catch {
+    /* the account data remains authoritative when storage is unavailable */
+  }
+}
+
+export function allergiesHaveBeenAnswered() {
+  try {
+    return localStorage.getItem(ALLERGY_ANSWERED_KEY) === 'true';
+  } catch {
+    return false;
+  }
 }
 
 /* Fetch the live profile from the backend and cache it. */

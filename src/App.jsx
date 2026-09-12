@@ -18,6 +18,7 @@ import Admin from './pages/app/Admin'
 import Suspended from './pages/app/Suspended'
 import CreateRecipe from './pages/app/CreateRecipe'
 import Search from './pages/app/Search'
+import MealPlan from './pages/app/MealPlan'
 import KookaSplash from './pages/loading/KookaSplash'
 import { isLoggedIn } from './user'
 import { readSettings, applyTheme } from './settings'
@@ -110,6 +111,7 @@ function App() {
           <Route path="/create" element={<CreateRecipe />} />
           <Route path="/recipe/:id/edit" element={<CreateRecipe />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/meal-plan" element={<MealPlan />} />
           <Route path="/recipe/:id" element={<Recipe />} />
           <Route path="/recipe/:id/cook" element={<Cook />} />
           <Route path="/learn" element={<Learn />} />

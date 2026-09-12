@@ -37,6 +37,13 @@ const ICONS = {
       <path d="M20 8.5A4.5 4.5 0 0 1 21 11v9l-3-2" />
     </svg>
   ),
+  mealPlan: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 3v7M3.5 3v4a2.5 2.5 0 0 0 5 0V3M6 9.5V21" />
+      <path d="M15 3v18M15 3c3.2 0 5 2.1 5 5s-1.8 5-5 5" />
+    </svg>
+  ),
   profile: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -68,6 +75,7 @@ const NAV = [
   },
   { to: '/chat', key: 'chat', icon: ICONS.chat },
   { to: '/learn', key: 'learn', icon: ICONS.learn },
+  { to: '/meal-plan', key: 'mealPlan', icon: ICONS.mealPlan },
   { to: '/forum', key: 'forum', icon: ICONS.forum },
   { to: '/profile', key: 'profile', icon: ICONS.profile },
 ];

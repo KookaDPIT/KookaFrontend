@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme, settingsBlob } from '../../settings';
-import { refreshUser, logout as logoutUser, useUser } from '../../user';
+import {
+  refreshUser, logout as logoutUser, useUser, markAllergiesAnswered,
+} from '../../user';
 import {
   updateProfile, changePassword, checkAvailability, getBlocked, unblockUser,
   getAllergenCatalog,
@@ -272,7 +274,23 @@ export default function Settings() {
     try {
       await updateProfile({ allergies: picked });
       await refreshUser(); // the feed filters read this off the cached account
+      markAllergiesAnswered();
       flash(t('settings.allergies.saved'));
+    } catch (err) {
+      flash(errText(err, t('common.error')));
+    } finally {
+      setSavingAllergies(false);
+    }
+  };
+
+  const confirmNoAllergies = async () => {
+    setSavingAllergies(true);
+    try {
+      setPicked([]);
+      await updateProfile({ allergies: [] });
+      await refreshUser();
+      markAllergiesAnswered();
+      flash(t('settings.allergies.noneSaved'));
     } catch (err) {
       flash(errText(err, t('common.error')));
     } finally {
@@ -476,6 +494,14 @@ export default function Settings() {
                   disabled={savingAllergies}
                 >
                   {savingAllergies ? t('common.saving') : t('settings.allergies.save')}
+                </button>
+                <button
+                  type="button"
+                  className="st-ghost"
+                  onClick={confirmNoAllergies}
+                  disabled={savingAllergies}
+                >
+                  {t('settings.allergies.noAllergies')}
                 </button>
               </div>
             </div>

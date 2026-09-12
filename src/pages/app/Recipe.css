@@ -164,6 +164,12 @@
 
 /* You told us to avoid this — said once, plainly, before the ingredients. */
 .recipe__allergy-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
   margin: 0 0 16px;
   padding: 11px 14px;
   border-radius: 12px;
@@ -173,6 +179,8 @@
   line-height: 1.5;
   color: #ffd8ce;
 }
+
+.recipe__allergy-warn-icon { flex-shrink: 0; line-height: 1; }
 
 /* CTA: full-width cook button, with an optional edit button stacked below */
 .recipe__cta {
@@ -200,6 +208,67 @@
 }
 
 .recipe__edit:hover { background: rgba(255, 255, 255, 0.18); }
+
+.recipe__shopping {
+  width: 100%;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff8ef;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.recipe__shopping:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.recipe__calendar-button { position: relative; }
+
+.recipe__calendar-popover {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(30, 17, 10, 0.92);
+}
+
+.recipe__calendar-popover label {
+  color: rgba(255, 248, 239, 0.72);
+  font-family: var(--font-important), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.recipe__calendar-popover input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff8ef;
+  font: 14px var(--font-body);
+}
+
+.recipe__calendar-confirm {
+  padding: 10px;
+  border: 0;
+  border-radius: 9px;
+  background: #ff6b35;
+  color: #fff;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.recipe__calendar-confirm:hover { background: #f2591f; }
 
 .recipe__photo {
   aspect-ratio: 4 / 3;
@@ -285,32 +354,21 @@
 
 .gauge__svg { width: 100%; height: auto; overflow: visible; }
 
-.gauge__track {
-  fill: none;
-  stroke: #ece0c6;
-  stroke-width: 7;
-  stroke-linecap: round;
-}
-
 .gauge__zone {
   fill: none;
-  stroke-width: 7;
-  stroke-linecap: butt;
+  stroke-width: 8;
+  stroke-linecap: round;
 }
 
 .gauge__zone--green { stroke: #3fae6f; }
-.gauge__zone--amber { stroke: #ef9f3c; }
+.gauge__zone--amber { stroke: #efb341; }
 .gauge__zone--red { stroke: #e5533a; }
-
-.gauge__tick { stroke: #c9b892; stroke-width: 1.4; stroke-linecap: round; }
 
 .gauge__needle {
   stroke: #2a2016;
-  stroke-width: 2.6;
+  stroke-width: 2.8;
   stroke-linecap: round;
 }
-
-.gauge__hub { fill: #2a2016; }
 
 .gauge__readout {
   display: flex;
@@ -426,6 +484,43 @@
 .recipe__ingredients li:first-child { border-top: none; padding-top: 4px; }
 .recipe__ingredients li:last-child { padding-bottom: 4px; }
 
+.recipe__shopping--body {
+  margin-top: 12px;
+  border-color: #e6d6b4;
+  background: transparent;
+  color: #d64f10;
+}
+
+.recipe__shopping--body:hover {
+  background: rgba(255, 107, 53, 0.08);
+  border-color: #ff6b35;
+}
+
+.recipe__allergy-modal {
+  max-width: 620px;
+}
+
+.recipe__allergy-modal .kmodal__title { color: #b42318; }
+
+.recipe__allergy-dialog {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  color: #b42318;
+  font-family: var(--font-important), sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.recipe__allergy-warning-icon { flex-shrink: 0; font-size: 25px; line-height: 1.1; }
+.recipe__allergy-dialog--danger { color: #a61b12; }
+
+[data-theme="dark"] .recipe__allergy-dialog,
+[data-theme="dark"] .recipe__allergy-dialog--danger { color: #ff7666; }
+[data-theme="dark"] .recipe__allergy-modal .kmodal__title { color: #ff7666; }
+
 .recipe__method {
   list-style: none;
   margin: 0 0 28px;
@@ -512,10 +607,7 @@
   border-color: #4a4238;
 }
 
-[data-theme="dark"] .gauge__track { stroke: #5b5145; }
-[data-theme="dark"] .gauge__tick { stroke: #a89968; }
 [data-theme="dark"] .gauge__needle { stroke: #f5f5f0; }
-[data-theme="dark"] .gauge__hub { fill: #f5f5f0; }
 [data-theme="dark"] .gauge__readout small,
 [data-theme="dark"] .gauge__label { color: #c9bea7; }
 
@@ -523,6 +615,10 @@
 [data-theme="dark"] .recipe__ingredients li,
 [data-theme="dark"] .recipe__method p { color: #f5f5f0; }
 [data-theme="dark"] .recipe__ingredients li { border-color: #4a4238; }
+[data-theme="dark"] .recipe__shopping--body {
+  border-color: #5b5145;
+  color: #ff9a70;
+}
 
 [data-theme="dark"] .recipe__step-no {
   background: rgba(255, 107, 53, 0.2);

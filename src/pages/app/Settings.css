@@ -236,7 +236,7 @@
 }
 .st-prefix input { padding-left: 28px; }
 
-.st-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+.st-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 .st-actions--start { justify-content: flex-start; }
 
 .st-save {
