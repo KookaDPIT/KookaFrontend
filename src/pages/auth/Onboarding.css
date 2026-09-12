@@ -209,3 +209,114 @@
   .onb__actions { flex-direction: column-reverse; }
   .onb__save, .onb__skip { width: 100%; }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page / card -------------------------------------------------------- */
+  .onb {
+    padding: 14px 12px;
+  }
+
+  .onb__card {
+    min-width: 0;
+    padding: 22px 16px 18px;
+    border-radius: 22px;
+  }
+
+  .onb__logo {
+    height: 30px;
+    margin-bottom: 16px;
+  }
+
+  .onb__title {
+    font-size: 26px;
+    overflow-wrap: anywhere;
+  }
+
+  .onb__sub {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+
+  /* ---- allergen grid ------------------------------------------------------ */
+  /* minmax(170px) collapses to ONE column below ~430px, which makes the
+     14-chip list ~760px tall before the actions; two columns on every phone
+     width halves that and keeps Save/Skip within a screen's reach. */
+  .onb__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .onb__chip {
+    min-width: 0;
+    min-height: 44px;
+    gap: 8px;
+    padding: 10px 10px;
+  }
+
+  .onb__chip-emoji {
+    flex-shrink: 0;
+    font-size: 17px;
+  }
+
+  .onb__chip-label {
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .onb__chip-tick {
+    flex-shrink: 0;
+  }
+
+  .onb__none {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
+
+  /* ---- actions ------------------------------------------------------------ */
+  .onb__actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .onb__save,
+  .onb__skip {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .onb__later {
+    margin-top: 12px;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* very narrow phones (320–400px) */
+@media (max-width: 400px) {
+  .onb {
+    padding: 10px;
+  }
+
+  .onb__card {
+    padding: 18px 14px 16px;
+  }
+
+  .onb__title {
+    font-size: 24px;
+  }
+
+  .onb__chip {
+    gap: 6px;
+    padding: 10px 8px;
+  }
+
+  .onb__chip-label {
+    font-size: 12.5px;
+  }
+}

@@ -310,3 +310,51 @@
 [data-theme='dark'] .fp-arrow { color: #a89988; }
 [data-theme='dark'] .fp-arrow:hover { background: rgba(255, 255, 255, 0.1); color: #f5f5f0; }
 [data-theme='dark'] .fp-id { border-color: #4a4238; color: #a89988; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page ---------------------------------------------------------------- */
+  .fp { padding: 16px 14px 24px; }
+  .fp-loading,
+  .fp-missing { margin: 40px auto; }
+  .fp-missing h1 { font-size: 28px; }
+
+  /* the staff strip is a tool, not part of the read: run it edge to edge
+     above the thread (it stays sticky — there is no top bar on phones) */
+  .fp > .modbar { margin: -16px -14px 16px; }
+
+  .fp-back { min-height: 40px; }
+
+  /* ---- the post ------------------------------------------------------------ */
+  .fp-card { padding: 18px 16px 18px 18px; border-radius: 20px; }
+  .fp-meta { gap: 6px; margin-bottom: 12px; }
+  .fp-id { min-height: 34px; }
+  .fp-title { font-size: clamp(22px, 6.6vw, 26px); overflow-wrap: anywhere; }
+  .fp-byline { overflow-wrap: anywhere; }
+  .fp-actions { margin-top: 18px; }
+  /* 36px arrows on the thread's own vote pill */
+  .fp-vote { padding: 3px 6px; }
+  .fp-arrow { width: 36px; height: 36px; }
+  .fp-arrow svg { width: 16px; height: 16px; }
+  .fp-chip { min-height: 40px; padding: 8px 14px; }
+
+  /* ---- comments ------------------------------------------------------------ */
+  .fp-comments { margin-top: 22px; }
+  .fp-comments__title { font-size: 22px; }
+  .fp-composer { gap: 8px; }
+  .fp-send { min-height: 42px; }
+  .fp-comment { padding: 12px 14px; border-radius: 14px; }
+  /* handle + full timestamp + delete do not fit one 300px line: wrap */
+  .fp-comment__head { flex-wrap: wrap; column-gap: 8px; row-gap: 2px; }
+  .fp-comment__head > span { min-width: 0; overflow-wrap: anywhere; }
+  .fp-comment__who { min-width: 0; overflow-wrap: anywhere; }
+  .fp-comment__del { min-height: 36px; padding: 6px 8px; margin-right: -8px; }
+}
+
+@media (max-width: 400px) {
+  .fp-card { padding: 16px 14px 16px 16px; }
+  .fp-chip { padding: 8px 12px; font-size: 12.5px; }
+  .fp-comment { padding: 11px 12px; }
+}

@@ -28,3 +28,39 @@
 @media (prefers-reduced-motion: reduce) {
   .ktoast { transition: opacity 0.22s ease; transform: translate(-50%, 0); }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Sit above the fixed tab bar (+ safe area) and, while a cook is parked,
+     above the floating dock as well — --k-dock-h is set on .app-shell by
+     AppLayout.css and is 0 everywhere else. Left/right insets + fit-content
+     + auto margins keep the pill centred but let it grow to the full width
+     for long messages instead of running off the screen. */
+  .ktoast {
+    left: 12px;
+    right: 12px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+    margin: 0 auto;
+    bottom: calc(78px + 14px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
+    padding: 12px 18px;
+    border-radius: 16px;
+    text-align: center;
+    overflow-wrap: anywhere;
+    transform: translate(0, 24px);
+  }
+
+  .ktoast.is-shown { transform: translate(0, 0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ktoast { transform: translate(0, 0); }
+  }
+}
+
+/* landscape phones: the pill would sit inside the fixed tab bar */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .ktoast { bottom: calc(78px + 14px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px)); }
+}

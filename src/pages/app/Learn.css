@@ -1045,3 +1045,336 @@
   font-size: 11px;
   opacity: 0.62;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- header ---- */
+  .lb-header {
+    padding-top: 22px;
+    padding-bottom: 6px;
+  }
+
+  .lb-sub {
+    font-size: 14px;
+  }
+
+  .lb-empty {
+    padding: 24px 18px;
+  }
+
+  .lb-empty--inline {
+    padding: 18px;
+  }
+
+  /* ---- rank ladder: label above the rank line, edge-to-edge scroller ---- */
+  .lb-ranks {
+    padding-top: 18px;
+  }
+
+  .lb-ranks__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .lb-ranks__current {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  /* The six rank families are wider than the screen: keep the horizontal
+     scroll but bleed it to the screen edges, snap per rank, hide the
+     scrollbar, and leave headroom so the raised current rank isn't clipped. */
+  .lb-ranks__tree {
+    gap: 14px;
+    margin-left: -18px;
+    margin-right: -18px;
+    padding: 8px 18px 12px;
+    scroll-padding-left: 18px;
+    scroll-padding-right: 18px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .lb-ranks__tree::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lb-rank {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  .lb-rank__name {
+    max-width: 100px;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- daily challenges ---- */
+  .lb-challenges {
+    padding-top: 24px;
+    padding-bottom: 8px;
+  }
+
+  /* minmax(300px) overflows a 284px content box at 320px wide */
+  .lb-challenges__grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  .lb-challenge {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .lb-challenge__photo {
+    width: 68px;
+    height: 68px;
+    font-size: 26px;
+  }
+
+  .lb-challenge__desc {
+    overflow-wrap: anywhere;
+  }
+
+  .lb-challenge__btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 6px 18px;
+  }
+
+  /* ---- tree layout / lesson detail panel ---- */
+  .lb-grid {
+    padding-top: 22px;
+    padding-bottom: 36px;
+    gap: 18px;
+  }
+
+  .lb-side {
+    gap: 14px;
+  }
+
+  .lb-detail {
+    padding: 16px;
+    border-radius: 18px;
+    gap: 11px;
+  }
+
+  .lb-detail__name {
+    font-size: 24px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .lb-detail__desc,
+  .lb-detail__locked,
+  .lb-detail__cooldown,
+  .lb-mastery__hint {
+    overflow-wrap: anywhere;
+  }
+
+  .lb-detail__facts {
+    gap: 6px;
+  }
+
+  .lb-detail__facts li {
+    padding: 8px 4px;
+  }
+
+  .lb-detail__facts b {
+    font-size: 15px;
+  }
+
+  .lb-start {
+    min-height: 44px;
+    padding: 11px 16px;
+  }
+
+  .lb-legend {
+    gap: 8px 12px;
+  }
+
+  /* ---- honeycomb: toolbar wraps, buttons become touch-sized ---- */
+  .lb-canvas-wrap {
+    border-radius: 18px;
+  }
+
+  .lb-canvas-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .lb-canvas-bar__stats {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .lb-canvas-bar__zoom {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .lb-canvas-bar__zoom button {
+    flex: 1 1 auto;
+    min-width: 44px;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  /* Shorter board on phones so page-scrollable area (the bar, the panel, the
+     page padding) stays on screen around the touch-action:none map; svh keeps
+     it stable while the browser chrome collapses. Panning and the +/−, Fit
+     and Locate buttons still reach every lesson. */
+  .lb-viewport {
+    height: clamp(300px, 55svh, 400px);
+  }
+
+  /* Touch path for the hover-revealed captions: a tap selects the hexagon,
+     and the selected hexagon always shows its label (rule above). Keep the
+     label from ever exceeding a narrow viewport. */
+  .lb-hex.is-selected .lb-hex__label {
+    opacity: 1;
+    max-width: min(130px, 70vw);
+  }
+
+  /* ---- lesson modal contents ---- */
+  .lb-lesson {
+    gap: 12px;
+  }
+
+  .lb-lesson__hero {
+    height: 84px;
+    font-size: 40px;
+  }
+
+  .lb-lesson__intro,
+  .lb-lesson__steps li,
+  .lb-lesson__tips,
+  .lb-lesson__masteryHint,
+  .lb-cooldown p {
+    overflow-wrap: anywhere;
+  }
+
+  .lb-lesson__steps li {
+    min-width: 0;
+  }
+
+  /* the mastery quiz button sits in a block container, not the flex column */
+  .lb-lesson__mastery .lb-start {
+    display: block;
+    width: 100%;
+  }
+
+  /* ---- quiz: every answer row is a comfortable tap target ---- */
+  .lb-quiz {
+    gap: 16px;
+  }
+
+  .lb-quiz__q legend {
+    overflow-wrap: anywhere;
+  }
+
+  .lb-opt {
+    min-height: 44px;
+    padding: 10px 12px;
+    gap: 12px;
+  }
+
+  .lb-opt input {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+
+  .lb-opt span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 400px) {
+  .lb-header__title {
+    font-size: clamp(28px, 9.5vw, 36px);
+  }
+
+  .lb-ranks__tree {
+    gap: 10px;
+  }
+
+  .lb-challenge__photo {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+
+  .lb-detail {
+    padding: 14px;
+  }
+
+  .lb-detail__name {
+    font-size: 22px;
+  }
+
+  .lb-detail__facts {
+    gap: 5px;
+  }
+
+  .lb-canvas-bar {
+    padding: 10px 12px;
+  }
+
+  .lb-canvas-bar__zoom button {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .lb-viewport {
+    height: clamp(280px, 52svh, 380px);
+  }
+
+  .lb-lesson__hero {
+    height: 76px;
+    font-size: 36px;
+  }
+}
+
+/* ---- PHONE follow-ups, verified in a 360/390px browser (additive) ---- */
+@media (max-width: 640px) {
+  /* A `1fr` track is minmax(auto, 1fr): its automatic minimum is the widest
+     card's min-content width, and a nowrap challenge title made one card
+     486px wide at 360. Zero minimum + a title that may wrap. */
+  .lb-challenges__grid { grid-template-columns: minmax(0, 1fr); }
+  .lb-challenge { min-width: 0; }
+  .lb-challenge__head { flex-wrap: wrap; row-gap: 4px; }
+  .lb-challenge__title { white-space: normal; overflow-wrap: anywhere; }
+
+  /* The board was a scroll trap on touch: touch-action:none ate every swipe
+     that started on it. Vertical swipes now scroll the page; horizontal
+     drags still pan the board (Learn.jsx also lets a drag start on a hexagon
+     at this width), and pinch keeps zooming the page. */
+  .lb-viewport { touch-action: pan-y pinch-zoom; }
+
+  /* Lesson panel under the board on phones: after tapping a hexagon the
+     title and the Start button appear right below it instead of ~500px above. */
+  .lb-canvas-wrap { order: 1; }
+  .lb-side { order: 2; }
+}
+
+/* landscape phones: keep a scrollable band around the board */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .lb-viewport {
+    height: clamp(180px, 45svh, 280px);
+    touch-action: pan-y pinch-zoom;
+  }
+}

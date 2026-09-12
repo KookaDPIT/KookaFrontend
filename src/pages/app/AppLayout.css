@@ -307,3 +307,129 @@
 [data-theme="dark"] .page-placeholder h1 {
   color: #8a7a5c;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- bottom tab bar ------------------------------------------------------
+     5 links (6 for staff) + theme + language have to fit at 360px. The
+     ≤900px rules give every link `flex: 1`, but a flex item's min-width is
+     its longest word, so "Moderation" / "Profile" used to widen the row past
+     the viewport and push the theme/lang buttons off-screen. Let the links
+     shrink and ellipsise the label instead of overflowing or wrapping — a
+     second label line would push the bar past the room the page reserves.
+     Height check (Bootstrap reboot gives everything line-height 1.5):
+     5 + (7 + 24 + 3 + 15 + 7) + 5 + 1 border = 67px < 78px. */
+  .app-nav {
+    padding: 5px 5px calc(5px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-nav__links {
+    gap: 0;
+    min-width: 0;
+  }
+
+  .app-nav__link {
+    min-width: 0;
+    gap: 3px;
+    padding: 7px 2px;
+    border-radius: 9px;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+
+  .app-nav__label {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-nav__bottom {
+    gap: 4px;
+    margin-left: 4px;
+  }
+
+  .app-nav__theme,
+  .app-nav__lang {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .app-nav__theme { font-size: 16px; }
+
+  .app-nav__lang {
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ---- page area ------------------------------------------------------------
+     Keep every page clear of the fixed bar, the home-indicator safe area and
+     — while a cook is parked — the floating dock. --k-dock-h is the dock's
+     phone height plus a gap (see CookDock.css); Toast.css reads it too so a
+     toast never lands on the dock. Browsers without :has() simply keep the
+     plain 78px reservation. */
+  .app-shell:has(.cdock) { --k-dock-h: 100px; }
+  .app-shell:has(.cdock__timer) { --k-dock-h: 156px; }
+
+  .app-main {
+    padding-bottom: calc(78px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* page roots are flex children of .app-main: without this one wide element
+     inside a page grows the root past the viewport and the shell scrolls
+     sideways */
+  .app-main > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-placeholder { padding: 20px; }
+  .page-placeholder h1 { font-size: 40px; }
+}
+
+@media (max-width: 400px) {
+  .app-nav {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+
+  .app-nav__link { padding: 7px 1px; }
+
+  .app-nav__bottom {
+    gap: 3px;
+    margin-left: 3px;
+  }
+}
+
+
+/* ---- PHONE follow-ups, verified in a 360px browser (additive) ---- */
+@media (max-width: 640px) {
+  /* 40×44 theme / language buttons: comfortably tappable, and six tabs still
+     fit at 360px (≈44px each, labels ellipsise) */
+  .app-nav__theme,
+  .app-nav__lang {
+    width: 40px;
+    height: 44px;
+  }
+
+  /* the bar's top hairline stayed light-mode beige in dark mode */
+  [data-theme="dark"] .app-nav { border-top-color: #3a3228; }
+
+  /* the dock's timer buttons are 40px now (CookDock.css): 6px more room */
+  .app-shell:has(.cdock__timer) { --k-dock-h: 164px; }
+}
+
+/* Landscape phones: the dock is lifted above the tab bar (CookDock.css), so
+   reserve room for its stacked layout under every page. Tablets are taller
+   than 480px and keep the plain 78px reservation. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .app-shell:has(.cdock) { --k-dock-h: 130px; }
+  .app-shell:has(.cdock__timer) { --k-dock-h: 186px; }
+  .app-main {
+    padding-bottom: calc(78px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+}

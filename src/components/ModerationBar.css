@@ -68,3 +68,17 @@
   .modbar { padding: 9px 14px; gap: 10px; }
   .modbar__text small { display: none; }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  .modbar { padding: 9px 14px; gap: 10px; }
+  .modbar__text b { overflow-wrap: anywhere; }
+  /* The note is the only explanation of what "hidden" means for the reader,
+     so it must stay reachable on a phone: the text column (flex: 1,
+     min-width: 0) wraps it under the label instead of dropping it. This
+     later, equal-specificity rule wins over the ≤620px one above. */
+  .modbar__text small { display: block; overflow-wrap: anywhere; }
+  .modbar__btn { min-height: 40px; padding: 8px 14px; }
+}

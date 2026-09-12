@@ -152,6 +152,10 @@ export default function Cook() {
 
   useEffect(() => {
     if (!isAssistantOpen) return undefined;
+    // On a phone the soft keyboard would cover the sheet's answer area the
+    // moment it opens — let the user tap the field instead. Desktop keeps
+    // the autofocus (the check is false there).
+    if (window.matchMedia('(max-width: 640px)').matches) return undefined;
     const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [isAssistantOpen]);

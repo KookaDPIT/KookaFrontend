@@ -98,3 +98,59 @@
   opacity: 0.6;
   cursor: progress;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- three fluid squares per row instead of 88px tiles that leave a
+     ragged gap on the right; a grid never wraps a tile unexpectedly the way
+     a flex row with calc() widths can ---- */
+  .imgup__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .imgup__thumb,
+  .imgup__add {
+    width: auto;
+    height: auto;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* remove ×: 30px visible, and an invisible ::after ring that extends the
+     tap area to 44px without covering more of the photo */
+  .imgup__remove {
+    width: 30px;
+    height: 30px;
+    top: 6px;
+    right: 6px;
+    font-size: 19px;
+  }
+
+  .imgup__remove::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+  }
+
+  /* reposition / replace (crop-enabled pickers): fill the two cells beside
+     the thumbnail with full-width, 40px buttons */
+  .imgup__ops {
+    grid-column: span 2;
+    min-width: 0;
+  }
+
+  .imgup__op {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
+  .imgup__error { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 400px) {
+  .imgup__grid { gap: 8px; }
+}

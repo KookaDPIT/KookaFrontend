@@ -29,3 +29,17 @@
 .stars__btn:hover {
   transform: scale(1.15);
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* rating buttons (26–28px glyphs) become 40px tap targets; the glyph size
+     and colour are untouched, only the hit area grows */
+  .stars--interactive .stars__btn {
+    display: inline-grid;
+    place-items: center;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}

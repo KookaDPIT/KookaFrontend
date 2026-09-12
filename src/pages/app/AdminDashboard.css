@@ -274,3 +274,90 @@
 [data-theme='dark'] .dash-spark__bars span.is-empty { background: rgba(255, 255, 255, 0.12); }
 [data-theme='dark'] .dash-list__photo { background-color: #3a3228; color: #c9bea7; }
 [data-theme='dark'] .dash-refresh { border-color: #4a4238; color: #c9bea7; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  .dash { gap: 14px; }
+
+  /* ---- blocks: 14px padding keeps ~304px of content on a 360px phone ---- */
+  .dash-block {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .dash-block__title { margin-bottom: 12px; }
+
+  /* ---- queues: two across; the odd last card takes the full width so the
+     grid never ends with a lonely half-width button ---- */
+  .dash-queues {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .dash-queue {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
+  .dash-queue:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .dash-queue b { font-size: 24px; }
+  .dash-queue span { overflow-wrap: anywhere; }
+
+  /* ---- stat grids: two across for the community numbers, three across
+     for the small sanctions grid (it has exactly three tiles) ---- */
+  .dash-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .dash-stats--small { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dash-stat {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+  .dash-stat__value { font-size: 22px; }
+  .dash-stat__label,
+  .dash-stat__note { overflow-wrap: anywhere; }
+  .dash-note { overflow-wrap: anywhere; }
+
+  /* ---- sparkbars: one chart per row, full width ---- */
+  .dash-sparks {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .dash-spark { padding: 12px; }
+  .dash-spark__head { flex-wrap: wrap; }
+  .dash-spark__label { overflow-wrap: anywhere; }
+  .dash-spark__bars { height: 42px; }
+
+  /* ---- short lists: stacked; titles may wrap to two lines instead of
+     being cut off; rows reach a 48px tap height ---- */
+  .dash-lists {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .dash-list button {
+    min-height: 48px;
+    padding: 8px;
+  }
+  .dash-list__text { flex: 1 1 auto; }
+  .dash-list__text b {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .dash-list__text small { overflow-wrap: anywhere; }
+
+  /* ---- refresh / retry: full-width, comfortable tap target ---- */
+  .dash-refresh {
+    align-self: stretch;
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  .dash-block { padding: 12px; }
+  .dash-stats--small { gap: 8px; }
+  .dash-stat { padding: 10px; }
+}

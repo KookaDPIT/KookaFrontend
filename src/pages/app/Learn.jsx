@@ -95,6 +95,10 @@ export default function Learn() {
      The flag is what puts the CSS transition on the canvas. */
   const [animating, setAnimating] = useState(false);
   const dragRef = useRef(null);
+  // phones only: a drag may start on a hexagon (see onPointerDown); the click
+  // that follows a real drag must not select it
+  const movedRef = useRef(false);
+  const dragStartRef = useRef(null);
   const viewportRef = useRef(null);
   /* A mirror of the current view, so the zoom maths can read where we are
      without making every caller a state updater. */
@@ -265,8 +269,12 @@ export default function Learn() {
   }, [zoomTo]);
 
   const onPointerDown = (e) => {
-    // Only start a drag on the canvas background, never on a hexagon.
-    if (e.target.closest('.lb-hex')) return;
+    movedRef.current = false;
+    // Only start a drag on the canvas background, never on a hexagon — except
+    // on a phone, where hexagons tile the whole board and a swipe over them
+    // must still pan it (a tap still selects: see movedRef in the hex onClick).
+    if (e.target.closest('.lb-hex') && !window.matchMedia('(max-width: 640px)').matches) return;
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
     // a transition here would make the board trail the pointer
     setAnimating(false);
     dragRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
@@ -274,6 +282,10 @@ export default function Learn() {
   };
   const onPointerMove = (e) => {
     if (!dragRef.current) return;
+    if (dragStartRef.current
+      && Math.abs(e.clientX - dragStartRef.current.x) + Math.abs(e.clientY - dragStartRef.current.y) > 6) {
+      movedRef.current = true;
+    }
     setPan({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
   };
   const onPointerUp = () => {
@@ -735,7 +747,11 @@ export default function Learn() {
                       width: HEX_W,
                       '--hex-color': branchColor[node.branch] || '#c9a632',
                     }}
-                    onClick={() => setSelected(node.slug)}
+                    onClick={() => {
+                      // a drag that started on this hexagon (phones) ends with a click too
+                      if (movedRef.current) { movedRef.current = false; return; }
+                      setSelected(node.slug);
+                    }}
                     aria-pressed={selected === node.slug}
                     title={`${node.title} — ${node.req_tier_label}`}
                   >

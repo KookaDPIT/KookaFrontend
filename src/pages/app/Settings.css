@@ -560,3 +560,90 @@
 }
 
 [data-theme="dark"] .st-allergens__note { color: rgba(245, 245, 240, 0.72); }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* --- top bar: back + log out share one line, the title gets its own —
+         three things across (1fr auto 1fr) do not fit a 360px screen ------ */
+  .st-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "back logout"
+      "title title";
+    gap: 6px 12px;
+    padding: 14px 16px 4px;
+  }
+  .st-back { grid-area: back; min-width: 0; min-height: 40px; }
+  .st-logout { grid-area: logout; min-height: 40px; white-space: nowrap; }
+  .st-title {
+    grid-area: title;
+    justify-self: start;
+    margin-top: 4px;
+    font-size: 28px;
+    overflow-wrap: anywhere;
+  }
+
+  /* --- grid: a single column that can never grow past the viewport ------ */
+  .st-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 8px 16px 32px; }
+
+  /* --- category rail: the ≤860 scrolling row, bled edge to edge so pills
+         slide under the page gutters instead of stopping short ------------ */
+  .st-nav {
+    margin: 0 -16px;
+    padding: 2px 16px 6px;
+    scroll-padding: 0 16px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .st-nav__item { padding: 10px 12px; font-size: 14px; }
+  .st-nav__icon { width: 28px; height: 28px; }
+
+  /* --- panel ------------------------------------------------------------ */
+  .st-panel { padding: 18px 16px 20px; min-width: 0; }
+  .st-panel__head { margin-bottom: 16px; }
+  .st-panel__head h2 { font-size: 20px; overflow-wrap: anywhere; }
+
+  /* --- rows: label first; the control drops under it only when the two
+         cannot share a line (switches fit, segmented controls wrap) ------- */
+  .st-row { flex-wrap: wrap; gap: 10px 16px; padding: 14px 0; }
+  .st-row__text { flex: 1 1 200px; }
+  .st-row__label,
+  .st-row__hint { overflow-wrap: anywhere; }
+  .st-row__control { max-width: 100%; }
+  .st-seg { max-width: 100%; flex-wrap: wrap; }
+  .st-seg button { min-height: 40px; }
+
+  /* the switch keeps its 48×28 look; an invisible ::before widens the tap
+     area to 64×44 without moving the knob (the ::after). Rows are 28px+
+     apart, so neighbouring hit areas never overlap */
+  .st-switch::before { content: ''; position: absolute; inset: -8px; }
+
+  /* --- forms & buttons: full-width, wrapping action rows ---------------- */
+  .st-form { gap: 14px; }
+  .st-actions { flex-wrap: wrap; gap: 10px; }
+  .st-actions .st-save,
+  .st-actions .st-ghost { flex: 1 1 auto; min-height: 44px; text-align: center; }
+
+  /* --- allergens: two chips per row down to 320px ------------------------ */
+  .st-allergens { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+  .st-allergen { padding: 10px 11px; min-height: 44px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+
+  /* --- sessions / blocked lists ----------------------------------------- */
+  .st-sessions li,
+  .st-blocked li { gap: 10px; }
+  .st-session__meta b,
+  .st-blocked li b { overflow-wrap: anywhere; }
+  .st-linkbtn { min-height: 40px; padding: 0 4px; }
+}
+
+@media (max-width: 400px) {
+  .st-top { padding: 12px 12px 4px; }
+  .st-grid { padding: 8px 12px 28px; }
+  .st-nav { margin: 0 -12px; padding: 2px 12px 6px; scroll-padding: 0 12px; }
+  .st-panel { padding: 16px 14px 18px; }
+  .st-allergens { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .st-allergen { padding: 10px 9px; gap: 7px; }
+  .st-seg button { padding: 8px 12px; }
+}

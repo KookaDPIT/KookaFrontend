@@ -197,3 +197,64 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- safety net against sideways page scroll ---------------------------
+     `clip`, not `hidden`: the document never becomes a scroll container, so
+     position: sticky inside pages keeps working. Page styles still fix the
+     root causes; this only stops one stray wide element from letting the
+     whole page pan sideways. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  /* ---- replaced / embedded content can never be wider than its column ---- */
+  img,
+  svg,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  /* ---- iOS zooms the page when a focused field is under 16px -------------
+     One global rule so pages do not repeat it. The :not() chains are there
+     for specificity — (0,3,1) and up — so this beats the `.page .field` and
+     `.kinput`-style rules that set 13–15px without resorting to !important.
+     Buttons, checkboxes, radios, ranges, colour and file pickers keep their
+     own size: they never trigger the zoom. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+  textarea:not([hidden]):not([aria-hidden="true"]):not([inert]),
+  select:not([hidden]):not([aria-hidden="true"]):not([inert]) {
+    font-size: 16px;
+  }
+}
+
+
+/* Landscape phones (641–940px wide, ≤480px tall) never match the ≤640px block
+   above; the same three global safeguards apply there. Tablets are taller
+   than 480px in either orientation, so they are not affected. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+  textarea:not([hidden]):not([aria-hidden="true"]):not([inert]),
+  select:not([hidden]):not([aria-hidden="true"]):not([inert]) {
+    font-size: 16px;
+  }
+}

@@ -250,3 +250,64 @@
 [data-theme="dark"] .search-no-results {
   color: #b8b0a0;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page frame (the shell already pads 78px for the tab bar) ---- */
+  .search-page { padding: 18px 16px 32px; }
+
+  .search-page__title {
+    font-size: clamp(2.1rem, 9.5vw, 2.6rem);
+    margin-bottom: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- query bar ---- */
+  .search-page__bar {
+    padding: 12px 16px;
+    margin-bottom: 18px;
+  }
+
+  .search-page__bar input { min-width: 0; }
+
+  .search-page__hint {
+    padding: 22px 0;
+    overflow-wrap: anywhere;
+  }
+
+  .search-page__section { margin-bottom: 24px; }
+
+  /* ---- people: text wraps instead of running under the follow button,
+     which is grown to a 40px tap target ---- */
+  .sresult-user {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .sresult-user__name,
+  .sresult-user__handle {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sresult-user__follow {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  /* ---- recipes: two cards abreast like the Home feed, instead of one
+     oversized 4:3 card per row; minmax(0, 1fr) so a long title cannot widen
+     the grid ---- */
+  .search-page__recipes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .search-page { padding-left: 14px; padding-right: 14px; }
+
+  .search-page__recipes { gap: 10px; }
+}

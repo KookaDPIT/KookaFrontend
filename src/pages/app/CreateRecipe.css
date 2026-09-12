@@ -276,3 +276,102 @@
 }
 
 [data-theme="dark"] .create__submit:hover:not(:disabled) { background: #e0691f; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page frame: tighter gutters, no double bottom padding (the shell
+     already reserves 78px for the fixed tab bar) ---- */
+  .create__head,
+  .create__form {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .create__head { padding-top: 18px; }
+
+  .create__back {
+    min-height: 40px;
+    padding: 6px 0;
+    margin-bottom: 6px;
+  }
+
+  .create__title {
+    font-size: clamp(2.1rem, 9.5vw, 2.6rem);
+    overflow-wrap: anywhere;
+  }
+
+  .create__sub {
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .create__form {
+    margin-top: 18px;
+    padding-bottom: 32px;
+    gap: 18px;
+  }
+
+  .create__hint,
+  .create__error { overflow-wrap: anywhere; }
+
+  /* ---- origin / servings / time / rank row: origin takes a full row,
+     servings + time share the next one, rank gets its own row right above
+     its hint. The -8px keeps 4px of slack so rounding can never wrap a
+     half-width field onto its own line. ---- */
+  .create__row { gap: 10px 12px; }
+
+  .create__row .create__field { min-width: 0; }
+
+  .create__row .create__field:first-child { flex: 1 1 100%; }
+
+  .create__row .create__field--sm {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 0;
+  }
+
+  .create__row .create__field--sm:last-child { flex-basis: 100% !important; }
+
+  /* ---- ingredient + step rows: 40px remove buttons, inputs that can shrink ---- */
+  .create__listrow .create__input,
+  .create__stepbody { min-width: 0; }
+
+  .create__del {
+    width: 40px;
+    height: 40px;
+    font-size: 1.4rem;
+  }
+
+  .create__listrow .create__del { margin-top: 0; }
+
+  .create__stepno { margin-top: 10px; }
+
+  .create__timer { max-width: 100%; }
+
+  .create__addrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-top: 0;
+  }
+
+  /* ---- submit: full width, thumb-sized ---- */
+  .create__submit {
+    align-self: stretch;
+    width: 100%;
+    min-height: 48px;
+    padding: 14px 20px;
+  }
+}
+
+@media (max-width: 400px) {
+  .create__head,
+  .create__form {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .create__listrow,
+  .create__steprow { gap: 6px; }
+}

@@ -118,3 +118,48 @@
   font-size: 26px;
   z-index: 1;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* cards sit two abreast in ~160px columns on a phone: tighter body, and a
+     title that cannot widen the column with one long word */
+  .rcard { min-width: 0; }
+
+  .rcard__body {
+    padding: 10px 12px 12px;
+    gap: 5px;
+  }
+
+  .rcard__title {
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .rcard__desc { font-size: 0.8rem; }
+
+  /* "25 min · 420 kcal" and five stars no longer fit side by side */
+  .rcard__foot {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .rcard__meta {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .rcard__rating { flex-shrink: 0; }
+
+  .rcard__rank {
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .rcard__flag {
+    top: 6px;
+    left: 6px;
+    font-size: 1.2rem;
+  }
+}

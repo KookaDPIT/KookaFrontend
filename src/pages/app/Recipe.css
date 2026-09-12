@@ -603,3 +603,61 @@
   font-size: 12.5px;
   color: rgba(255, 255, 255, 0.82);
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- hero: tighter frame, title scales with the screen, long words wrap ---- */
+  .recipe__hero { padding: 14px 16px 24px; }
+  .recipe__back { min-height: 40px; margin-bottom: 14px; }
+  .recipe__hero-inner { gap: 18px; }
+  .recipe__hero-text { min-width: 0; }
+  .recipe__title {
+    font-size: clamp(30px, 9vw, 36px);
+    line-height: 1.04;
+    overflow-wrap: anywhere;
+  }
+  .recipe__tagline { font-size: 15px; overflow-wrap: anywhere; }
+  .recipe__translated { max-width: 100%; }
+  .recipe__meta { gap: 8px 14px; margin: 14px 0 18px; }
+  .recipe__meta li:not(:last-child)::after { margin-left: 8px; }
+  .recipe__author { max-width: 100%; margin-bottom: 14px; }
+  .recipe__author-text { min-width: 0; overflow-wrap: anywhere; }
+  .recipe__allergy-warn { overflow-wrap: anywhere; }
+  .recipe__cta { max-width: none; }
+  .recipe__photo { border-radius: 14px; }
+
+  /* ---- nutrition dashboard + allergens: give the gauges the card's width ---- */
+  .recipe__dash { gap: 14px; padding: 22px 16px 0; }
+  .recipe__dash-card { padding: 16px; border-radius: 16px; }
+  .recipe__panel-title { margin-bottom: 14px; font-size: 26px; }
+  .recipe__gauges { gap: 10px; }
+  .gauge__readout b { font-size: 18px; }
+  .aller { overflow-wrap: anywhere; }
+
+  /* ---- ingredients + method ---- */
+  .recipe__body { gap: 24px; padding: 22px 16px; }
+  .recipe__col-title { margin-bottom: 14px; font-size: 28px; }
+  .recipe__ingredients { padding: 14px 16px; border-radius: 16px; }
+  .recipe__ingredients li { padding: 12px 0; overflow-wrap: anywhere; }
+  .recipe__method li { grid-template-columns: 28px 1fr; gap: 12px; margin-bottom: 18px; }
+  .recipe__step-no { width: 28px; height: 28px; font-size: 14px; }
+  .recipe__method p { margin: 3px 0 0; overflow-wrap: anywhere; }
+
+  /* ---- reviews wrapper ---- */
+  .recipe__reviews { padding: 8px 16px 40px; }
+
+  /* ---- rank-locked screen ---- */
+  .recipe--locked { padding: 40px 16px; }
+  .recipe__lockTitle { font-size: 28px; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 400px) {
+  .recipe__hero { padding: 12px 14px 20px; }
+  .recipe__dash { padding: 18px 14px 0; }
+  .recipe__dash-card { padding: 14px 12px; }
+  .recipe__gauges { gap: 8px; }
+  .recipe__body { padding: 18px 14px; }
+  .recipe__reviews { padding: 8px 14px 36px; }
+}

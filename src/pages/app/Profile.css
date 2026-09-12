@@ -870,3 +870,156 @@
 @media (max-width: 620px) {
   .pf-rankrow__rank { display: none; }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* --- page frame: tighter gutters; the body column can never outgrow
+         the viewport (a bare 1fr has an auto minimum, minmax(0,1fr) does not) */
+  .pf { --pf-cover-h: 300px; --pf-cover-radius: 18px; }
+  .pf-head { padding: 0 16px; }
+  .pf-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    margin-top: 20px;
+    padding: 0 16px 32px;
+  }
+  .pf-main { min-width: 0; }
+
+  /* --- cover band: avatar + identity side by side, actions on their own row */
+  .pf-head__row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    row-gap: 12px;
+    padding: 0 16px 18px;
+  }
+  .pf-id { min-width: 0; overflow-wrap: anywhere; }
+  .pf-name {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: clamp(22px, 7vw, 28px);
+    line-height: 1.1;
+  }
+  .pf-handle { flex-wrap: wrap; row-gap: 2px; font-size: 13px; }
+
+  /* the ≤620 avatar size applies to the whole phone band (621–640 included);
+     the photo inherits the box's radius instead of keeping the 128px-box 32px,
+     which otherwise leaves orange slivers in the corners of a smaller avatar */
+  .pf-avatar { width: 100px; height: 100px; font-size: 36px; border-radius: 26px; }
+  .pf-avatar__img { border-radius: inherit; }
+
+  /* the actions take a full row under avatar + identity (the ≤620 rule does
+     this; it is repeated here so 621–640 behaves the same). Follow stretches
+     across the row; the kebab hugs the right edge so its right-anchored menu
+     always opens inward, on both own and other profiles */
+  .pf-actions { grid-column: 1 / -1; padding-bottom: 0; gap: 10px; }
+  .pf-actions .pf-follow { flex: 1 1 auto; min-height: 44px; padding: 11px 18px; }
+  .pf-actions .pf-more { margin-left: auto; }
+  .pf-menu { max-width: calc(100vw - 32px); }
+  .pf-menu button { min-height: 44px; }
+
+  /* --- stat strip ------------------------------------------------------- */
+  .pf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+  .pf-stat { padding: 14px 16px; }
+  .pf-stat b { font-size: 26px; }
+
+  /* --- tabs: one horizontally scrolling pill row, no tab is ever clipped
+         out of reach and no scrollbar clutter --------------------------- */
+  .pf-tabs {
+    display: flex;
+    width: max-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 14px;
+  }
+  .pf-tabs::-webkit-scrollbar { display: none; }
+  .pf-tab { flex-shrink: 0; white-space: nowrap; min-height: 40px; padding: 9px 14px; }
+
+  /* --- activity: the remove control is always visible and finger-sized
+         (there is no hover on a phone) ------------------------------------ */
+  .pf-activity li { gap: 10px; padding: 12px 2px; }
+  .pf-activity__text { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+  .pf-activity__when { flex-shrink: 0; white-space: nowrap; }
+  .pf-activity__x { opacity: 1; width: 40px; height: 40px; }
+
+  /* --- recipes: one card per row across the whole phone band (the ≤620 rule
+         already does this; 621–640 now matches) ---------------------------- */
+  .pf-recipes { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .pf-recipe h3,
+  .pf-recipe span { overflow-wrap: anywhere; }
+
+  /* --- passport --------------------------------------------------------- */
+  .pf-passport-tab { gap: 16px; }
+  .pf-globe svg { max-width: 100%; height: auto; }
+  .pf-passport { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .pf-stamp { padding: 14px 8px; min-width: 0; }
+  .pf-stamp b,
+  .pf-stamp small { max-width: 100%; text-align: center; overflow-wrap: anywhere; }
+
+  /* --- badges ----------------------------------------------------------- */
+  .pf-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pf-badge { padding: 18px 10px; }
+  .pf-badge b { text-align: center; overflow-wrap: anywhere; }
+
+  /* --- rail cards: stacked one under another. The ≤1040 rule turns the rail
+         into a wrapping row of flex:1 cards and the ≤620 rule pins them to
+         min-width:100% (content-box, so 44px wider than the rail); a column
+         of auto-sized cards is what a phone needs, and it also means a card
+         can never be squeezed to a third of the screen ---------------------- */
+  .pf-rail { flex-direction: column; flex-wrap: nowrap; gap: 12px; }
+  .pf-card { flex: 0 0 auto; min-width: 0; padding: 16px 18px; }
+  .pf-card__head { flex-wrap: wrap; gap: 0 10px; }
+  .pf-card__title { font-size: 22px; overflow-wrap: anywhere; }
+  .pf-link { min-height: 40px; padding: 0 4px; }
+  .pf-about { overflow-wrap: anywhere; }
+
+  /* --- ranking: the scope pills wrap if a translation is long; two-line
+         rows — the tier pill (hidden ≤620 above) sits under the name instead
+         of being dropped ---------------------------------------------------- */
+  .pf-rankboard__scopes { max-width: 100%; flex-wrap: wrap; }
+  .pf-rankscope { min-height: 40px; }
+  .pf-rankrow {
+    display: grid;
+    grid-template-columns: auto 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "pos avatar who xp"
+      "pos avatar rank xp";
+    align-items: center;
+    gap: 4px 10px;
+    padding: 10px 12px;
+  }
+  .pf-rankrow__pos { grid-area: pos; }
+  .pf-rankrow__avatar { grid-area: avatar; }
+  .pf-rankrow__who { grid-area: who; }
+  .pf-rankrow__rank { grid-area: rank; display: inline-block; justify-self: start; }
+  .pf-rankrow__xp { grid-area: xp; font-size: 12.5px; }
+
+  /* --- private / locked view -------------------------------------------- */
+  .pf-cover--identity { height: 240px; }
+  .pf-cover__id { padding: 20px 16px; overflow-wrap: anywhere; }
+  .pf-cover__name { font-size: clamp(26px, 8vw, 34px); }
+  .pf-locked { margin: 26px auto; padding: 0 16px; }
+
+  /* --- country sheet (modal body) --------------------------------------- */
+  .pf-country__row { padding: 8px 6px; }
+}
+
+@media (max-width: 400px) {
+  .pf { --pf-cover-h: 280px; }
+  .pf-head { padding: 0 12px; }
+  .pf-body { padding-left: 12px; padding-right: 12px; }
+  .pf-head__row { gap: 12px; row-gap: 12px; padding: 0 12px 16px; }
+  .pf-avatar { width: 84px; height: 84px; font-size: 30px; border-radius: 22px; }
+  .pf-avatar__level { width: 34px; height: 34px; font-size: 14px; right: -6px; bottom: -6px; }
+  .pf-stats { gap: 8px; }
+  .pf-stat { padding: 12px 14px; }
+  .pf-stat b { font-size: 24px; }
+  .pf-passport { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-rankrow { padding: 10px; gap: 4px 8px; }
+}

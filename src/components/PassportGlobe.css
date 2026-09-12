@@ -74,3 +74,32 @@
 }
 
 [data-theme="dark"] .pglobe__name { color: #f5f5f0; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* The globe svg already scales to the modal width (viewBox + width:100%);
+     the box follows it instead of reserving a fixed 360px of dead space. */
+  .pglobe__map { height: auto; }
+
+  .pglobe__hint { margin: 6px 0 14px; }
+
+  /* two stamps per row on a 360px phone (modal body ≈ 264px wide) */
+  .pglobe__stamps {
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 8px;
+  }
+
+  .pglobe__stamp {
+    min-width: 0;
+    padding: 9px 6px;
+  }
+
+  .pglobe__name { overflow-wrap: anywhere; }
+}
+
+/* landscape phones: the fixed 360px map is taller than the whole card */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .pglobe__map { height: auto; }
+}

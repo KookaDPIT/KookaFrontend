@@ -540,3 +540,144 @@
 
 /* signup no longer needs its own compaction — both pages share the density
    above, so switching between them stays visually seamless. */
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- panel ------------------------------------------------------------ */
+  .auth-panel {
+    min-width: 0;
+    padding: 16px 16px 28px;
+  }
+
+  .auth-panel__inner {
+    min-width: 0;
+  }
+
+  /* ---- mobile brand ------------------------------------------------------ */
+  .auth-brand-mobile {
+    margin-bottom: 14px;
+    font-size: 26px;
+  }
+
+  .auth-brand-mobile img {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* ---- tab switcher + language pill ------------------------------------- */
+  /* "Autentificare" + "Cont nou" + the RO/EN pill share ~328px at 360px:
+     tighter link padding keeps them on one row; the row may wrap as a last
+     resort so the language button is never pushed off-screen. */
+  .auth-switchrow {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-bottom: 14px;
+  }
+
+  .auth-toggle {
+    min-width: 0;
+  }
+
+  .auth-toggle a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    line-height: 1.2;
+  }
+
+  .auth-lang {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
+  /* ---- heading ------------------------------------------------------------ */
+  .auth-head {
+    margin-bottom: 14px;
+  }
+
+  /* the ≤900 rule drops the subtitle to keep signup in view on tablets; a
+     phone scrolls anyway, so the line comes back in a compact size */
+  .auth-subtitle {
+    display: block;
+    margin-top: 2px;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+
+  /* ---- form --------------------------------------------------------------- */
+  .auth-form {
+    gap: 10px;
+  }
+
+  .field {
+    gap: 4px;
+    min-width: 0;
+  }
+
+  /* ≥40px tap height once the shell's 16px input font applies */
+  .auth-input {
+    padding: 10px 14px;
+  }
+
+  .auth-note,
+  .auth-error {
+    overflow-wrap: anywhere;
+  }
+
+  .auth-error {
+    font-size: 13.5px;
+  }
+
+  .btn-primary {
+    min-height: 48px;
+    padding: 13px 18px;
+  }
+
+  .auth-terms {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* very narrow phones (320–400px) */
+@media (max-width: 400px) {
+  .auth-panel {
+    padding: 14px 12px 24px;
+  }
+
+  .auth-brand-mobile {
+    font-size: 24px;
+  }
+
+  .auth-toggle a {
+    padding: 8px 6px;
+    font-size: 12.5px;
+  }
+
+  .auth-lang {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .auth-heading {
+    font-size: 26px;
+  }
+}
+
+/* ---- PHONE follow-up (additive) ---- */
+@media (max-width: 640px) {
+  /* the terms row: a bigger checkbox and more line height so the two inline
+     links and the checkbox are easier to hit separately */
+  .auth-terms { line-height: 1.7; }
+  .auth-terms input {
+    width: 20px;
+    height: 20px;
+  }
+}

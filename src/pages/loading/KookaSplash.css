@@ -87,3 +87,33 @@
   .kl-splash * { animation: none !important; }
   .kl-fill { clip-path: none; }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* the fixed 300px wordmark has no side room on a 320px screen; the negative
+     margins that pull it up against the mark stay proportional (72/300) */
+  .kl-word {
+    width: min(300px, 80vw);
+    margin: calc(-0.24 * min(300px, 80vw)) 0;
+  }
+}
+
+/* landscape phones: this is a fixed full-screen overlay, and the 190px mark +
+   wordmark stack (~380px) clips inside a ~360px-tall viewport — scale to height */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .kl-splash__inner {
+    gap: 16px;
+  }
+
+  .kl-mark {
+    width: min(190px, 34svh);
+    height: min(190px, 34svh);
+  }
+
+  .kl-word {
+    width: min(300px, 54svh);
+    margin: calc(-0.24 * min(300px, 54svh)) 0;
+  }
+}

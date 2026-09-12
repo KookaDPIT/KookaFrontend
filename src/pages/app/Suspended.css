@@ -158,3 +158,90 @@
   background: rgba(255, 138, 106, 0.16);
   color: #ff8a6a;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page / card -------------------------------------------------------- */
+  .susp {
+    padding: 14px 12px;
+  }
+
+  .susp__card {
+    min-width: 0;
+    padding: 26px 18px 22px;
+    border-radius: 22px;
+  }
+
+  .susp__icon {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 14px;
+  }
+
+  .susp__title {
+    font-size: 30px;
+    overflow-wrap: anywhere;
+  }
+
+  .susp__lead {
+    font-size: 14.5px;
+  }
+
+  /* ---- until box ---------------------------------------------------------- */
+  .susp__until {
+    margin: 18px 0;
+    padding: 14px;
+  }
+
+  .susp__untilValue {
+    font-size: 17px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .susp__what {
+    margin-bottom: 20px;
+  }
+
+  .susp__what li {
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- actions ------------------------------------------------------------ */
+  /* "Verifică din nou" + "Deconectare" (~314px) no longer fit side by side in
+     the card at 360px — stack them full width, same order */
+  .susp__actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .susp__btn {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 46px;
+  }
+}
+
+/* very narrow phones (320–400px) */
+@media (max-width: 400px) {
+  .susp__card {
+    padding: 22px 14px 18px;
+  }
+
+  .susp__title {
+    font-size: 28px;
+  }
+}
+
+/* ---- PHONE follow-up (additive) ---- */
+@media (max-width: 640px) {
+  /* grid items do not shrink: width 100% + side padding spilled the card
+     ~6px past both viewport edges */
+  .susp__card {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+}

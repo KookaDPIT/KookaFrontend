@@ -595,3 +595,246 @@
 [data-theme="dark"] .cook-step__desc {
   color: #b8b0a0;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- frame: sit above the fixed bottom tab bar (78px + safe area).
+     The AI panel is no longer a second grid row — it becomes a bottom sheet
+     laid over the stage (same grid cell, aligned to its end), so the step
+     area keeps its full height and the composer is never clipped. ---- */
+  .cook {
+    height: calc(100svh - 78px - env(safe-area-inset-bottom, 0px));
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .cook--assistant-open { grid-template-rows: minmax(0, 1fr) auto; }
+
+  /* ---- stage: scrolls; the timer + quick chips stay pinned at its bottom ---- */
+  .cook__stage {
+    grid-row: 1;
+    grid-column: 1;
+    padding: 12px 16px 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .cook__topline { flex-wrap: wrap; gap: 8px 10px; margin-bottom: 14px; }
+  .cook__exit {
+    flex: 1 1 120px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: block;
+    padding: 8px 12px 8px 10px;
+    line-height: 24px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cook__exit-icon { vertical-align: -3px; margin-right: 2px; }
+  .cook__count { flex-shrink: 0; white-space: nowrap; }
+  .cook__home { flex-shrink: 0; min-height: 40px; margin-left: auto; }
+
+  .cook__progress { gap: 4px; margin-bottom: 16px; }
+  .cook__progress span { height: 5px; }
+  .cook__step-no { margin-bottom: 8px; }
+  .cook__step {
+    margin: 0 0 18px;
+    font-size: 22px;
+    line-height: 1.3;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+
+  /* pinned bottom of the stage: timer full-width, chips in one scrolling row */
+  .cook__timerrow {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: auto;
+    padding: 14px 0;
+    background: linear-gradient(to bottom, rgba(33, 21, 16, 0) 0, rgba(33, 21, 16, 0.94) 16px);
+  }
+  .cook__timerrow .ctimer { display: flex; width: 100%; box-sizing: border-box; justify-content: space-between; }
+
+  .cook__voice {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .cook__voice::-webkit-scrollbar { display: none; }
+  .cook__vchip {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 9px 14px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  /* ---- Ask Kooka: bottom sheet over the stage; the footer (with its
+     Ask Kooka toggle) stays visible underneath ---- */
+  .cook__side {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: end;
+    z-index: 3;
+    height: min(86%, 640px);
+    max-height: 100%;
+    padding: 12px 16px 0;
+    border-top: 0;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -14px 40px rgba(20, 12, 6, 0.45);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .cook__side-head { padding-bottom: 12px; }
+  .cook__side-head > div { min-width: 0; }
+  .cook__side-close { width: 40px; height: 40px; }
+  .cook__timers { padding: 10px 0; }
+  .cook__timers ul { max-height: 96px; overflow-y: auto; }
+  .cook__timers li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .cook__chat { min-height: 140px; padding: 12px 0; }
+  .cook__msg { max-width: 92%; overflow-wrap: anywhere; }
+  .cook__ask { padding: 10px 0 14px; }
+  .cook__ask-send { width: 44px; height: 44px; }
+
+  /* ---- footer: two rows of two thumb-sized buttons
+     (Back | Next step) / (Give up | Ask Kooka, label shown again) ---- */
+  .cook__foot {
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 8px;
+    padding: 8px 14px;
+  }
+  .cook__foot .cook__btn { padding: 12px; font-size: 15px; min-height: 46px; }
+  .cook__giveup,
+  .cook__ai { justify-content: center; min-height: 42px; padding: 9px 10px; }
+  .cook__ai span { display: inline; }
+
+  /* ---- "I cooked it" verification modal contents ---- */
+  .cook__photo-preview img { max-height: 200px; }
+  .cook__photo-pick { padding: 18px 14px; }
+  .cook__verify-btn,
+  .cook__verified .cook__btn { width: 100%; box-sizing: border-box; }
+
+  /* The cook-along stage is the same dark surface in both themes, so the
+     dark-mode counterparts of the colours set above are identical. */
+  [data-theme="dark"] .cook__timerrow {
+    background: linear-gradient(to bottom, rgba(33, 21, 16, 0) 0, rgba(33, 21, 16, 0.94) 16px);
+  }
+  [data-theme="dark"] .cook__side { box-shadow: 0 -14px 40px rgba(20, 12, 6, 0.45); }
+}
+
+@media (max-width: 400px) {
+  .cook__stage { padding: 10px 14px 0; }
+  .cook__voice { margin: 0 -14px; padding: 0 14px 2px; }
+  .cook__topline { margin-bottom: 12px; }
+  .cook__step { font-size: 20px; }
+  .cook__side { padding: 10px 14px 0; }
+  .cook__foot { gap: 6px; padding: 8px 12px; }
+  .cook__foot .cook__btn { padding: 12px 8px; font-size: 14px; }
+  .cook__giveup,
+  .cook__ai { padding: 9px 8px; }
+}
+
+/* Landscape phone: the fixed-height frame is only usable if the whole stage
+   scrolls with the timer row in flow, the AI sheet covers the stage and the
+   footer is one short row. Self-contained, because 641–940px is outside the
+   block above. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .cook {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .cook--assistant-open { grid-template-rows: minmax(0, 1fr) auto; }
+
+  .cook__stage { grid-row: 1; grid-column: 1; padding: 10px 16px 12px; overflow-y: auto; }
+  .cook__topline { margin-bottom: 10px; }
+  .cook__progress { margin-bottom: 12px; }
+  .cook__step { margin: 0 0 14px; font-size: 20px; max-width: none; overflow-wrap: anywhere; }
+  .cook__timerrow {
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 0;
+    background: none;
+  }
+  .cook__timerrow .ctimer { display: inline-flex; width: auto; }
+  .cook__voice { flex-direction: row; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; overflow: visible; }
+  .cook__vchip { white-space: normal; }
+
+  .cook__side {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: end;
+    z-index: 3;
+    height: 100%;
+    max-height: 100%;
+    padding: 10px 16px 0;
+    border-top: 0;
+    border-radius: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .cook__side-close { width: 40px; height: 40px; }
+  .cook__timers { padding: 8px 0; }
+  .cook__timers ul { max-height: 72px; overflow-y: auto; }
+  .cook__chat { min-height: 100px; padding: 10px 0; }
+  .cook__ask { padding: 8px 0 10px; }
+
+  .cook__foot { grid-row: 2; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+  .cook__foot .cook__btn { padding: 10px 16px; min-height: 40px; }
+  .cook__giveup,
+  .cook__ai { min-height: 40px; padding: 8px 12px; }
+  .cook__ai span { display: inline; }
+}
+
+/* Landscape phone inside the shell's bottom-tab-bar range (≤900px): the frame
+   must also end above the bar. At 901–940px the shell shows the side rail
+   instead, so the plain 100svh height stays. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 900px) {
+  .cook { height: calc(100svh - 78px - env(safe-area-inset-bottom, 0px)); }
+}
+
+
+/* ---- PHONE follow-ups, verified in a 360/390px browser (additive) ---- */
+@media (max-width: 640px) {
+  /* .cook__timerrow keeps `flex-wrap: wrap` from its base rule. A wrapping
+     column flex container sizes its line to the tallest item's max-content
+     width, so the overflow-x:auto chip row came out 488px wide and its last
+     chip was cut off. Single-line column: the row is stretched to the stage
+     width and scrolls sideways as intended. */
+  .cook__timerrow { flex-wrap: nowrap; }
+
+  /* With the Ask Kooka sheet open the timer row sat underneath it. Park the
+     row at the top of the stage (sticky) while the sheet is open and keep the
+     sheet a little shorter, so the timer and the quick chips stay usable. */
+  .cook--assistant-open .cook__side { height: min(76%, 640px); }
+  .cook--assistant-open .cook__timerrow {
+    order: -1;
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding: 0 0 12px;
+    background: linear-gradient(to top, rgba(33, 21, 16, 0) 0, rgba(33, 21, 16, 0.94) 16px);
+  }
+  [data-theme="dark"] .cook--assistant-open .cook__timerrow {
+    background: linear-gradient(to top, rgba(33, 21, 16, 0) 0, rgba(33, 21, 16, 0.94) 16px);
+  }
+}

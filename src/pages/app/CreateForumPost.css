@@ -216,3 +216,35 @@
   border-color: rgba(255, 138, 106, 0.35);
   color: #ff8a6a;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page + card --------------------------------------------------------- */
+  .cfp { padding: 16px 14px 24px; }
+  .cfp-card { padding: 18px 16px 18px; border-radius: 20px; }
+  .cfp-head { margin-bottom: 18px; }
+  .cfp-title { font-size: clamp(23px, 7vw, 27px); overflow-wrap: anywhere; }
+  .cfp-field { margin-bottom: 18px; }
+
+  /* ---- subforum row: the language name wraps instead of being ellipsised,
+     and the "change" button drops under it when the two no longer share a
+     line (roughly under 375px) ---------------------------------------------- */
+  .cfp-langrow { flex-wrap: wrap; gap: 10px; padding: 10px; }
+  .cfp-chosen { flex: 1 1 150px; }
+  .cfp-chosen__text b { white-space: normal; overflow-wrap: anywhere; }
+  .cfp-change { margin-left: auto; min-height: 40px; padding: 8px 12px; }
+
+  /* ---- option chips (quick picks, tags): 40px tall, wrapping as before ---- */
+  .cfp-opt { min-height: 40px; }
+
+  /* ---- footer: cancel / post share the width ------------------------------- */
+  .cfp-foot { flex-wrap: wrap; gap: 8px; }
+  .cfp-foot .kbtn { flex: 1 1 auto; min-height: 44px; }
+}
+
+@media (max-width: 400px) {
+  .cfp-card { padding: 16px 14px 16px; }
+  .cfp-opt { padding: 8px 12px; font-size: 13px; }
+}

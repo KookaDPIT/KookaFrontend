@@ -151,3 +151,31 @@
   color: #c9bea7;
 }
 [data-theme='dark'] .lpick__row.is-active .lpick__code { background: #ff6b35; color: #fff; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  .lpick { gap: 10px; }
+
+  /* the list lives inside the shared modal card, which on phones is at most
+     100svh - 24px tall and scrolls itself. Use most of that height so fewer
+     swipes reach a language: the card's head, the search box and the paddings
+     add up to ~150px, so 100svh - 170px fills the card without making it
+     scroll as well. The 160px floor covers short (keyboard-shrunk) viewports —
+     there the card scrolls, which is the better of the two. The 88vh line is
+     the fallback for browsers without svh; the scroll never chains to the page */
+  .lpick__list {
+    max-height: 46vh;
+    max-height: max(160px, calc(88vh - 176px));
+    max-height: max(160px, calc(100svh - 170px));
+    padding-right: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* finger-sized rows */
+  .lpick__row { gap: 10px; padding: 10px; min-height: 48px; }
+  .lpick__code { width: 32px; }
+  .lpick__search input { padding: 12px 12px 12px 38px; }
+}

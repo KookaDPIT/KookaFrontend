@@ -280,6 +280,12 @@ export default function Chat() {
      screen every time buried the thing people actually came for. The toggle
      is one tap away, in the same place either way. */
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  /* On a phone the history drawer overlays the thread, so picking a
+     conversation (or starting a new one) closes it. Desktop keeps the
+     drawer open — the check is false there. */
+  const closeDrawerOnPhone = () => {
+    if (window.matchMedia('(max-width: 640px)').matches) setSidebarOpen(false);
+  };
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -309,6 +315,7 @@ export default function Chat() {
       setMessages([]);
     } finally {
       setLoadingThread(false);
+      closeDrawerOnPhone();
     }
   };
 
@@ -326,6 +333,7 @@ export default function Chat() {
     setMessages([]);
     setDraft('');
     setPhoto(null);
+    closeDrawerOnPhone();
     inputRef.current?.focus();
   };
 

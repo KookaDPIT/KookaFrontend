@@ -96,3 +96,18 @@
 }
 
 .ctimer--compact .ctimer__btn--reset { font-size: 14px; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* full face (cook-along stage): a little tighter, buttons ≥44px */
+  .ctimer { gap: 12px; padding: 10px 12px; max-width: 100%; box-sizing: border-box; }
+  .ctimer__readout { min-width: 0; }
+  .ctimer__readout b { font-size: 26px; }
+  .ctimer__btn { width: 44px; height: 44px; }
+
+  /* compact face (floating dock): still comfortably tappable */
+  .ctimer--compact { gap: 6px; padding: 6px 8px; }
+  .ctimer--compact .ctimer__btn { width: 34px; height: 34px; font-size: 13px; }
+}

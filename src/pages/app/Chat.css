@@ -738,3 +738,180 @@
 [data-theme="dark"] .m-ai__text p,
 [data-theme="dark"] .m-ai__list { color: #f5f5f0; }
 [data-theme="dark"] .chat-attach__name { color: #c9bea7; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page frame ------------------------------------------------------
+     The shell's bottom tab bar (78px + safe-area) is fixed over the page, so
+     the 100svh page is shortened by exactly that much: the composer sits
+     above the bar instead of underneath it and the thread keeps scrolling
+     inside .chat-scroll. */
+  .chat {
+    height: calc(100svh - 78px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-scroll { overscroll-behavior: contain; }
+
+  /* ---- history drawer --------------------------------------------------
+     Already position: fixed at ≤860px. Pin it top-left, leave a sliver of
+     the thread visible on the right, and stop above the tab bar so the tabs
+     stay reachable while it is open. Collapsed keeps width: 0 (higher
+     specificity rule above). */
+  .chat-sb {
+    top: 0;
+    left: 0;
+    width: min(300px, calc(100vw - 56px));
+    height: calc(100svh - 78px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-sb__head { padding: 12px 12px 8px; }
+
+  .chat-sb__new {
+    min-width: 0;
+    padding: 9px 12px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .chat-sb__scroll { overscroll-behavior: contain; }
+
+  /* the delete button has no hover on a touchscreen — keep it visible and
+     big enough to tap; the row leaves room for it on the right */
+  .chat-sb__item { padding-right: 46px; }
+
+  .chat-sb__del {
+    right: 2px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    opacity: 1;
+  }
+
+  /* icon buttons: 40px touch targets */
+  .chat-sb__icon,
+  .chat-top__icon { width: 40px; height: 40px; }
+
+  /* ---- top bar ---------------------------------------------------------- */
+  .chat-top { padding: 10px 12px; gap: 8px; }
+  .chat-top__title { font-size: 20px; white-space: nowrap; }
+  .chat-top__new { padding: 8px 12px; white-space: nowrap; }
+
+  /* ---- welcome / empty state ------------------------------------------- */
+  .chat-welcome { padding: 16px 14px 24px; }
+  .chat-welcome__title { margin: 12px 0 6px; font-size: 28px; }
+  .chat-welcome__sub { margin-bottom: 18px; font-size: 14px; }
+  .chat-welcome__tasks { gap: 10px; margin-bottom: 20px; }
+  .chat-task { padding: 12px 13px; gap: 11px; border-radius: 14px; }
+
+  /* ---- thread ----------------------------------------------------------- */
+  .chat-thread { padding: 16px 12px 20px; gap: 20px; }
+  .chat-thread__state { padding: 24px 14px; }
+  .m-row--ai { gap: 9px; }
+  .m-user { max-width: 86%; padding: 10px 14px; overflow-wrap: anywhere; }
+  .m-ai__text,
+  .m-ai__list,
+  .m-ai__error { overflow-wrap: anywhere; }
+
+  /* ---- rich responses (recipe cards, calorie estimate) ------------------ */
+  .card { padding: 14px; border-radius: 16px; }
+  .chat-actions { gap: 8px; }
+  .rec-card__name { overflow-wrap: anywhere; }
+  .est { grid-template-columns: 1fr; }
+  .est__kcal { gap: 8px; margin-bottom: 14px; }
+  .est__kcal b { font-size: 42px; }
+  .macro { grid-template-columns: 64px minmax(0, 1fr) 52px; gap: 10px; }
+  .est__row { flex-wrap: wrap; gap: 6px 10px; padding: 10px 2px; }
+  .est__row span:first-child { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+  .est__pill { white-space: nowrap; }
+  .est__kc { margin-left: auto; }
+
+  /* ---- composer --------------------------------------------------------- */
+  .chat-composer { padding: 6px 10px 10px; }
+  .chat-composer form { padding: 6px 6px 6px 8px; border-radius: 24px; }
+  .chat-composer__hint { margin-top: 6px; padding: 0 4px; font-size: 11.5px; line-height: 1.35; }
+
+  /* the five task chips become one horizontally scrolling row (full-bleed,
+     no scrollbar) instead of stacking into three rows above the input */
+  .chat-quick {
+    flex-wrap: nowrap;
+    max-width: none;
+    margin: 0 -10px 8px;
+    padding: 2px 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .chat-quick::-webkit-scrollbar { display: none; }
+
+  .chat-quick__label,
+  .chat-quick__chip { flex-shrink: 0; white-space: nowrap; }
+  .chat-quick__chip { padding: 8px 13px; }
+
+  /* pending-photo strip: 40px remove target */
+  .chat-attach button { width: 40px; height: 40px; }
+}
+
+/* very narrow phones (320–400px) */
+@media (max-width: 400px) {
+  .chat-sb { width: min(288px, calc(100vw - 44px)); }
+  .chat-top__title { font-size: 19px; }
+  .chat-top__sub { font-size: 12px; }
+  .chat-welcome__title { font-size: 26px; }
+  .m-user { max-width: 90%; }
+  .est__kcal b { font-size: 38px; }
+  .macro { grid-template-columns: 58px minmax(0, 1fr) 48px; gap: 8px; }
+}
+
+/* landscape phones: a fixed-height 100svh page with the tab bar on top of it
+   leaves ~280px of usable height, so the page is shortened the same way and
+   the vertical chrome (top bar, welcome, composer) is trimmed */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  /* the shell's bottom tab bar only exists at ≤900px */
+  @media (max-width: 900px) {
+    .chat,
+    .chat-sb { height: calc(100svh - 78px - env(safe-area-inset-bottom, 0px)); }
+  }
+
+  .chat-sb { top: 0; left: 0; }
+  .chat-top { padding-top: 6px; padding-bottom: 6px; }
+  .chat-welcome { padding-top: 12px; padding-bottom: 16px; }
+  .chat-welcome__title { margin: 8px 0 4px; font-size: 26px; }
+  .chat-welcome__sub { margin-bottom: 12px; }
+  .chat-welcome__tasks { gap: 8px; margin-bottom: 12px; }
+  .chat-task { padding: 10px 12px; }
+  .chat-thread { padding-top: 12px; padding-bottom: 16px; gap: 16px; }
+  .chat-composer { padding-top: 4px; padding-bottom: 6px; }
+  .chat-composer form { padding: 4px 4px 4px 8px; }
+  .chat-quick { margin-bottom: 6px; }
+  .chat-composer__hint { margin-top: 4px; }
+}
+
+
+/* ---- PHONE follow-ups, verified in a 360/390px browser (additive) ---- */
+@media (max-width: 640px) {
+  /* While a cook is parked the floating dock (CookDock.css) sits above the
+     tab bar and used to cover the composer. --k-dock-h is set on .app-shell
+     by AppLayout.css (0 when there is no dock), so the page shrinks by the
+     dock's height and the composer stays clear of it. */
+  .chat,
+  .chat-sb {
+    height: calc(100svh - 78px - var(--k-dock-h, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Landscape phones (641–940px wide, ≤480px tall) never match the ≤640px
+   block, so the touch path for the hover-revealed delete button is repeated
+   here; tablets are taller than 480px and are not affected. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .chat-sb__item { padding-right: 46px; }
+  .chat-sb__del {
+    right: 2px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    opacity: 1;
+  }
+}

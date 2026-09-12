@@ -197,3 +197,100 @@
   border-color: rgba(255, 138, 106, 0.35);
   color: #ff8a6a;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- overlay + card: 12px gutters all the way up to 640px, a card that
+     is never taller than the visible viewport (svh follows the URL bar) and
+     scrolls inside. The frame itself is not touched — it is sized in JS from
+     the slot's width, so it already shrinks to the card. ---- */
+  .kcrop { padding: 12px; }
+
+  .kcrop__card {
+    max-height: calc(100svh - 24px);
+    padding: 16px 14px 16px;
+    border-radius: 18px;
+    overscroll-behavior: contain; /* reaching the card's end must not scroll the page behind */
+  }
+
+  .kcrop__head { margin-bottom: 12px; }
+
+  .kcrop__title {
+    font-size: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .kcrop__hint { font-size: 13px; }
+
+  /* ---- zoom row: 40px buttons, 24px slider thumb for fingers ---- */
+  .kcrop__zoom {
+    gap: 10px;
+    margin: 14px 0 2px;
+  }
+
+  .kcrop__zoombtn {
+    width: 40px;
+    height: 40px;
+    font-size: 21px;
+  }
+
+  /* the slider's hit box is only as tall as its track, so a finger that lands
+     a few px above or below the 8px bar misses it: keep the visible track at
+     8px (background clipped to the content box) but pad the element to 36px.
+     content-box is explicit because the reboot makes everything border-box,
+     which would collapse an 8px-high padded box to a 0px track. */
+  .kcrop__zoom input[type='range'] {
+    height: 8px;
+    box-sizing: content-box;
+    padding: 14px 0;
+    background-clip: content-box;
+  }
+
+  /* the dark rule's `background` shorthand outranks the longhand above and
+     would reset the clip, painting a 36px-tall track */
+  [data-theme='dark'] .kcrop__zoom input[type='range'] { background-clip: content-box; }
+
+  .kcrop__zoom input[type='range']::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .kcrop__zoom input[type='range']::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .kcrop__error {
+    margin-top: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- footer: Reset / Cancel / Apply no longer fit on one 296px line
+     (nor with the longer Romanian labels), so they wrap and grow; the empty
+     layout spacer is purely presentational and steps aside ---- */
+  .kcrop__foot {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .kcrop__foot .kbtn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 12px 14px;
+    white-space: nowrap;
+  }
+
+  .kcrop__spacer { display: none; }
+}
+
+@media (max-width: 400px) {
+  .kcrop { padding: 10px; }
+
+  .kcrop__card {
+    max-height: calc(100svh - 20px);
+    padding: 14px 12px 14px;
+  }
+}

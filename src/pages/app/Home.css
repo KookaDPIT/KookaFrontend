@@ -1076,3 +1076,183 @@
 
 [data-theme="dark"] .home-match b { color: #ff9b6a; }
 [data-theme="dark"] .home-warn { color: #ff8a72; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- hero ---- */
+  .home-hero { padding: 14px 16px 30px; }
+
+  /* The dish photo used to own the right 54% of the hero. On a phone the
+     title spans the whole width, so the photo becomes a sliver on the far
+     right and the copy gets a soft shadow to lift it off whatever is left. */
+  .home-hero__photo {
+    inset: 0 0 0 50%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 70%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 70%);
+  }
+
+  .home-topbar {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .home-search {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .home-topbar__meta { gap: 10px; }
+
+  /* rank pill: 40px tall so it is a real tap target next to the "+" */
+  .home-rank {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  .home-daily { max-width: none; }
+
+  .home-daily__badge { margin-bottom: 14px; }
+
+  .home-daily__h1 {
+    font-size: clamp(36px, 11vw, 48px);
+    line-height: 1.02;
+    overflow-wrap: anywhere;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+  }
+
+  .home-daily__meta {
+    max-width: none;
+    margin-bottom: 20px;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .home-daily__actions { gap: 10px; }
+
+  .home-daily__actions .home-btn {
+    min-width: 0;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  /* ---- body sheet ---- */
+  .home-sheet { padding: 22px 16px 36px; }
+
+  /* filter chips scroll edge to edge instead of clipping at the sheet padding */
+  .home-filters {
+    margin-left: -16px;
+    margin-right: -16px;
+    margin-bottom: 22px;
+    padding: 0 16px 6px;
+    scroll-padding-inline: 16px;
+  }
+
+  .home-chip {
+    min-height: 40px;
+    padding: 10px 16px;
+  }
+
+  /* fridge form: the input takes its own row, the buttons share the next */
+  .home-pantry {
+    margin-bottom: 18px;
+    padding: 14px;
+  }
+
+  .home-pantry__row { gap: 8px; }
+
+  .home-pantry__row input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .home-pantry__row .home-btn,
+  .home-pantry__clear {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .home-nudge {
+    margin-bottom: 18px;
+    padding: 14px;
+  }
+
+  .home-nudge .home-btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  /* ---- sections + feed ---- */
+  .home-section { margin-bottom: 28px; }
+
+  .home-section__head { margin-bottom: 14px; }
+
+  .home-section__title { font-size: 30px; }
+
+  /* minmax(0, 1fr): a long unbreakable title can no longer widen the grid */
+  .home-feed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .home-feed__item,
+  .home-card { min-width: 0; }
+
+  .home-card__body { padding: 10px 12px 12px; }
+
+  .home-match,
+  .home-warn { overflow-wrap: anywhere; }
+
+  .home-empty {
+    padding: 16px 14px;
+    font-size: 14px;
+  }
+
+  /* ---- panels: passport + reviews ---- */
+  .home-panels { gap: 14px; }
+
+  .home-passport,
+  .home-reviews { padding: 20px 18px; }
+
+  .home-passport__title,
+  .home-reviews__title { font-size: 27px; }
+
+  .home-passport__stamps { gap: 8px; }
+
+  .home-review__head { align-items: flex-start; }
+
+  .home-review__who {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .home-review__head .stars { flex-shrink: 0; }
+
+  .home-review__recipe,
+  .home-review__text { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 400px) {
+  .home-hero { padding: 12px 14px 26px; }
+
+  .home-topbar { gap: 10px; }
+
+  /* two full-width buttons instead of two squeezed ones */
+  .home-daily__actions .home-btn { flex: 1 1 100%; }
+
+  .home-sheet { padding: 20px 14px 32px; }
+
+  .home-filters {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding: 0 14px 6px;
+    scroll-padding-inline: 14px;
+  }
+
+  .home-feed { gap: 10px; }
+
+  .home-section__title { font-size: 28px; }
+
+  .home-passport,
+  .home-reviews { padding: 18px 14px; }
+}

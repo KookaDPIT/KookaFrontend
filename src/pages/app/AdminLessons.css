@@ -226,3 +226,103 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  .admL-empty { padding: 20px 14px; }
+  .admL-list { margin-top: 12px; }
+
+  /* ---- lesson row: icon | name, with the completed / mastered counts on a
+     second line under the name. The ≤760px rule above hides those counts;
+     on a phone they come back stacked, so no information is lost. ---- */
+  .admL-row {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 3px;
+    align-items: center;
+    min-height: 56px;
+    padding: 12px;
+  }
+  .admL-icon { grid-row: 1 / span 2; }
+  .admL-name { grid-column: 2; }
+  .admL-name b,
+  .admL-name small { overflow-wrap: anywhere; }
+  .admL-stats {
+    display: block;
+    grid-column: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- editor ---- */
+  .admL-editor {
+    padding: 4px 12px 16px;
+    gap: 12px;
+  }
+  .admL-warn { margin-top: 8px; }
+
+  /* title on its own line, then icon / minutes / tier side by side */
+  .admL-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .admL-grid > .admL-field:not(.admL-field--sm) { grid-column: 1 / -1; }
+  .admL-field { min-width: 0; }
+
+  /* inputs: border-box so `width: 100%` + padding no longer overflows the
+     card (which clips it), and a comfortable tap height */
+  .admL-input {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 42px;
+  }
+  .admL-input--sm { min-height: 40px; }
+
+  .admL-listrow { gap: 8px; }
+  .admL-listrow .admL-input { flex: 1 1 auto; }
+  .admL-x {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .admL-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 4px 0;
+  }
+
+  /* ---- quiz question: bigger radio, option rows at tap height ---- */
+  .admL-q { padding: 10px; }
+  .admL-opts { gap: 6px; }
+  .admL-opt {
+    min-height: 44px;
+    padding: 4px 8px;
+  }
+  .admL-opt input[type='radio'] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+  .admL-opt .admL-input { flex: 1 1 auto; }
+
+  /* ---- save / restore / cancel share the row evenly ---- */
+  .admL-actions {
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .admL-actions .adm-btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 400px) {
+  .admL-editor { padding: 4px 10px 14px; }
+  .admL-grid { gap: 6px; }
+  .admL-q { padding: 8px; }
+}

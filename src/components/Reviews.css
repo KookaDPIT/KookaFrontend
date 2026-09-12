@@ -255,3 +255,36 @@
   border-radius: 12px;
   display: block;
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  .reviews__head { gap: 6px 14px; margin-bottom: 14px; }
+  .reviews__title { font-size: 1.9rem; }
+
+  /* ---- add / edit form: full-width submit, wrapping action row,
+     star buttons tall enough to tap ---- */
+  .reviews__form { padding: 14px; border-radius: 14px; }
+  .reviews__form > .reviews__submit { align-self: stretch; }
+  .reviews__form-actions { flex-wrap: wrap; }
+  .reviews__form-actions > button { flex: 1 1 120px; }
+  .reviews__form .stars__btn { padding: 6px 2px; }
+  .reviews__submit,
+  .reviews__ghost { padding: 12px 18px; min-height: 44px; }
+
+  .reviews__locked { padding: 16px 14px; }
+
+  /* ---- my review ---- */
+  .reviews__mine { padding: 14px; }
+  .reviews__mine-head { flex-wrap: wrap; gap: 6px 12px; }
+  .reviews__mine-actions button { padding: 8px 6px; }
+  .reviews__mine p { overflow-wrap: anywhere; }
+
+  /* ---- list ---- */
+  .reviews__list { gap: 16px; }
+  .reviews__item { gap: 10px; }
+  .reviews__item-head { flex-wrap: wrap; gap: 4px 10px; }
+  .reviews__item-name,
+  .reviews__item-text { overflow-wrap: anywhere; }
+}

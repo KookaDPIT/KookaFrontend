@@ -316,3 +316,102 @@
 [data-theme='dark'] .adm-btn--go { color: #7ec99b; border-color: rgba(126, 201, 155, 0.4); }
 [data-theme='dark'] .adm-duration { border-color: #4a4238; color: #f5f5f0; }
 [data-theme='dark'] .adm-duration:hover { border-color: #ff8a6a; color: #ff8a6a; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page frame: 14px gutters so a 360px phone keeps 332px of content ---- */
+  .adm { padding: 18px 14px 32px; }
+
+  /* ---- header: title block and role pill share a row until they cannot ---- */
+  .adm-head {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-bottom: 16px;
+  }
+  .adm-head > div { flex: 1 1 200px; min-width: 0; }
+  .adm-title {
+    font-size: clamp(26px, 8vw, 32px);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .adm-sub { margin-top: 6px; font-size: 14px; }
+
+  /* ---- pane switch: five tabs are wider than any phone, so the row wraps
+     (every tab stays visible) and each tab reaches a 40px tap height ---- */
+  .adm-panes {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .adm-pane {
+    min-height: 40px;
+    padding: 9px 14px;
+    white-space: nowrap;
+  }
+
+  /* ---- filters: the search box takes its own line; the role select and
+     the status chips fill the next one ---- */
+  .adm-filters { gap: 8px; margin-bottom: 14px; }
+  .adm-search { flex: 1 1 100%; min-width: 0; }
+  .adm-filters > .adm-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .adm-chipbtn {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  /* ---- rows: already one column at ≤900px; tighten the card and let the
+     name / title / e-mail wrap to two lines instead of being cut off ---- */
+  .adm-row,
+  .adm-row--recipe {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .adm-who { width: 100%; }
+  .adm-who__text b,
+  .adm-who__text small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* action controls: role select on its own line, then the buttons share the
+     row evenly — all at a comfortable tap height */
+  .adm-tools { gap: 8px; }
+  .adm-tools .adm-select--role {
+    flex: 1 1 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .adm-tools .adm-btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+  }
+  .adm-btn { min-height: 40px; }
+
+  /* ---- suspend menu: duration pills fill the modal width ---- */
+  .adm-durations { gap: 8px; margin-top: 12px; }
+  .adm-duration {
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .adm { padding: 16px 12px 28px; }
+  .adm-pane { padding: 9px 12px; font-size: 13.5px; }
+  .adm-chipbtn { padding: 8px 12px; }
+  .adm-row,
+  .adm-row--recipe { padding: 11px; }
+}

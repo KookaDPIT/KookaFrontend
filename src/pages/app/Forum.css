@@ -586,3 +586,123 @@
 [data-theme='dark'] .fo-sort__btn.is-active { background: #3a3228; color: #f5f5f0; }
 [data-theme='dark'] .fo-trend__chip em { color: #a89988; }
 [data-theme='dark'] .fo-search__clear { background: rgba(255, 255, 255, 0.1); color: #c9bea7; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ---- page ---------------------------------------------------------------
+     Tighter gutters so two tiles still get a sane size at 360px (158px each).
+     The fixed bottom tab bar is already reserved by .app-main. */
+  .fo {
+    padding: 16px 14px 24px;
+    --fo-gap: 14px;
+    --fo-radius: 20px;
+  }
+
+  /* ---- header: title + "+" on one line, the search on its own line -------- */
+  .fo-head { gap: 12px; margin-bottom: 16px; }
+  .fo-head__title { font-size: clamp(26px, 8vw, 32px); overflow-wrap: anywhere; }
+  .fo-head__sub { font-size: 14px; }
+  .fo-search input { padding-right: 44px; }
+  /* a real hit area for the clear "×" */
+  .fo-search__clear { right: 7px; width: 34px; height: 34px; }
+
+  /* ---- the three swipeable rows (subforums, tags, trending) ---------------
+     Bleed to the screen edges so a row scrolls under the gutter instead of
+     being clipped 14px in; the padding keeps the first chip on the content
+     line and the snap points aligned with it. */
+  .fo-langs,
+  .fo-tags,
+  .fo-trend {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+    scroll-padding-inline: 14px;
+  }
+  .fo-langs { margin-bottom: 14px; }
+  .fo-trend { margin-bottom: 16px; }
+  .fo-trend__label { flex: 0 0 auto; white-space: nowrap; }
+
+  /* ---- tags + sort: stacked; the sort spans the width and its four tabs
+     share it (and swipe if a translation is wider than the screen) --------- */
+  .fo-controls { flex-direction: column; align-items: stretch; gap: 10px; }
+  .fo-tagchip,
+  .fo-trend__chip { min-height: 40px; }
+  .fo-sort {
+    align-self: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fo-sort::-webkit-scrollbar { display: none; }
+  .fo-sort__btn { flex: 1 0 auto; min-height: 40px; padding: 8px 10px; }
+
+  /* ---- tiles -------------------------------------------------------------- */
+  /* room for a two-line byline strip (see .fo-tile__foot below) */
+  .fo-tile__open { padding-bottom: 44px; }
+  /* tag chip + #id: a 158px tile cannot always hold both on one line */
+  .fo-tile__top { flex-wrap: wrap; gap: 4px 6px; }
+  .fo-tile:not(.is-lead) .fo-tile__tag { padding: 3px 8px; font-size: 10px; letter-spacing: 0.02em; }
+  .fo-tile__id { flex-shrink: 0; font-size: 11px; }
+  .fo-tile__title,
+  .fo-tile__excerpt { overflow-wrap: anywhere; }
+
+  /* byline strip: on a 2-column phone grid it has ~50px next to the vote
+     pill, so let it wrap — the handle keeps the first line when it needs it
+     and the time + comment count drop to a second one. */
+  .fo-tile__foot {
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 0;
+    line-height: 1.3;
+  }
+  .fo-tile__who { flex: 1 1 auto; min-width: 48px; }
+
+  /* vote pill: 24px arrows, each with an invisible 40px hit area */
+  .fo-tile__vote { right: 10px; bottom: 10px; padding: 3px 4px; }
+  .fo-tile__arrow { position: relative; width: 24px; height: 24px; }
+  .fo-tile__arrow::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+  }
+
+  /* ---- empty state -------------------------------------------------------- */
+  .fo-empty { margin: 28px auto; }
+  .fo-empty__title { font-size: 23px; }
+  .fo-empty__cta { min-height: 44px; }
+}
+
+@media (max-width: 400px) {
+  .fo {
+    padding: 14px 12px 20px;
+    --fo-gap: 12px;
+  }
+  .fo-langs,
+  .fo-tags,
+  .fo-trend {
+    margin-left: -12px;
+    margin-right: -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    scroll-padding-inline: 12px;
+  }
+  .fo-tile__open { padding: 11px 11px 42px; }
+  .fo-tile__foot { left: 11px; right: 11px; bottom: 10px; }
+  .fo-tile.is-lead .fo-tile__title { font-size: 17px; }
+}
+
+/* ---- PHONE follow-ups, verified in a 360/390px browser (additive) ---- */
+@media (max-width: 640px) {
+  /* .fo-controls keeps `flex-wrap: wrap` from its base rule; as a wrapping
+     column container it sized its line to the tag row's max-content width
+     (932px at 360), so the overflow-x:auto tag row never shrank and the tags
+     past the right edge were unreachable. */
+  .fo-controls { flex-wrap: nowrap; }
+
+  /* a pasted URL in the search box must not widen the results line */
+  .fo-note { overflow-wrap: anywhere; }
+}

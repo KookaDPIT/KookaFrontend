@@ -136,3 +136,117 @@
 @media (max-width: 720px) {
   .cdock { right: 12px; left: 12px; bottom: 12px; width: auto; }
 }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* The ≤720px rule stretches the card edge to edge but pins it at
+     bottom: 12px — on top of the fixed tab bar, hiding it. Lift the dock
+     above the bar (+ safe area) and flatten it into a strip so it hides as
+     little of the page as possible: photo + text on the left, the two
+     actions on the right, progress bar and (optional) timer underneath.
+     AppLayout.css reserves matching room under every page via --k-dock-h.
+     Height: 20 padding + 55 text row + 12 bar = 87px; timer adds 56px. */
+  .cdock {
+    left: 10px;
+    right: 10px;
+    bottom: calc(78px + 8px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 12px;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main actions"
+      "bar bar"
+      "timer timer";
+    column-gap: 10px;
+    align-items: center;
+  }
+
+  .cdock__main {
+    grid-area: main;
+    min-width: 0;
+  }
+
+  .cdock__bar {
+    grid-area: bar;
+    margin-top: 8px;
+  }
+
+  .cdock__timer {
+    grid-area: timer;
+    margin-top: 8px;
+  }
+
+  .cdock__actions {
+    grid-area: actions;
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .cdock__photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .cdock__resume,
+  .cdock__forfeit {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 8px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* the compact timer's 28px play/reset buttons are too small to tap */
+  .cdock .cdock__timer .ctimer__btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 400px) {
+  .cdock {
+    left: 8px;
+    right: 8px;
+    padding: 9px 10px;
+    column-gap: 8px;
+  }
+
+  .cdock__resume,
+  .cdock__forfeit { padding: 8px 9px; }
+}
+
+/* ---- PHONE follow-ups (additive) ---- */
+@media (max-width: 640px) {
+  /* "STILL COOKING" wrapped to two lines at 360px and pushed the strip past
+     the room the page reserves for it */
+  .cdock__label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* thumb-sized actions: the text column is 55px tall anyway, so the strip
+     does not grow; "Give up" is destructive and sits next to "Back to it" */
+  .cdock__actions { gap: 8px; }
+  .cdock__resume,
+  .cdock__forfeit { min-height: 44px; }
+
+  /* play/pause + reset in the compact timer: 40px targets (row grows 6px;
+     AppLayout.css reserves 164px for the dock with a timer) */
+  .cdock .cdock__timer .ctimer__btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Landscape phones (641–940px wide, ≤480px tall): the ≤720px rule pins the
+   full-width dock at bottom: 12px — on top of the fixed tab bar — and the
+   desktop card (721px+) covers the bar's right end. Lift it above the bar.
+   Tablets are taller than 480px, so they keep their current dock. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 940px) {
+  .cdock { bottom: calc(78px + 8px + env(safe-area-inset-bottom, 0px)); }
+}
