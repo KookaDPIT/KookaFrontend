@@ -49,13 +49,17 @@ function timeAgo(iso) {
   return `${Math.floor(d / 30)}mo`;
 }
 
+/* Earned from the numbers the profile already carries, so a badge means the
+   same thing on every profile and nobody sees somebody else's shelf. Each one
+   is a threshold on a real counter: cooked dishes, stamped countries,
+   followers. `need` drives the "next badge" bar in the rail. */
 const BADGES = [
-  { icon: '🔪', name: 'Clean Cuts', got: true },
-  { icon: '🔥', name: 'Sear Master', got: true },
-  { icon: '🥚', name: 'Egg Whisperer', got: true },
-  { icon: '🌶️', name: 'Heat Seeker', got: true },
-  { icon: '🍞', name: 'Crust Club', got: false },
-  { icon: '🫙', name: 'Funk Lord', got: false },
+  { key: 'firstDish', icon: '🍳', of: 'recipes', need: 1 },
+  { key: 'tenDishes', icon: '🔪', of: 'recipes', need: 10 },
+  { key: 'fiftyDishes', icon: '🔥', of: 'recipes', need: 50 },
+  { key: 'firstStamp', icon: '🛂', of: 'countries', need: 1 },
+  { key: 'globetrotter', icon: '🌍', of: 'countries', need: 10 },
+  { key: 'followed', icon: '👫', of: 'followers', need: 10 },
 ];
 
 export default function Profile() {
@@ -95,6 +99,13 @@ export default function Profile() {
   const [liveRecipes, setLiveRecipes] = useState([]);
   const [passport, setPassport] = useState({ countries: [], total: 0 });
   const [activity, setActivity] = useState([]);
+  /* Whose content is currently held. Walking from your own profile to someone
+     else's keeps this component mounted, so until the new requests land the
+     old arrays are still in state — and they were being rendered under the new
+     person's name. Tagging the data with its owner means "not theirs yet" is
+     something the render can see, rather than something we would have to
+     remember to clear in every path that changes the target. */
+  const [contentFor, setContentFor] = useState(null);
 
   const menuRef = useRef(null);
 
@@ -109,9 +120,11 @@ export default function Profile() {
     let alive = true;
 
     const loadContent = () => {
-      getUserRecipes(targetId).then((r) => { if (alive) setLiveRecipes(r || []); }).catch(() => {});
-      getPassport(targetId).then((p) => { if (alive) setPassport(p || { countries: [], total: 0 }); }).catch(() => {});
-      getUserActivity(targetId).then((a) => { if (alive) setActivity(a || []); }).catch(() => {});
+      Promise.allSettled([
+        getUserRecipes(targetId).then((r) => alive && setLiveRecipes(r || [])),
+        getPassport(targetId).then((p) => alive && setPassport(p || { countries: [], total: 0 })),
+        getUserActivity(targetId).then((a) => alive && setActivity(a || [])),
+      ]).then(() => { if (alive) setContentFor(targetId); });
     };
 
     const run = async () => {
@@ -120,6 +133,10 @@ export default function Profile() {
         loadContent();
         return;
       }
+      /* Held from the profile we came from — it must not sit under the new
+         name while this fetch is in flight. A refetch of the SAME profile
+         (follow, unblock) keeps what it has, so the header doesn't blink. */
+      setOther((prev) => (prev && prev.id === targetId ? prev : null));
       try {
         const u = await getUser(targetId);
         if (!alive) return;
@@ -129,6 +146,7 @@ export default function Profile() {
           setLiveRecipes([]);
           setPassport({ countries: [], total: 0 });
           setActivity([]);
+          setContentFor(targetId);
         } else {
           loadContent();
         }
@@ -344,11 +362,23 @@ export default function Profile() {
   const TABS = isSelf
     ? ['activity', 'recipes', 'passport', 'ranking', 'badges']
     : ['activity', 'recipes', 'passport', 'badges'];
+
+  /* Derived, not stored. `tab` survives a walk from your own profile to
+     someone else's, and Ranking exists only on your own — so sitting on your
+     leaderboard and clicking a name in it left YOUR standings rendered under
+     THEIR name, with no tab highlighted. Falling back to the first tab keeps
+     any future self-only pane from doing the same. */
+  const activeTab = TABS.includes(tab) ? tab : TABS[0];
+
+  // the content in state belongs to the profile we were on until it reloads
+  const contentReady = contentFor === targetId;
   const isStaff = me?.role === 'admin' || me?.role === 'moderator';
   const initials = (p.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2);
   const aboutText = p.bio || (isSelf ? t('profile.about') : '');
   const joined = p.created_at ? new Date(p.created_at).getFullYear() : '';
-  const countriesTotal = passport?.total ?? 0;
+  /* Zero rather than the previous profile's figure while the new one loads —
+     the stat strip, the "next badge" bar and the flag row all read this. */
+  const countriesTotal = contentFor === targetId ? (passport?.total ?? 0) : 0;
 
   const stats = {
     recipes: p.recipe_count,
@@ -356,6 +386,17 @@ export default function Profile() {
     countries: countriesTotal,
     followers: p.followers,
   };
+
+  /* Whose shelf this is: the counters above, not a constant. */
+  const badgeList = BADGES.map((b) => ({
+    ...b,
+    have: stats[b.of] ?? 0,
+    got: (stats[b.of] ?? 0) >= b.need,
+  }));
+  // the closest one still out of reach — what the rail's progress bar tracks
+  const nextBadge = badgeList
+    .filter((b) => !b.got)
+    .sort((a, b) => a.need - a.have - (b.need - b.have))[0] || null;
 
   const recipeList = (liveRecipes || []).map((r) => ({
     id: r.id,
@@ -530,8 +571,8 @@ export default function Profile() {
                 key={k}
                 type="button"
                 role="tab"
-                aria-selected={tab === k}
-                className={`pf-tab ${tab === k ? 'is-active' : ''}`}
+                aria-selected={activeTab === k}
+                className={`pf-tab ${activeTab === k ? 'is-active' : ''}`}
                 onClick={() => setTab(k)}
               >
                 {t(`profile.tabs.${k}`)}
@@ -539,8 +580,10 @@ export default function Profile() {
             ))}
           </div>
 
-          {tab === 'activity' && (
-            activity.length === 0 ? (
+          {activeTab === 'activity' && (
+            !contentReady ? (
+              <p className="pf-empty">{t('common.loading')}…</p>
+            ) : activity.length === 0 ? (
               <p className="pf-empty">{t('profile.activityEmpty')}</p>
             ) : (
               <ul className="pf-activity">
@@ -572,8 +615,10 @@ export default function Profile() {
             )
           )}
 
-          {tab === 'recipes' && (
-            recipeList.length === 0 ? (
+          {activeTab === 'recipes' && (
+            !contentReady ? (
+              <p className="pf-empty">{t('common.loading')}…</p>
+            ) : recipeList.length === 0 ? (
               <p className="pf-empty">{t('profile.recipesEmpty')}</p>
             ) : (
               <div className="pf-recipes">
@@ -598,13 +643,15 @@ export default function Profile() {
             )
           )}
 
-          {tab === 'passport' && (
+          {activeTab === 'passport' && (
             <div className="pf-passport-tab">
               <div className="pf-globe">
-                <WorldGlobe visited={visitedStamps} size={320} />
+                <WorldGlobe visited={contentReady ? visitedStamps : []} size={320} />
                 <p className="pf-globe__hint">{t('passport.spin')}</p>
               </div>
-              {passportList.length === 0 ? (
+              {!contentReady ? (
+                <p className="pf-empty">{t('common.loading')}…</p>
+              ) : passportList.length === 0 ? (
                 <p className="pf-empty">{t('passport.empty')}</p>
               ) : (
                 <div className="pf-passport">
@@ -625,7 +672,7 @@ export default function Profile() {
             </div>
           )}
 
-          {tab === 'ranking' && (
+          {activeTab === 'ranking' && (
             <div className="pf-rankboard">
               <div className="pf-rankboard__scopes" role="tablist">
                 {['global', 'friends'].map((sc) => (
@@ -702,12 +749,17 @@ export default function Profile() {
             </div>
           )}
 
-          {tab === 'badges' && (
+          {activeTab === 'badges' && (
             <div className="pf-badges">
-              {BADGES.map((b) => (
-                <div className={`pf-badge ${b.got ? '' : 'is-locked'}`} key={b.name}>
+              {badgeList.map((b) => (
+                <div className={`pf-badge ${b.got ? '' : 'is-locked'}`} key={b.key}>
                   <span className="pf-badge__icon" aria-hidden="true">{b.icon}</span>
-                  <b>{b.name}</b>
+                  <b>{t(`profile.badgeNames.${b.key}`, { count: b.need })}</b>
+                  {!b.got && (
+                    <small className="pf-badge__need">
+                      {Math.min(b.have, b.need)} / {b.need}
+                    </small>
+                  )}
                 </div>
               ))}
             </div>
@@ -724,19 +776,24 @@ export default function Profile() {
             <p className="pf-about">{aboutText || t('profile.aboutEmpty')}</p>
           </section>
 
-          <section className="pf-card pf-card--next">
-            <h3 className="pf-card__title">{t('profile.nextBadge')}</h3>
-            <div className="pf-next">
-              <span className="pf-next__icon" aria-hidden="true">🌍</span>
-              <div className="pf-next__body">
-                <b>Globetrotter</b>
-                <div className="pf-next__bar">
-                  <i style={{ width: `${Math.min(100, (countriesTotal / 25) * 100)}%` }} />
+          {nextBadge && (
+            <section className="pf-card pf-card--next">
+              <h3 className="pf-card__title">{t('profile.nextBadge')}</h3>
+              <div className="pf-next">
+                <span className="pf-next__icon" aria-hidden="true">{nextBadge.icon}</span>
+                <div className="pf-next__body">
+                  <b>{t(`profile.badgeNames.${nextBadge.key}`, { count: nextBadge.need })}</b>
+                  <div className="pf-next__bar">
+                    <i style={{ width: `${Math.min(100, (nextBadge.have / nextBadge.need) * 100)}%` }} />
+                  </div>
+                  <small>
+                    {Math.min(nextBadge.have, nextBadge.need)} / {nextBadge.need}{' '}
+                    {t(`profile.stats.${nextBadge.of}`).toLowerCase()}
+                  </small>
                 </div>
-                <small>{countriesTotal} / 25 {t('profile.stats.countries').toLowerCase()}</small>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <section className="pf-card">
             <div className="pf-card__head">
@@ -745,7 +802,7 @@ export default function Profile() {
                 {t('profile.viewAll')}
               </button>
             </div>
-            {passportList.length === 0 ? (
+            {!contentReady || passportList.length === 0 ? (
               <p className="pf-flags__sub">{t('passport.empty')}</p>
             ) : (
               <>
