@@ -29,6 +29,14 @@ function ProtectedRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to="/login" replace />
 }
 
+/* The other direction. Signing in lasts 30 days, so someone who used the app
+   last week should land in it, not on a login form they have to fill in again
+   — and `/` sent everyone to `/login` regardless of whether they were already
+   signed in. */
+function GuestRoute({ children }) {
+  return isLoggedIn() ? <Navigate to="/home" replace /> : children
+}
+
 // How long the splash stays up at minimum, so the gold-fill animation
 // has time to play through even when the page loads instantly.
 const SPLASH_MIN_MS = 1800
@@ -72,8 +80,8 @@ function App() {
 
       <Routes>
         {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
 
         {/* The one question we ask a brand-new account, before the app opens:
             what can't you eat? It sits outside the shell on purpose — there is
@@ -128,8 +136,9 @@ function App() {
           <Route path="/admin" element={<Admin />} />
         </Route>
 
-        {/* Redirect root to login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Root goes where you belong: the app if you are signed in, the
+            login form if you are not. */}
+        <Route path="/" element={<GuestRoute><Navigate to="/login" replace /></GuestRoute>} />
       </Routes>
     </BrowserRouter>
   )

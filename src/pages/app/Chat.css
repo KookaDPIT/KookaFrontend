@@ -915,3 +915,54 @@
     opacity: 1;
   }
 }
+
+/* ==========================================================================
+   PLAN CARD — the receipt for something Kooka changed.
+
+   Distinct from the recipe and nutrition cards on purpose: those are answers,
+   this is a record of a side effect on the person's own data. The green edge
+   is the same "this happened" signal used elsewhere in the app.
+   ========================================================================== */
+.plan-card {
+  padding: 14px 16px;
+  border-left: 3px solid #7d9a5a;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-card__group h4 {
+  margin: 0 0 6px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  color: #6b5d43;
+}
+
+.plan-card__group ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.plan-card__group li b { color: #5f7a3f; }
+
+.plan-card__link {
+  align-self: flex-start;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #ff6b35;
+  text-decoration: none;
+}
+
+.plan-card__link:hover { text-decoration: underline; }
+
+[data-theme="dark"] .plan-card { border-left-color: #9dbb78; }
+[data-theme="dark"] .plan-card__group h4 { color: rgba(245, 245, 240, 0.6); }
+[data-theme="dark"] .plan-card__group li b { color: #b6cf93; }

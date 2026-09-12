@@ -1,0 +1,100 @@
+/* ==========================================================================
+   SITE FOOTER
+
+   A quiet strip under every scrolling page. Separated from the content by a
+   tint and by whitespace rather than a rule, like the rest of the app.
+   ========================================================================== */
+.kfoot {
+  margin-top: auto;
+  padding: 26px clamp(20px, 5vw, 72px) 30px;
+  background: rgba(120, 80, 30, 0.05);
+  color: #6b5d43;
+}
+
+.kfoot__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+}
+
+.kfoot__brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+.kfoot__mark {
+  font-family: var(--font-brand), sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #ff6b35;
+}
+
+.kfoot__tag { font-size: 13px; color: #94805c; }
+
+.kfoot__socials {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-left: auto;
+}
+
+.kfoot__follow {
+  margin-right: 2px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #94805c;
+}
+
+.kfoot__social {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #fffdf9;
+  color: #6b5d43;
+  box-shadow: 0 2px 8px rgba(120, 80, 30, 0.1);
+  transition: color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.kfoot__social svg { width: 19px; height: 19px; }
+
+/* Deliberately NOT the networks' own blue and pink on hover: two foreign brand
+   colours in the one strip that closes every page pulled the warm palette
+   apart for no gain — the glyphs are recognisable on their own. They take the
+   Kooka orange, like every other interactive thing in the app. */
+.kfoot__social:hover {
+  color: #ff6b35;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(120, 80, 30, 0.16);
+}
+
+.kfoot__legal { margin: 0; flex-basis: 100%; font-size: 12px; color: #a0906f; }
+
+[data-theme="dark"] .kfoot {
+  background: rgba(255, 255, 255, 0.035);
+  color: #c9bea7;
+}
+
+[data-theme="dark"] .kfoot__tag,
+[data-theme="dark"] .kfoot__follow { color: rgba(245, 245, 240, 0.55); }
+[data-theme="dark"] .kfoot__legal { color: rgba(245, 245, 240, 0.4); }
+
+[data-theme="dark"] .kfoot__social {
+  background: rgba(255, 255, 255, 0.07);
+  color: #e2d8c4;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kfoot__social:hover { color: #ff8a5a; }
+
+@media (max-width: 640px) {
+  .kfoot { padding: 20px 14px 26px; }
+  .kfoot__inner { gap: 12px 16px; }
+  .kfoot__socials { margin-left: 0; flex-basis: 100%; }
+  /* 44px targets on a phone */
+  .kfoot__social { width: 44px; height: 44px; }
+  .kfoot__tag { flex-basis: 100%; }
+}

@@ -5,6 +5,7 @@ import {
   getPost, votePost, addComment, deleteComment, deletePost, moderatePost,
 } from '../../services/forum';
 import ModerationBar from '../../components/ModerationBar';
+import ReportDialog from '../../components/ReportDialog';
 import { useUser } from '../../user';
 import { languageName } from '../../lib/languages';
 import Modal from '../../components/Modal';
@@ -40,6 +41,10 @@ export default function ForumPost() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  /* Reporting is per-thing, so the dialog is told what it is looking at:
+     `{ type, id }` for the post itself or for one comment. */
+  const [report, setReport] = useState(null);
+  const [reported, setReported] = useState(() => new Set());
   const [toast, setToast] = useState('');
 
   const flash = (msg) => {
@@ -232,6 +237,17 @@ export default function ForumPost() {
               {t('forum.share')}
             </button>
 
+            {!post.can_edit && (
+              <button
+                type="button"
+                className="fp-chip"
+                disabled={reported.has(`forum_post:${post.id}`)}
+                onClick={() => setReport({ type: 'forum_post', id: post.id })}
+              >
+                ⚑ {reported.has(`forum_post:${post.id}`) ? t('report.done') : t('report.action')}
+              </button>
+            )}
+
             {post.can_edit && (
               <button
                 type="button"
@@ -297,6 +313,17 @@ export default function ForumPost() {
                         {t('common.delete')}
                       </button>
                     )}
+                    {!c.is_mine && (
+                      <button
+                        type="button"
+                        className="fp-comment__report"
+                        disabled={reported.has(`forum_comment:${c.id}`)}
+                        onClick={() => setReport({ type: 'forum_comment', id: c.id })}
+                        title={t('report.action')}
+                      >
+                        ⚑
+                      </button>
+                    )}
                   </div>
                   <p className="fp-comment__body">{c.body}</p>
                 </li>
@@ -323,6 +350,17 @@ export default function ForumPost() {
       >
         <p>{t('forum.deleteNote')}</p>
       </Modal>
+
+      <ReportDialog
+        open={Boolean(report)}
+        onClose={() => setReport(null)}
+        targetType={report?.type || 'forum_post'}
+        targetId={report?.id || 0}
+        onDone={(msg) => {
+          setReported((set) => new Set(set).add(`${report.type}:${report.id}`));
+          flash(msg);
+        }}
+      />
 
       <Toast message={toast} />
     </div>

@@ -22,13 +22,13 @@ export default function RecipeCard({ recipe }) {
           </span>
         )}
         {recipe.rank && (
+          /* `locked` used to mean the recipe would not open at all, and the
+             card said so with a padlock and a grey veil over the photo. It no
+             longer blocks anything — it only means the dish is rated above
+             your rank — so the pill carries the whole message and the photo
+             stays exactly as appetising as everyone else's. */
           <span className="rcard__rank">
-            <RankPill rank={recipe.rank} label={recipe.rank_name} locked={recipe.locked} />
-          </span>
-        )}
-        {recipe.locked && (
-          <span className="rcard__lockveil" aria-hidden="true">
-            <span>🔒</span>
+            <RankPill rank={recipe.rank} label={recipe.rank_name} />
           </span>
         )}
       </div>

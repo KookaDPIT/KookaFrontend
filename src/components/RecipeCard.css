@@ -108,17 +108,6 @@
   z-index: 2;
 }
 
-.rcard__lockveil {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(42, 32, 22, 0.42);
-  backdrop-filter: blur(1.5px);
-  font-size: 26px;
-  z-index: 1;
-}
-
 /* ==========================================================================
    PHONE (≤640px) — additive only; tablets and desktops are unchanged
    ========================================================================== */
@@ -162,4 +151,35 @@
     left: 6px;
     font-size: 1.2rem;
   }
+}
+
+/* ==========================================================================
+   DARK MODE
+
+   The card was built on the shared `--k-*` tokens, which are deliberately
+   theme-independent (they carry the warm identity in both themes). That works
+   everywhere the surface is already cream — but the feed, the search results
+   and the passport modal all turn dark, and the cards stayed as bright
+   cream-white blocks on top of them. They are the most prominent thing on
+   Home, so this was the loudest break in the whole dark theme.
+
+   Re-pointing the tokens on the card itself keeps every rule below untouched.
+   ========================================================================== */
+[data-theme="dark"] .rcard {
+  --k-surface: #2c241c;
+  --k-border: #3d3429;
+  --k-text: #f5f5f0;
+  --k-muted: #c9bea7;
+  --k-muted-2: #a89988;
+  color: #f5f5f0;
+}
+
+/* the placeholder weave, for cards with no photo yet */
+[data-theme="dark"] .rcard__photo {
+  background-color: #3a3228;
+  background-image: repeating-linear-gradient(-45deg, #3a3228 0 12px, #332c23 12px 24px);
+}
+
+[data-theme="dark"] .rcard:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.38);
 }

@@ -124,6 +124,18 @@ export function IconClock({ className }) {
    One per thing Kooka can do. They carry the meaning on the welcome cards, so
    people can tell the options apart without reading every line. */
 
+/* a shopping basket — "add this to my list" */
+export function IconBasket({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 9h16l-1.4 9.2a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8z" />
+      <path d="M9 9 11 4M15 9l-2-5" />
+      <path d="M10 13v3M14 13v3" />
+    </svg>
+  );
+}
+
 /* a pot on the hob — "what can I cook?" */
 export function IconPot({ className }) {
   return (

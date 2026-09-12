@@ -138,3 +138,22 @@
   }
   .cpick__opt { padding: 11px 10px; min-height: 44px; }
 }
+
+/* ==========================================================================
+   DARK MODE
+
+   The picker is built entirely on the shared `--k-*` tokens, which stay warm
+   in both themes — so on Create Recipe it kept painting a cream control and a
+   cream dropdown next to inputs that had gone dark. Re-pointing the tokens on
+   the root covers the control, the menu, the search box and the option rows
+   without touching a single rule above.
+   ========================================================================== */
+[data-theme="dark"] .cpick {
+  --k-surface: #3a3228;
+  --k-input-bg: #322a20;
+  --k-border: #4a4238;
+  --k-border-strong: #5b5145;
+  --k-input-border: #4a4238;
+  --k-text: #f5f5f0;
+  --k-faint: #8a7d6c;
+}

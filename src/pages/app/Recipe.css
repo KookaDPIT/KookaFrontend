@@ -354,15 +354,14 @@
 
 .gauge__svg { width: 100%; height: auto; overflow: visible; }
 
-.gauge__zone {
+/* One stroke for the whole band. It used to be three arcs end to end, each
+   with a rounded cap, which drew a pair of dividing lines at every zone
+   boundary; the colour now changes inside a single gradient instead. */
+.gauge__band {
   fill: none;
   stroke-width: 8;
   stroke-linecap: round;
 }
-
-.gauge__zone--green { stroke: #3fae6f; }
-.gauge__zone--amber { stroke: #efb341; }
-.gauge__zone--red { stroke: #e5533a; }
 
 .gauge__needle {
   stroke: #2a2016;
@@ -756,4 +755,50 @@
   .recipe__gauges { gap: 8px; }
   .recipe__body { padding: 18px 14px; }
   .recipe__reviews { padding: 8px 14px 36px; }
+}
+
+/* ==========================================================================
+   ABOVE YOUR RANK + REPORT
+   A recipe harder than your rank is shown and cooked like any other; the note
+   is a signpost, not a barrier, so it sits with the metadata rather than
+   taking over the page.
+   ========================================================================== */
+.recipe__rank-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: rgba(255, 248, 239, 0.75);
+}
+
+.recipe__report-row {
+  display: flex;
+  justify-content: center;
+  padding: 0 clamp(20px, 5vw, 60px) 44px;
+}
+
+.recipe__report {
+  padding: 10px 20px;
+  border: 1px solid #e5d7ba;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #94805c;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.recipe__report:hover:not(:disabled) { color: #c2452c; border-color: #d2452c; }
+.recipe__report:disabled { opacity: 0.7; cursor: default; }
+
+[data-theme="dark"] .recipe__report { border-color: #4a4238; color: #a89988; }
+[data-theme="dark"] .recipe__report:hover:not(:disabled) { color: #ff8a72; border-color: #ff8a72; }
+
+@media (max-width: 640px) {
+  .recipe__report-row { padding: 0 14px 28px; }
+  .recipe__report { min-height: 44px; }
 }

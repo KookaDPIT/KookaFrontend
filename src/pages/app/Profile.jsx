@@ -6,6 +6,7 @@ import { useUser, refreshUser } from '../../user';
 import {
   updateProfile, getUser, getUserRecipes, getPassport, getUserActivity,
   getPassportCountry, hideActivity, follow, unfollow, getLeaderboard,
+  getBlocked, blockUser, unblockUser,
 } from '../../services/users';
 import { RANK_COLORS } from '../../lib/ranks';
 import { countryOf } from '../../data/countries';
@@ -71,6 +72,11 @@ export default function Profile() {
   const [other, setOther] = useState(null);        // fetched user for /profile/:id
   const [following, setFollowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  /* Blocking is symmetric on the backend: once it is in place neither account
+     sees the other's recipes, posts, comments or reviews. The page only needs
+     to know whether it is already on, so the menu can offer the opposite. */
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -155,6 +161,15 @@ export default function Profile() {
       });
     return () => { alive = false; };
   }, [tab, rankScope, boardFor]);
+
+  useEffect(() => {
+    if (isSelf || !targetId) return undefined;
+    let alive = true;
+    getBlocked()
+      .then((list) => alive && setIsBlocked((list || []).some((u) => u.id === targetId)))
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [isSelf, targetId, reloadTick]);
 
   // close the kebab menu on an outside click
   useEffect(() => {
@@ -258,6 +273,30 @@ export default function Profile() {
   const openModeration = () => {
     setMenuOpen(false);
     navigate('/admin');
+  };
+
+  /* After blocking there is nothing left on this page to look at — the backend
+     404s the profile — so we leave rather than sit on a broken screen. */
+  const doBlock = async () => {
+    setConfirmBlock(false);
+    try {
+      await blockUser(targetId);
+      navigate('/home', { replace: true });
+    } catch {
+      flash(t('common.error'));
+    }
+  };
+
+  const doUnblock = async () => {
+    setMenuOpen(false);
+    try {
+      await unblockUser(targetId);
+      setIsBlocked(false);
+      setReloadTick((n) => n + 1);
+      flash(t('profile.unblocked', { name: p.username }));
+    } catch {
+      flash(t('common.error'));
+    }
   };
 
   /* Tapping a stamp answers the obvious question: what did I actually cook
@@ -447,6 +486,22 @@ export default function Profile() {
                     <button type="button" role="menuitem" onClick={openModeration}>
                       {t('admin.title')}
                     </button>
+                  )}
+                  {!isSelf && (
+                    isBlocked ? (
+                      <button type="button" role="menuitem" onClick={doUnblock}>
+                        {t('profile.unblock')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="pf-menu__danger"
+                        onClick={() => { setMenuOpen(false); setConfirmBlock(true); }}
+                      >
+                        {t('profile.block')}
+                      </button>
+                    )
                   )}
                 </div>
               )}
@@ -808,6 +863,25 @@ export default function Profile() {
             ))}
           </ul>
         )}
+      </Modal>
+
+      {/* Blocking is a two-way cut — worth one sentence before it happens. */}
+      <Modal
+        open={confirmBlock}
+        onClose={() => setConfirmBlock(false)}
+        title={t('profile.blockTitle', { name: p.name || p.username })}
+        footer={(
+          <>
+            <button type="button" className="kbtn kbtn--ghost" onClick={() => setConfirmBlock(false)}>
+              {t('common.cancel')}
+            </button>
+            <button type="button" className="kbtn kbtn--danger" onClick={doBlock}>
+              {t('profile.block')}
+            </button>
+          </>
+        )}
+      >
+        <p className="pf-block-note">{t('profile.blockNote')}</p>
       </Modal>
 
       <Toast message={toast} />

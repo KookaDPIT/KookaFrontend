@@ -1,0 +1,102 @@
+/* ==========================================================================
+   REPORT DIALOG — reasons as tappable rows, not a select.
+   A native <select> hides the options behind a tap and makes a six-item list
+   feel longer than it is.
+   ========================================================================== */
+.rep__intro {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #6b5d43;
+}
+
+.rep__reasons {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.rep__reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #eadfc6;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #2a2016;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.rep__reason:hover { border-color: #e0cda6; }
+
+.rep__reason.is-on {
+  border-color: #d2452c;
+  background: rgba(210, 69, 44, 0.07);
+}
+
+.rep__reason input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: #d2452c;
+}
+
+.rep__details { display: block; }
+
+.rep__details > span {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #6b5d43;
+}
+
+.rep__details textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid #eadfc6;
+  border-radius: 12px;
+  background: #fff;
+  font: 14px var(--font-body), sans-serif;
+  color: #2a2016;
+  resize: vertical;
+  outline: none;
+}
+
+.rep__details textarea:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.13);
+}
+
+.rep__error {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #c2452c;
+}
+
+[data-theme="dark"] .rep__intro,
+[data-theme="dark"] .rep__details > span { color: rgba(245, 245, 240, 0.62); }
+
+[data-theme="dark"] .rep__reason,
+[data-theme="dark"] .rep__details textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f5f5f0;
+}
+
+[data-theme="dark"] .rep__reason.is-on {
+  border-color: #ff8a72;
+  background: rgba(210, 69, 44, 0.18);
+}
+
+[data-theme="dark"] .rep__error { color: #ff8a72; }
+
+@media (max-width: 640px) {
+  .rep__reason { padding: 13px; min-height: 46px; }
+}

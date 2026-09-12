@@ -946,69 +946,6 @@
    fridge wants your ingredients, the allergen filter wants your allergies.
    Both ask inline rather than showing an empty grid.
    ========================================================================== */
-.home-pantry {
-  margin: 0 0 22px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: #fffaf1;
-  box-shadow: 0 6px 20px rgba(120, 80, 30, 0.08);
-}
-
-.home-pantry__label {
-  display: block;
-  margin-bottom: 9px;
-  font-family: var(--font-important), sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  color: #2a2016;
-}
-
-.home-pantry__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.home-pantry__row input {
-  flex: 1;
-  min-width: 220px;
-  padding: 12px 16px;
-  border: 1px solid #eadfc6;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 14.5px;
-  color: #2a2016;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.home-pantry__row input:focus {
-  border-color: #ff6b35;
-  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.14);
-}
-
-.home-pantry__row input::placeholder { color: #b3a888; }
-
-.home-pantry__clear {
-  padding: 12px 18px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(120, 80, 30, 0.09);
-  font-family: var(--font-important), sans-serif;
-  font-weight: 700;
-  font-size: 13.5px;
-  color: #6b5d43;
-  cursor: pointer;
-}
-
-.home-pantry__clear:hover { background: rgba(120, 80, 30, 0.16); }
-
-.home-pantry__hint {
-  margin: 9px 0 0;
-  font-size: 12.5px;
-  color: #8a7a5c;
-}
-
 .home-nudge {
   display: flex;
   align-items: center;
@@ -1031,16 +968,6 @@
 /* per-card explanations: why this recipe is in front of you */
 .home-feed__item { display: flex; flex-direction: column; }
 
-.home-match {
-  margin: 7px 2px 0;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: #6b5d43;
-}
-
-.home-match b { color: #c25317; }
-.home-match span { display: block; }
-
 .home-warn {
   margin: 6px 2px 0;
   font-size: 12.5px;
@@ -1048,34 +975,7 @@
   color: #c2452c;
 }
 
-[data-theme="dark"] .home-pantry,
-[data-theme="dark"] .home-nudge {
-  background: #241b14;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .home-pantry__label { color: #f5f5f0; }
-[data-theme="dark"] .home-pantry__hint,
-[data-theme="dark"] .home-nudge p,
-[data-theme="dark"] .home-match { color: rgba(245, 245, 240, 0.66); }
-
-[data-theme="dark"] .home-pantry__row input {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .home-pantry__row input::placeholder {
-  color: rgba(255, 248, 239, 0.35);
-}
-
-[data-theme="dark"] .home-pantry__clear {
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(245, 245, 240, 0.8);
-}
-
-[data-theme="dark"] .home-match b { color: #ff9b6a; }
-[data-theme="dark"] .home-warn { color: #ff8a72; }
+[data-theme="dark"] [data-theme="dark"] [data-theme="dark"] [data-theme="dark"] [data-theme="dark"] [data-theme="dark"] [data-theme="dark"] [data-theme="dark"] .home-warn { color: #ff8a72; }
 
 /* ==========================================================================
    PHONE (≤640px) — additive only; tablets and desktops are unchanged
@@ -1154,25 +1054,7 @@
   }
 
   /* fridge form: the input takes its own row, the buttons share the next */
-  .home-pantry {
-    margin-bottom: 18px;
-    padding: 14px;
-  }
-
-  .home-pantry__row { gap: 8px; }
-
-  .home-pantry__row input {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-
-  .home-pantry__row .home-btn,
-  .home-pantry__clear {
-    flex: 1 1 auto;
-    text-align: center;
-  }
-
-  .home-nudge {
+          .home-nudge {
     margin-bottom: 18px;
     padding: 14px;
   }
@@ -1200,10 +1082,7 @@
 
   .home-card__body { padding: 10px 12px 12px; }
 
-  .home-match,
-  .home-warn { overflow-wrap: anywhere; }
-
-  .home-empty {
+    .home-empty {
     padding: 16px 14px;
     font-size: 14px;
   }

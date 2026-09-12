@@ -35,6 +35,63 @@ export async function restoreRecipe(id) {
   return data;
 }
 
+/* Re-run the AI pass that fills in nutrition and allergens.
+
+   That analysis happens once, when a recipe is published. Anything older than
+   those fields — imported recipes, or ones saved while Groq was down — kept
+   zeroes and an empty allergen list, and both the "free of my allergens"
+   filter and the warning on the recipe page read exactly those fields. */
+export async function analyzeRecipe(id) {
+  const { data } = await api.post(`/admin/recipes/${id}/analyze`);
+  return data; // { ok, flagged, reason?, recipe }
+}
+
+/* The same pass over every recipe, one small batch per request.
+
+   Not one long request: an HTTP call that runs for minutes dies on any proxy,
+   and Groq's free tier is metered per minute — a single giant batch would take
+   a 429 halfway through. `runAnalyzeAll` below drives the loop and reports
+   progress as it goes.
+
+   `scope` is 'missing' (only recipes with no nutrition or no allergens — what
+   you want after the analyser has been down) or 'all'. */
+export async function analyzeAllBatch({ scope = 'missing', limit = 5, afterId = 0 } = {}) {
+  const { data } = await api.post('/admin/recipes/analyze-all', null, {
+    params: { scope, limit, after_id: afterId },
+  });
+  return data; // { processed, updated, flagged, remaining, total, last_id, stopped }
+}
+
+/* Walk the whole catalogue, calling `onProgress` after each batch.
+
+   Stops when the backend says there is nothing left, when it reports the
+   analyser is unavailable, or when `shouldStop()` says the operator changed
+   their mind. Whatever was written before stopping stays written. */
+export async function runAnalyzeAll({ scope = 'missing', onProgress, shouldStop } = {}) {
+  let afterId = 0;
+  let updated = 0;
+  let flagged = 0;
+  let stopped = '';
+
+  // A hard ceiling on iterations. The cursor and the `remaining` count should
+  // always terminate this on their own; the cap is here so a backend that
+  // answered oddly could never spin the browser forever.
+  for (let round = 0; round < 400; round += 1) {
+    if (shouldStop?.()) { stopped = 'cancelled'; break; }
+
+    const batch = await analyzeAllBatch({ scope, afterId });
+    updated += batch.updated;
+    flagged += batch.flagged;
+    afterId = batch.last_id ?? afterId;
+    onProgress?.({ updated, flagged, remaining: batch.remaining, total: batch.total });
+
+    if (batch.stopped) { stopped = batch.stopped; break; }
+    if (batch.remaining <= 0 || batch.processed === 0) break;
+  }
+
+  return { updated, flagged, stopped };
+}
+
 // ----- forum -----
 export async function getForumQueue({ status = 'ok', q = '' } = {}) {
   const { data } = await api.get('/admin/forum/posts', { params: { status, q } });

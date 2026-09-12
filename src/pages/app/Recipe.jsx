@@ -7,8 +7,10 @@ import Modal from '../../components/Modal';
 import { countryOf } from '../../data/countries';
 import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import Reviews from '../../components/Reviews';
+import ReportDialog from '../../components/ReportDialog';
+import Toast from '../../components/Toast';
 import { IconBack, IconClock } from '../../components/Icons';
-import RankBadge, { RankPill } from '../../components/RankBadge';
+import { RankPill } from '../../components/RankBadge';
 import './Recipe.css';
 
 /* ==========================================================================
@@ -35,7 +37,15 @@ function gaugeArc(f0, f1, rr = G.r) {
   return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${rr} ${rr} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 
-function Gauge({ value, unit, label, pct }) {
+/* The dial is ONE stroke, coloured by a gradient with hard stops, not three
+   arcs laid end to end. Three arcs each had a rounded cap, so every zone
+   boundary showed up as a pair of little dividing lines across the band.
+
+   The stops are at 0.25 and 0.75 rather than a third and two thirds because a
+   linearGradient runs along x while the band runs around an arc: the point at
+   angle f sits at x = cx - r·cos(f·π), so f = 1/3 lands a quarter of the way
+   across the box. Same boundaries as before, no seams. */
+function Gauge({ value, unit, label, pct, gradientId }) {
   const p = Math.max(0, Math.min(1, pct));
   const zone = p < 1 / 3 ? '#3fae6f' : p < 2 / 3 ? '#efb341' : '#e5533a';
   const [nx, ny] = gaugePoint(p, G.r - 7);
@@ -43,9 +53,17 @@ function Gauge({ value, unit, label, pct }) {
   return (
     <div className="gauge">
       <svg viewBox="0 0 100 58" className="gauge__svg" aria-hidden="true">
-        <path className="gauge__zone gauge__zone--green" d={gaugeArc(0, 1 / 3)} />
-        <path className="gauge__zone gauge__zone--amber" d={gaugeArc(1 / 3, 2 / 3)} />
-        <path className="gauge__zone gauge__zone--red" d={gaugeArc(2 / 3, 1)} />
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#3fae6f" />
+            <stop offset="25%" stopColor="#3fae6f" />
+            <stop offset="25%" stopColor="#efb341" />
+            <stop offset="75%" stopColor="#efb341" />
+            <stop offset="75%" stopColor="#e5533a" />
+            <stop offset="100%" stopColor="#e5533a" />
+          </linearGradient>
+        </defs>
+        <path className="gauge__band" d={gaugeArc(0, 1)} stroke={`url(#${gradientId})`} />
         <line x1={G.cx} y1={G.cy} x2={nx.toFixed(2)} y2={ny.toFixed(2)} className="gauge__needle" />
       </svg>
       <div className="gauge__readout">
@@ -66,70 +84,36 @@ export default function Recipe() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [user] = useUser();
-  /* One state object rather than three: the outcome of a load is exactly one
-     of loading / ok / rank-locked / error, and keeping them together means the
-     effect never has to reset anything synchronously.
+  /* One state object rather than two: a load ends as loading / ok / error, and
+     keeping them together means the effect never has to reset anything
+     synchronously.
 
-     Recipes above your rank come back as a 403 carrying what you'd need to
-     reach, which we render as its own screen rather than a generic error. */
+     A recipe above your rank is no longer a wall. It opens and it cooks; the
+     payload just carries `above_rank`, and pressing Cook asks you first. */
   const [view, setView] = useState({ status: 'loading' });
   const [ingredientsAdded, setIngredientsAdded] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date().toISOString().slice(0, 10));
   const [calendarAdded, setCalendarAdded] = useState(false);
   const [cookWarning, setCookWarning] = useState(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reported, setReported] = useState(false);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     let alive = true;
     getRecipe(id)
       .then((r) => alive && setView({ status: 'ok', recipe: r }))
-      .catch((err) => {
-        if (!alive) return;
-        const detail = err?.response?.data?.detail;
-        if (err?.response?.status === 403 && detail?.required_rank) {
-          setView({ status: 'locked', lock: detail });
-        } else {
-          setView({ status: 'error' });
-        }
-      });
+      .catch(() => alive && setView({ status: 'error' }));
     return () => {
       alive = false;
     };
   }, [id]);
 
   const recipe = view.status === 'ok' ? view.recipe : null;
-  const rankLock = view.status === 'locked' ? view.lock : null;
 
   if (view.status === 'loading') {
     return <div className="recipe recipe--state">{t('common.loading')}…</div>;
-  }
-  if (rankLock) {
-    return (
-      <div className="recipe recipe--state recipe--locked">
-        <RankBadge rank={rankLock.required_rank} size={104}
-                   title={rankLock.required_rank_name} />
-        <h1 className="recipe__lockTitle">{rankLock.recipe?.title}</h1>
-        <p className="recipe__lockMsg">
-          {t('recipe.rankLocked', { rank: rankLock.required_rank_name })}
-        </p>
-        <p className="recipe__lockRank">
-          {t('recipe.yourRankIs', { rank: rankLock.your_rank?.tier_label })}
-          {rankLock.your_rank && !rankLock.your_rank.is_max && (
-            <> · {t('recipe.xpToGo', {
-              xp: rankLock.your_rank.xp_to_next?.toLocaleString(),
-            })}</>
-          )}
-        </p>
-        <div className="recipe__lockActions">
-          <button type="button" className="recipe__cook" onClick={() => navigate('/learn')}>
-            {t('recipe.goEarnXp')}
-          </button>
-          <button type="button" className="recipe__lockBack" onClick={() => navigate('/home')}>
-            {t('common.back')}
-          </button>
-        </div>
-      </div>
-    );
   }
   if (recipe === null) {
     return (
@@ -158,16 +142,34 @@ export default function Recipe() {
     }));
   const hasAllergens = containedAllergens.length > 0 || recipe.allergen_conflicts?.length > 0;
 
+  /* Three things can give you pause before you start, in order of how badly
+     they can go: an allergen you told us to avoid, a dish we have no allergen
+     answer for, and a recipe above your rank. None of them stops you — each
+     one asks once, and "cook anyway" is always there. */
   const startCooking = () => {
-    if (hasAllergens && userAllergies.length === 0 && !allergiesHaveBeenAnswered()) {
-      setCookWarning({ type: 'setup' });
-      return;
-    }
     if (allergyConflicts.length > 0) {
       setCookWarning({ type: 'conflict', allergens: allergyConflicts });
       return;
     }
+    if (hasAllergens && userAllergies.length === 0 && !allergiesHaveBeenAnswered()) {
+      setCookWarning({ type: 'setup' });
+      return;
+    }
+    if (recipe.above_rank) {
+      setCookWarning({ type: 'rank' });
+      return;
+    }
     navigate(`/recipe/${recipe.id}/cook`);
+  };
+
+  const goCook = () => {
+    setCookWarning(null);
+    navigate(`/recipe/${recipe.id}/cook`);
+  };
+
+  const flash = (msg) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(''), 2600);
   };
 
   const addIngredientsToShoppingList = () => {
@@ -278,6 +280,22 @@ export default function Recipe() {
               </Link>
             )}
 
+            {/* A stretch, not a wall: the recipe opens and cooks either way,
+                but say so where the difficulty is stated. */}
+            {recipe.above_rank && recipe.rank_warning && (
+              <p className="recipe__rank-note">
+                <RankPill
+                  rank={recipe.rank_warning.required_rank}
+                  label={recipe.rank_warning.required_rank_name}
+                />
+                <span>
+                  {t('recipe.aboveYourRank', {
+                    rank: recipe.rank_warning.your_rank?.tier_label,
+                  })}
+                </span>
+              </p>
+            )}
+
             {/* You told us to avoid these. Better here, before the shopping
                 list, than three steps into the method. */}
             {recipe.allergen_conflicts?.length > 0 && (
@@ -344,7 +362,17 @@ export default function Recipe() {
             <h2 className="recipe__panel-title">{t('recipe.nutrition')} <span>{t('recipe.perServing')}</span></h2>
             <div className="recipe__gauges">
               {recipe.nutrition.map((n) => (
-                <Gauge key={n.key} value={n.value} unit={n.unit} label={n.label} pct={n.value / n.max} />
+                /* the gradient id has to be unique per dial — SVG defs are
+                   document-global, so a shared id makes every gauge use the
+                   first one's gradient */
+                <Gauge
+                  key={n.key}
+                  value={n.value}
+                  unit={n.unit}
+                  label={n.label}
+                  pct={n.value / n.max}
+                  gradientId={`gauge-${recipe.id}-${n.key}`}
+                />
               ))}
             </div>
             <p className="recipe__dash-note">{t('recipe.aiNote')}</p>
@@ -410,13 +438,30 @@ export default function Recipe() {
         <Reviews recipeId={recipe.id} />
       </div>
 
+      {/* Reporting belongs at the foot of the page: you reach for it after
+          reading, and it should never compete with "cook this". */}
+      {!isAuthor && (
+        <div className="recipe__report-row">
+          <button
+            type="button"
+            className="recipe__report"
+            onClick={() => !reported && setReportOpen(true)}
+            disabled={reported}
+          >
+            ⚑ {reported ? t('report.done') : t('report.action')}
+          </button>
+        </div>
+      )}
+
       <Modal
         open={Boolean(cookWarning)}
         onClose={() => setCookWarning(null)}
         className="recipe__allergy-modal"
-        title={cookWarning?.type === 'setup'
-          ? t('recipe.allergySetupTitle')
-          : t('recipe.allergyConflictTitle')}
+        title={
+          cookWarning?.type === 'rank' ? t('recipe.rankWarnTitle')
+            : cookWarning?.type === 'setup' ? t('recipe.allergySetupTitle')
+              : t('recipe.allergyConflictTitle')
+        }
         footer={(
           <>
             <button type="button" className="kbtn kbtn--ghost" onClick={() => setCookWarning(null)}>
@@ -427,25 +472,38 @@ export default function Recipe() {
                 <button type="button" className="kbtn kbtn--ghost" onClick={() => navigate('/settings?section=allergies')}>
                   {t('recipe.goToAllergySettings')}
                 </button>
-                <button type="button" className="kbtn kbtn--primary" onClick={() => {
-                  setCookWarning(null);
-                  navigate(`/recipe/${recipe.id}/cook`);
-                }}>
+                <button type="button" className="kbtn kbtn--primary" onClick={goCook}>
+                  {t('recipe.cookAnyway')}
+                </button>
+              </>
+            ) : cookWarning?.type === 'rank' ? (
+              <>
+                <button type="button" className="kbtn kbtn--ghost" onClick={() => navigate('/learn')}>
+                  {t('recipe.goEarnXp')}
+                </button>
+                {/* primary, not danger: cooking above your rank is ambitious,
+                    not unsafe — the tone should match */}
+                <button type="button" className="kbtn kbtn--primary" onClick={goCook}>
                   {t('recipe.cookAnyway')}
                 </button>
               </>
             ) : (
-              <button type="button" className="kbtn kbtn--danger" onClick={() => {
-                setCookWarning(null);
-                navigate(`/recipe/${recipe.id}/cook`);
-              }}>
+              <button type="button" className="kbtn kbtn--danger" onClick={goCook}>
                 {t('recipe.cookAnyway')}
               </button>
             )}
           </>
         )}
       >
-        {cookWarning?.type === 'setup' ? (
+        {cookWarning?.type === 'rank' ? (
+          <p className="recipe__allergy-dialog">
+            <span className="recipe__allergy-warning-icon" aria-hidden="true">🎯</span>
+            {t('recipe.rankWarnMessage', {
+              rank: recipe.rank_warning?.required_rank_name,
+              yours: recipe.rank_warning?.your_rank?.tier_label,
+            })}
+          </p>
+        ) : cookWarning?.type === 'setup' ? (
           <p className="recipe__allergy-dialog">
             <span className="recipe__allergy-warning-icon" aria-hidden="true">⚠️</span>
             {t('recipe.allergySetupMessage', { list: containedAllergens.join(', ') })}
@@ -457,6 +515,16 @@ export default function Recipe() {
           </p>
         )}
       </Modal>
+
+      <ReportDialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="recipe"
+        targetId={recipe.id}
+        onDone={(msg) => { setReported(true); flash(msg); }}
+      />
+
+      <Toast message={toast} />
     </div>
   );
 }

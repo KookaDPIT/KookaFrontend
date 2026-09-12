@@ -33,8 +33,37 @@ function write(user) {
   window.dispatchEvent(new CustomEvent(EVENT, { detail: user }));
 }
 
+/* Is the stored token still good?
+
+   Presence alone used to be the test, so an expired token let the app render,
+   fire a request, take a 401 and only then bounce you to the login screen —
+   a visible flash of an app you were not signed into. Reading `exp` out of the
+   JWT settles it before the first paint.
+
+   This is convenience, never access control: the signature is not checked here
+   and could not be. Every endpoint re-validates the token server-side. */
+function tokenIsLive(token) {
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // `exp` is in seconds; a token without one is treated as non-expiring
+    return !payload.exp || payload.exp * 1000 > Date.now();
+  } catch {
+    // unreadable token — let the backend be the judge rather than locking out
+    return true;
+  }
+}
+
 export function isLoggedIn() {
-  return !!localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  if (tokenIsLive(token)) return true;
+  // stale: clear it so nothing downstream keeps retrying with it
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(KEY);
+  } catch { /* storage may be unavailable */ }
+  return false;
 }
 
 export function logout() {

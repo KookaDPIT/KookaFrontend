@@ -56,6 +56,13 @@
   align-items: center;
   gap: 8px;
   width: 100%;
+  /* Claims the space between the logo and the bottom cluster, so its
+     clientHeight IS the room available for entries — which is what
+     useNavCapacity measures. `overflow: hidden` makes a miscount clip the
+     last entry instead of stretching the rail past the viewport. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .app-nav__link {
@@ -85,58 +92,6 @@
   color: #ff6b35;
 }
 
-/* theme toggle — pinned to the bottom of the desktop rail */
-.app-nav__bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: auto;
-  padding: 0 6px;
-}
-
-.app-nav__theme {
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 14px;
-  background: #f8ecd4;
-  color: #6b5d43;
-  font-family: var(--font-important), sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.app-nav__theme:hover {
-  background: rgba(255, 107, 53, 0.14);
-  color: #ff6b35;
-}
-
-/* language switcher — pinned to the bottom of the desktop rail */
-.app-nav__lang {
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 14px;
-  background: #f8ecd4;
-  color: #6b5d43;
-  font-family: var(--font-important), sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.app-nav__lang:hover {
-  background: rgba(255, 107, 53, 0.14);
-  color: #ff6b35;
-}
-
 .app-nav__icon {
   display: flex;
   flex-shrink: 0;
@@ -151,6 +106,10 @@
 .app-main {
   flex: 1;
   display: flex;
+  /* A column so the page can grow and the site footer can sit under it. Pages
+     are still `flex: 1`, so a short one still fills the viewport and pushes
+     the footer to the bottom rather than leaving it floating mid-screen. */
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -226,30 +185,6 @@
     height: 24px;
   }
 
-  .app-nav__bottom {
-    flex-direction: row;
-    gap: 6px;
-    margin-top: 0;
-    margin-left: auto;
-    padding: 0;
-  }
-
-  .app-nav__theme {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .app-nav__lang {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
   .app-main {
     /* leave room for the fixed bottom bar */
     padding-bottom: 78px;
@@ -288,18 +223,6 @@
 }
 
 [data-theme="dark"] .app-nav__link.active {
-  background: rgba(255, 107, 53, 0.16);
-  color: #ff8a5a;
-}
-
-[data-theme="dark"] .app-nav__theme,
-[data-theme="dark"] .app-nav__lang {
-  background: #3a3228;
-  color: #a89968;
-}
-
-[data-theme="dark"] .app-nav__theme:hover,
-[data-theme="dark"] .app-nav__lang:hover {
   background: rgba(255, 107, 53, 0.16);
   color: #ff8a5a;
 }
@@ -347,25 +270,6 @@
     text-overflow: ellipsis;
   }
 
-  .app-nav__bottom {
-    gap: 4px;
-    margin-left: 4px;
-  }
-
-  .app-nav__theme,
-  .app-nav__lang {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-  }
-
-  .app-nav__theme { font-size: 16px; }
-
-  .app-nav__lang {
-    font-size: 11px;
-    letter-spacing: 0.3px;
-  }
-
   /* ---- page area ------------------------------------------------------------
      Keep every page clear of the fixed bar, the home-indicator safe area and
      — while a cook is parked — the floating dock. --k-dock-h is the dock's
@@ -399,23 +303,10 @@
 
   .app-nav__link { padding: 7px 1px; }
 
-  .app-nav__bottom {
-    gap: 3px;
-    margin-left: 3px;
-  }
 }
-
 
 /* ---- PHONE follow-ups, verified in a 360px browser (additive) ---- */
 @media (max-width: 640px) {
-  /* 40×44 theme / language buttons: comfortably tappable, and six tabs still
-     fit at 360px (≈44px each, labels ellipsise) */
-  .app-nav__theme,
-  .app-nav__lang {
-    width: 40px;
-    height: 44px;
-  }
-
   /* the bar's top hairline stayed light-mode beige in dark mode */
   [data-theme="dark"] .app-nav { border-top-color: #3a3228; }
 
@@ -432,4 +323,167 @@
   .app-main {
     padding-bottom: calc(78px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* ==========================================================================
+   THE "MORE" DRAWER
+
+   The rail was carrying the four places you live in, the planner, the
+   moderation console and two icon buttons at the same weight — nine targets
+   in a row on a phone. The secondary ones live behind one entry now, and the
+   panel opens in the bottom-right corner: beside the button on a phone, clear
+   of the page on a laptop.
+   ========================================================================== */
+.app-more { position: relative; }
+
+/* A <button> wearing the same class as the <a> links, so it only needs the
+   button chrome stripped. Deliberately NO `font: inherit` here: this rule
+   comes after `.app-nav__link` at equal specificity, so the shorthand was
+   overriding that rule's 11px Manrope with the document's 18px body font —
+   "More" rendered half again as large as every other label and wrapped onto
+   two lines. `.app-nav__link` already sets family, size and weight on this
+   element; there is nothing left to inherit. */
+.app-nav__link--more {
+  width: 100%;
+  border: none;
+  background: none;
+  color: #6b5d43;
+  cursor: pointer;
+}
+
+.app-more__panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  /* above the cook dock (60) — it lives in the same corner */
+  z-index: 70;
+  width: 264px;
+  padding: 8px;
+  border-radius: 18px;
+  background: #fffdf9;
+  box-shadow: 0 18px 44px rgba(74, 47, 20, 0.24);
+  animation: app-more-in 0.16s ease-out;
+}
+
+/* While a cook is parked, the dock owns the corner — sit above it. The panel
+   is portalled to <body>, so the shell's `:has()` no longer reaches it and the
+   dock's own presence in the document is the condition. The phone rules below
+   set `--k-dock-h` on `.app-shell` for the page padding; these are the same
+   measurements declared where the portalled panel can inherit them. */
+body:has(.cdock) { --k-dock-h: 128px; }
+body:has(.cdock__timer) { --k-dock-h: 186px; }
+
+body:has(.cdock) .app-more__panel {
+  bottom: calc(20px + var(--k-dock-h));
+}
+
+@keyframes app-more-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-more__panel { animation: none; }
+}
+
+/* Two groups in the drawer: the places that did not fit, then the switches.
+   Separated by whitespace and a hairline rather than a heading — the switches
+   read as different the moment you see they carry a value rather than a
+   description, and a label above two rows would be more furniture than help. */
+.app-more__group { display: flex; flex-direction: column; }
+
+.app-more__group--controls:not(:first-child) {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(120, 80, 30, 0.12);
+}
+
+.app-more__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 13px;
+  background: transparent;
+  color: #2a2016;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.app-more__item:hover { background: rgba(255, 107, 53, 0.1); }
+.app-more__item.active { background: rgba(255, 107, 53, 0.14); }
+
+.app-more__item b {
+  display: block;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.app-more__item small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: #94805c;
+}
+
+.app-more__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: rgba(255, 107, 53, 0.12);
+  color: #ff6b35;
+}
+
+.app-more__icon svg { width: 19px; height: 19px; }
+.app-more__icon--emoji { font-size: 17px; }
+
+[data-theme="dark"] .app-more__panel {
+  background: #2c241c;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .app-more__item { color: #f5f5f0; }
+[data-theme="dark"] .app-more__item small { color: rgba(245, 245, 240, 0.5); }
+[data-theme="dark"] .app-more__item:hover { background: rgba(255, 107, 53, 0.16); }
+
+[data-theme="dark"] .app-more__group--controls:not(:first-child) {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* On the bottom bar the ⋯ speaks for itself, and its label happened to be the
+   longest of the lot — leaving it in cost a whole destination its place in the
+   row, because every tab has to be as wide as the widest one. The button keeps
+   an aria-label. */
+@media (max-width: 900px) {
+  .app-nav__link--more .app-nav__label { display: none; }
+  .app-nav__link--more { justify-content: center; }
+}
+
+/* ---- phone: the panel clears the bottom tab bar and spans the gutters ---- */
+@media (max-width: 900px) {
+  .app-more { flex: 1; min-width: 0; display: flex; }
+
+  .app-more__panel {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(78px + 10px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  body:has(.cdock) .app-more__panel {
+    bottom: calc(78px + 10px + var(--k-dock-h, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* on a wide phone the panel does not need the whole width */
+@media (min-width: 560px) and (max-width: 900px) {
+  .app-more__panel { left: auto; right: 16px; width: 288px; }
 }

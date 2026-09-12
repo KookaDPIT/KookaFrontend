@@ -23,9 +23,12 @@ import './Settings.css';
    remain local for now.
    ========================================================================== */
 
+/* "Security" used to sit here. Two of its three controls were mock — a fake
+   two-factor toggle and a hard-coded list of sessions nothing could revoke —
+   and the third, changing your password, belongs with the rest of your account
+   details rather than in a section of its own. */
 const SECTIONS = [
-  'account', 'allergies', 'privacy', 'notifications', 'appearance',
-  'security', 'blocked',
+  'account', 'allergies', 'privacy', 'notifications', 'appearance', 'blocked',
 ];
 
 const SECTION_ICONS = {
@@ -34,16 +37,9 @@ const SECTION_ICONS = {
   privacy: '🔒',
   notifications: '🔔',
   appearance: '🎨',
-  security: '🛡️',
   blocked: '🚫',
 };
 
-/* seed mock data — no backend model for these yet */
-const SEED_SESSIONS = [
-  { id: 's1', device: 'Chrome · Windows', where: 'Bucharest, RO', current: true },
-  { id: 's2', device: 'Kooka for iOS', where: 'Cluj-Napoca, RO', current: false },
-  { id: 's3', device: 'Safari · macOS', where: 'Berlin, DE', current: false },
-];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function Switch({ on, onChange, label }) {
@@ -85,7 +81,6 @@ export default function Settings() {
     SECTIONS.includes(requested) ? requested : 'account',
   );
   const [toast, setToast] = useState('');
-  const [sessions, setSessions] = useState(SEED_SESSIONS);
   const [blocked, setBlocked] = useState([]);
   const [blockedLoaded, setBlockedLoaded] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -445,6 +440,11 @@ export default function Settings() {
                 />
               </label>
               <div className="st-actions">
+                {/* Changing your password is an account detail, not a section
+                    of its own — it moved here when Security went away. */}
+                <button type="button" className="st-ghost" onClick={openPassword}>
+                  {t('settings.security.changePassword')}
+                </button>
                 <button type="button" className="st-save" onClick={saveAccount} disabled={savingAccount || accountBlocked}>
                   {savingAccount ? t('common.saving') : t('settings.account.save')}
                 </button>
@@ -575,57 +575,6 @@ export default function Settings() {
                   ))}
                 </div>
               </Row>
-            </div>
-          )}
-
-          {/* SECURITY */}
-          {active === 'security' && (
-            <div className="st-rows">
-              <Row label={t('settings.security.twoFactor')} hint={t('settings.security.twoFactorHint')}>
-                <Switch
-                  on={settings.twoFactor}
-                  label={t('settings.security.twoFactor')}
-                  onChange={(v) => {
-                    setPref({ twoFactor: v });
-                    flash(v ? t('settings.security.twoFactorOn') : t('settings.security.twoFactorOff'));
-                  }}
-                />
-              </Row>
-
-              <div className="st-sub">{t('settings.security.sessions')}</div>
-              <ul className="st-sessions">
-                {sessions.map((s) => (
-                  <li key={s.id}>
-                    <span className="st-session__dot" data-current={s.current} aria-hidden="true" />
-                    <span className="st-session__meta">
-                      <b>{s.device}</b>
-                      <small>{s.where}</small>
-                    </span>
-                    {!s.current && (
-                      <button
-                        type="button"
-                        className="st-linkbtn"
-                        onClick={() => {
-                          setSessions((list) => list.filter((x) => x.id !== s.id));
-                          flash(t('settings.security.sessionEnded'));
-                        }}
-                      >
-                        {t('settings.security.logoutSession')}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="st-actions st-actions--start">
-                <button
-                  type="button"
-                  className="st-ghost"
-                  onClick={openPassword}
-                >
-                  {t('settings.security.changePassword')}
-                </button>
-              </div>
             </div>
           )}
 

@@ -546,7 +546,7 @@ export default function Learn() {
             {tree.challenges.map((ch) => (
               <article
                 key={ch.id}
-                className={`lb-challenge ${ch.done ? 'is-done' : ''} ${ch.locked ? 'is-locked' : ''}`}
+                className={`lb-challenge ${ch.done ? 'is-done' : ''}`}
               >
                 <div
                   className="lb-challenge__photo"
@@ -561,19 +561,21 @@ export default function Learn() {
                 <div className="lb-challenge__content">
                   <div className="lb-challenge__head">
                     <h3 className="lb-challenge__title">{ch.recipe.title}</h3>
-                    <RankPill rank={ch.rank} label={ch.rank_name} locked={ch.locked} />
+                    <RankPill rank={ch.rank} label={ch.rank_name} />
                   </div>
                   <p className="lb-challenge__desc">
-                    {ch.locked
-                      ? t('learn.challengeLocked', { rank: ch.rank_name })
+                    {/* A challenge above your rank is no longer shut: recipes
+                        stopped being rank-gated, and a challenge that refused
+                        to open a recipe you can open directly would just be
+                        inconsistent. It says what it is instead. */}
+                    {ch.above_rank
+                      ? t('learn.challengeStretch', { rank: ch.rank_name })
                       : t('learn.challengeHint')}
                   </p>
                   <div className="lb-challenge__foot">
                     <span className="lb-challenge__reward">+{ch.xp} {t('learn.xp')}</span>
                     {ch.done ? (
                       <span className="lb-challenge__done">✓ {t('learn.challengeDone')}</span>
-                    ) : ch.locked ? (
-                      <span className="lb-challenge__blocked">🔒</span>
                     ) : (
                       <Link to={`/recipe/${ch.recipe.id}`} className="lb-challenge__btn">
                         {t('common.start')}

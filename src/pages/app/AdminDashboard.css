@@ -361,3 +361,23 @@
   .dash-stats--small { gap: 8px; }
   .dash-stat { padding: 10px; }
 }
+
+/* the refresh control and the timestamp that proves it did something */
+.dash-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dash-refresh:disabled { opacity: 0.6; cursor: default; }
+.dash-refresh:disabled:hover { border-color: #e5d7ba; color: #6b5d43; }
+
+.dash-updated {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #a0906f;
+}
+
+[data-theme='dark'] .dash-updated { color: rgba(245, 245, 240, 0.45); }
+[data-theme='dark'] .dash-refresh:disabled:hover { border-color: #4a4238; color: #c9bea7; }

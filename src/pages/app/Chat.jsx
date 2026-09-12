@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   listConversations, getConversation, deleteConversation,
   sendChatMessage, fileToDataUrl,
 } from '../../services/ai';
 import {
   KookaAvatar, IconSend, IconCamera, IconPlus, IconSidebar,
-  IconPot, IconSwap, IconCalendar, IconScale,
+  IconPot, IconSwap, IconCalendar, IconScale, IconBasket,
 } from '../../components/Icons';
 import './Chat.css';
 
@@ -81,6 +81,27 @@ const TASKS = [
     blurb: 'Snap your fridge or your plate — I read what is in it.',
     chip: 'Send a photo',
     photo: true,
+  },
+  /* These two write to the real shopping list and the real weekly calendar
+     (see PlanCard). "What's in my fridge" used to be a chip on Home with a
+     form attached; describing what you have belongs in a conversation. */
+  {
+    key: 'shopping',
+    icon: IconBasket,
+    title: 'Add to my shopping list',
+    blurb: 'Tell me what to put on it and it is there when you get to the shop.',
+    chip: 'Add to my list',
+    prompt: 'Add to my shopping list: ',
+    needsMore: true,
+  },
+  {
+    key: 'weekend',
+    icon: IconCalendar,
+    title: 'Plan my weekend',
+    blurb: 'Two days of food, straight into your calendar.',
+    chip: 'Plan my weekend',
+    prompt: 'Plan my meals for this coming weekend and put them in my calendar. '
+      + 'Add anything I need to my shopping list too.',
   },
 ];
 
@@ -176,6 +197,61 @@ const MACRO_ROWS = [
   ['Protein', 'protein_g', 'c3', 120],
 ];
 
+/* ======================================================================== */
+/* WHAT KOOKA PUT ON YOUR LIST / IN YOUR WEEK                                */
+/* ======================================================================== */
+
+/* Kooka can write to the real shopping list and the real meal calendar. That
+   is a side effect on the person's data, so it gets a receipt: exactly what
+   was added, and a way straight to the page it landed on. The rows come back
+   from the server, which means they are what was actually stored — not what
+   the model asked for. */
+function PlanCard({ plan }) {
+  if (!plan || (!plan.shopping?.length && !plan.meals?.length)) return null;
+
+  const when = (iso) => {
+    const date = new Date(`${iso}T12:00:00`);
+    return Number.isNaN(date.getTime())
+      ? iso
+      : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <div className="card plan-card">
+      {plan.shopping?.length > 0 && (
+        <div className="plan-card__group">
+          <h4>🛒 Added to your shopping list</h4>
+          <ul>
+            {plan.shopping.map((item, i) => (
+              <li key={`s${i}`}>
+                {(item.quantity || item.unit) && (
+                  <b>{[item.quantity, item.unit].filter(Boolean).join(' ')} </b>
+                )}
+                {item.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {plan.meals?.length > 0 && (
+        <div className="plan-card__group">
+          <h4>📅 Put in your week</h4>
+          <ul>
+            {plan.meals.map((meal, i) => (
+              <li key={`m${i}`}>
+                <b>{when(meal.date)}</b> · {meal.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Link className="plan-card__link" to="/meal-plan">Open the meal plan →</Link>
+    </div>
+  );
+}
+
 function NutritionCard({ nutrition }) {
   if (!nutrition || !nutrition.total_kcal) return null;
   const macros = nutrition.macros || {};
@@ -250,10 +326,11 @@ function Message({ msg }) {
         <span className="m-ai__who">Kooka</span>
         <AiText text={msg.text} />
         {msg.error && <p className="m-ai__error">{msg.error}</p>}
-        {(msg.recipes?.length > 0 || msg.nutrition) && (
+        {(msg.recipes?.length > 0 || msg.nutrition || msg.plan) && (
           <div className="m-ai__rich">
             <RecipeCards recipes={msg.recipes} />
             <NutritionCard nutrition={msg.nutrition} />
+            <PlanCard plan={msg.plan} />
           </div>
         )}
       </div>

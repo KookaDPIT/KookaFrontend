@@ -358,3 +358,30 @@
   .fp-chip { padding: 8px 12px; font-size: 12.5px; }
   .fp-comment { padding: 11px 12px; }
 }
+
+
+/* the flag next to a comment — quiet until you hover it */
+.fp-comment__report {
+  margin-left: 4px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #b3a380;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.fp-comment__report:hover:not(:disabled) { color: #c2452c; background: rgba(210, 69, 44, 0.1); }
+.fp-comment__report:disabled { opacity: 0.45; cursor: default; }
+
+.fp-chip:disabled { opacity: 0.6; cursor: default; }
+
+[data-theme='dark'] .fp-comment__report { color: #8a7d6c; }
+[data-theme='dark'] .fp-comment__report:hover:not(:disabled) { color: #ff8a72; }
+
+@media (max-width: 640px) {
+  .fp-comment__report { min-width: 32px; min-height: 32px; }
+}

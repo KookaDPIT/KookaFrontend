@@ -46,6 +46,13 @@ function Sparkbars({ series, label, tone }) {
   );
 }
 
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? '—'
+    : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
 function Stat({ label, value, note }) {
   return (
     <div className="dash-stat">
@@ -61,20 +68,31 @@ export default function AdminDashboard({ onOpenPane }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(false);
-  // bumping this is the whole of "reload" — the effect owns the request, so
-  // nothing sets state synchronously on the way in
+  /* Bumping this is the whole of "reload" — the effect owns the request, so
+     nothing sets state synchronously on the way in. */
   const [reloadTick, setReloadTick] = useState(0);
-  const load = () => setReloadTick((n) => n + 1);
+  /* ...and this is what makes the button look like it did something. It was
+     refetching correctly, but on a quiet day every number comes back identical,
+     so pressing it produced no visible change at all and read as broken. */
+  const [busy, setBusy] = useState(false);
+  const load = () => {
+    if (busy) return;
+    setBusy(true);
+    setReloadTick((n) => n + 1);
+  };
 
   useEffect(() => {
     let alive = true;
+    // a floor on how long the busy state shows: a 40ms response that flickers
+    // the label is indistinguishable from nothing happening
+    const started = Date.now();
+    const settle = (fn) => {
+      const wait = Math.max(0, 450 - (Date.now() - started));
+      window.setTimeout(() => { if (alive) fn(); }, wait);
+    };
     getModerationStats()
-      .then((data) => {
-        if (!alive) return;
-        setStats(data);
-        setError(false);
-      })
-      .catch(() => alive && setError(true));
+      .then((data) => settle(() => { setStats(data); setError(false); setBusy(false); }))
+      .catch(() => settle(() => { setError(true); setBusy(false); }));
     return () => { alive = false; };
   }, [reloadTick]);
 
@@ -91,7 +109,9 @@ export default function AdminDashboard({ onOpenPane }) {
   if (!stats) return <p className="adm-empty">{t('common.loading')}…</p>;
 
   const { totals, week, queues, accounts, series } = stats;
-  const queueTotal = queues.flagged_recipes + queues.hidden_recipes + queues.hidden_posts;
+  const openReports = queues.open_reports || 0;
+  const queueTotal =
+    queues.flagged_recipes + queues.hidden_recipes + queues.hidden_posts + openReports;
 
   return (
     <div className="dash">
@@ -117,6 +137,16 @@ export default function AdminDashboard({ onOpenPane }) {
             <button type="button" className="dash-queue" onClick={() => onOpenPane('forum')}>
               <b>{queues.hidden_posts}</b>
               <span>{t('admin.dash.hiddenPosts')}</span>
+            </button>
+            {/* reports are the only queue a person opened by hand, so they get
+                the same "waiting on a human" treatment as the AI flags */}
+            <button
+              type="button"
+              className={`dash-queue ${openReports ? 'is-hot' : ''}`}
+              onClick={() => onOpenPane('reports')}
+            >
+              <b>{openReports}</b>
+              <span>{t('admin.dash.openReports')}</span>
             </button>
           </div>
         )}
@@ -229,9 +259,16 @@ export default function AdminDashboard({ onOpenPane }) {
         </section>
       </div>
 
-      <button type="button" className="dash-refresh" onClick={load}>
-        {t('admin.dash.refresh')}
-      </button>
+      <div className="dash-foot">
+        <button type="button" className="dash-refresh" onClick={load} disabled={busy}>
+          {busy ? `${t('common.loading')}…` : t('admin.dash.refresh')}
+        </button>
+        {/* Says when these numbers are from, which is the other half of making
+            the button believable — you can see the time move. */}
+        <span className="dash-updated">
+          {t('admin.dash.updated', { time: fmtTime(stats.generated_at) })}
+        </span>
+      </div>
     </div>
   );
 }

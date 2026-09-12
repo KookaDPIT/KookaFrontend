@@ -415,3 +415,115 @@
   .adm-row,
   .adm-row--recipe { padding: 11px; }
 }
+
+/* ==========================================================================
+   REPORTS QUEUE
+   A report is a person's sentence about a thing, so the row leads with the
+   reason and then shows the thing — the opposite order from the AI queues,
+   where the content is the subject.
+   ========================================================================== */
+/* `.adm-row` is a three-column grid with centred items; a report stacks
+   instead, so it has to reset both or every line ends up centred. */
+.adm-row--report {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 14px 16px;
+}
+
+.adm-row--report .adm-who { width: 100%; }
+.adm-row--report .adm-report__head { width: 100%; }
+
+.adm-report__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.adm-report__reason {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #c2452c;
+}
+
+.adm-report__meta { font-size: 12px; color: #a0906f; }
+
+.adm-report__details {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: rgba(120, 80, 30, 0.06);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #6b5d43;
+}
+
+[data-theme='dark'] .adm-report__reason { color: #ff8a72; }
+[data-theme='dark'] .adm-report__meta { color: rgba(245, 245, 240, 0.45); }
+[data-theme='dark'] .adm-report__details {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(245, 245, 240, 0.72);
+}
+
+/* ==========================================================================
+   BULK RE-ANALYSE
+   A quiet strip above the queue: it is a maintenance job, not the reason you
+   opened this pane, so it gets a tinted band rather than a card of its own.
+   ========================================================================== */
+.adm-sweep {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: rgba(120, 80, 30, 0.06);
+}
+
+.adm-sweep__label,
+.adm-sweep__status {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #6b5d43;
+}
+
+.adm-sweep__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: auto;
+  color: #c25317;
+}
+
+/* the one place in the app that needs a spinner: this is the only action that
+   can legitimately run for a minute */
+.adm-sweep__spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  border-top-color: #ff6b35;
+  animation: adm-spin 0.7s linear infinite;
+}
+
+@keyframes adm-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-sweep__spinner { animation-duration: 2.4s; }
+}
+
+[data-theme='dark'] .adm-sweep { background: rgba(255, 255, 255, 0.05); }
+[data-theme='dark'] .adm-sweep__label { color: rgba(245, 245, 240, 0.68); }
+[data-theme='dark'] .adm-sweep__status { color: #ff9b6a; }
+
+@media (max-width: 640px) {
+  .adm-sweep { gap: 8px; }
+  .adm-sweep__label { flex-basis: 100%; }
+  .adm-sweep .adm-btn { flex: 1 1 auto; min-height: 40px; }
+}

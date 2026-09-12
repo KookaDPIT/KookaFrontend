@@ -174,86 +174,29 @@
 /* ==========================================================================
     DARK MODE
     ========================================================================== */
-[data-theme="dark"] .search {
-  background: #2a2016;
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .search-header {
-  background: #3a3228;
-  border-bottom-color: #4a4238;
-}
-
-[data-theme="dark"] .search-header__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .search-form {
-  background: transparent;
-}
-
-[data-theme="dark"] .search-input {
-  background: #3a3228;
-  color: #f5f5f0;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .search-input::placeholder {
-  color: #a89968;
-}
-
-[data-theme="dark"] .search-filters {
-  background: transparent;
-}
-
-[data-theme="dark"] .search-filter {
-  background: #3a3228;
-  color: #b8b0a0;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .search-filter.is-active {
-  background: rgba(255, 107, 53, 0.16);
-  color: #ff8a5a;
-  border-color: #ff8a5a;
-}
-
-[data-theme="dark"] .search-results {
-  background: #2a2016;
-}
-
-[data-theme="dark"] .search-result {
-  background: #3a3228;
-  border-color: #4a4238;
-}
-
-[data-theme="dark"] .search-result__title {
-  color: #f5f5f0;
-}
-
-[data-theme="dark"] .search-result__desc {
-  color: #b8b0a0;
-}
-
-[data-theme="dark"] .search-result__meta {
-  color: #a89968;
-}
-
-[data-theme="dark"] .search-result__btn {
-  background: #c8551f;
-}
-
-[data-theme="dark"] .search-result__btn:hover {
-  background: #e0691f;
-}
-
-[data-theme="dark"] .search-no-results {
-  color: #b8b0a0;
-}
-
 /* ==========================================================================
-   PHONE (≤640px) — additive only; tablets and desktops are unchanged
+   DARK MODE
+
+   The block that used to live here targeted `.search`, `.search-header`,
+   `.search-input` and `.search-filter` — the class names this page had before
+   it was rebuilt. None of them exist any more, so the page simply stayed
+   light: cream panel, cream search bar and cream result rows on a dark app.
+
+   The page is built entirely on the shared `--k-*` tokens, so re-pointing them
+   once on the root element is the whole fix; every rule above is untouched.
    ========================================================================== */
+[data-theme="dark"] .search-page {
+  --k-bg: #2a2016;
+  --k-surface: #3a3228;
+  --k-input-bg: #322a20;
+  --k-border: #4a4238;
+  --k-input-border: #4a4238;
+  --k-text: #f5f5f0;
+  --k-muted: #c9bea7;
+  --k-muted-2: #a89988;
+  --k-faint: #8a7d6c;
+}
+
 @media (max-width: 640px) {
   /* ---- page frame (the shell already pads 78px for the tab bar) ---- */
   .search-page { padding: 18px 16px 32px; }

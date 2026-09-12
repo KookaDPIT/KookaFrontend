@@ -184,6 +184,15 @@
   color: #c9bea7;
 }
 [data-theme="dark"] .kmodal__x:hover { background: rgba(255, 107, 53, 0.2); color: #ff9a70; }
+/* The secondary button in every dialog footer had no dark rule, so "Cancel"
+   sat as #6b5d43 on a near-black card — 2.5:1, barely legible. Every modal in
+   the app shares these two classes, so this is one fix for all of them. */
+[data-theme="dark"] .kbtn--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d8ccb6;
+}
+[data-theme="dark"] .kbtn--ghost:hover { background: rgba(255, 255, 255, 0.14); }
+
 [data-theme="dark"] .kfield > label { color: #c9bea7; }
 [data-theme="dark"] .kinput,
 [data-theme="dark"] .ktextarea {

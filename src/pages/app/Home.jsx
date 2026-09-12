@@ -16,29 +16,21 @@ function Skeleton({ className = '', style }) {
   return <span className={`skl ${className}`} style={style} aria-hidden="true" />;
 }
 
-/* The chips are five different questions, not five sorts of one list.
-   `filter` is what the backend is asked for; recommended, fridge and
-   allergy_free are resolved server-side in services/feed.py, because they need
-   the deserialised ingredients, the allergen list, or the follow graph. */
+/* Four different questions, not four sorts of one list. `filter` is what the
+   backend is asked for; recommended and allergy_free are resolved server-side
+   in services/feed.py, because they need the deserialised allergen list or the
+   follow graph.
+
+   "What's in my fridge" used to live here too. It was the one chip that could
+   not answer on its own — it made you fill in a form before the feed would say
+   anything — so the whole idea moved to AI Chat, where describing what you
+   have is the natural thing to do anyway. */
 const FILTERS = [
   { key: 'recommended', filter: 'recommended' },
   { key: 'under30', filter: 'under30' },
-  { key: 'fridge', filter: 'fridge' },
   { key: 'allergyFree', filter: 'allergy_free' },
   { key: 'topRated', filter: 'top_rated' },
 ];
-
-/* Remembered between visits: retyping the contents of your fridge every time
-   would make the filter not worth using. */
-const PANTRY_KEY = 'kooka_pantry';
-
-function readPantry() {
-  try {
-    return localStorage.getItem(PANTRY_KEY) || '';
-  } catch {
-    return '';
-  }
-}
 
 export default function Home() {
   const { t } = useTranslation();
@@ -48,18 +40,16 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState(0);
 
-  // the fridge filter: the draft in the box vs. the list actually searched
-  const [pantryDraft, setPantryDraft] = useState(readPantry);
-  const [pantry, setPantry] = useState(readPantry);
-
   const [daily, setDaily] = useState(undefined); // undefined = loading, null = none
   const [feed, setFeed] = useState(null);
+  /* True when what is on screen is the random shelf rather than the answer to
+     the chip you pressed — the feed says so instead of pretending. */
+  const [feedIsFallback, setFeedIsFallback] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [passport, setPassport] = useState([]);
   const [showGlobe, setShowGlobe] = useState(false);
 
   const current = FILTERS[activeFilter];
-  const isFridge = current.key === 'fridge';
   const isAllergyFree = current.key === 'allergyFree';
   const hasAllergies = (user?.allergies || []).length > 0;
 
@@ -68,44 +58,44 @@ export default function Home() {
     getDailyDish().then(setDaily).catch(() => setDaily(null));
   }, []);
 
-  /* The fridge chip is the one that cannot answer on its own: with an empty
-     pantry there is nothing to match against. That is a render-time fact, not
-     a fetch result, so it short-circuits below rather than being written into
-     `feed` from inside the effect. */
-  const needsPantry = isFridge && !pantry.trim();
-
+  /* A chip that finds nothing falls back to a random shelf rather than an
+     empty page. On a young catalogue "recommended for you" legitimately has
+     nothing to say, and an empty grid reads as a broken app rather than as an
+     honest answer — so we show a few dishes and label them as such. */
   useEffect(() => {
-    if (needsPantry) return undefined;
     let alive = true;
-    listRecipes({ filter: current.filter, pantry: isFridge ? pantry : '', limit: 12 })
-      .then((r) => alive && setFeed(r))
-      .catch(() => alive && setFeed([]));
+    listRecipes({ filter: current.filter, limit: 12 })
+      .then((rows) => {
+        if (!alive) return;
+        if (rows.length > 0) {
+          setFeed(rows);
+          setFeedIsFallback(false);
+          return undefined;
+        }
+        return listRecipes({ filter: 'random', limit: 8 }).then((random) => {
+          if (!alive) return;
+          setFeed(random);
+          setFeedIsFallback(random.length > 0);
+        });
+      })
+      .catch(() => {
+        if (!alive) return;
+        setFeed([]);
+        setFeedIsFallback(false);
+      });
     return () => {
       alive = false;
     };
-  }, [current.filter, isFridge, pantry, needsPantry]);
+  }, [current.filter]);
 
+  /* These are options, not toggles: pressing the one that is already on used
+     to clear the grid to skeletons and re-fetch the same list, which looked
+     like the button had broken it. */
   const pickFilter = (i) => {
+    if (i === activeFilter) return;
     setActiveFilter(i);
-    setFeed(null); // show skeletons while the new filter loads
-  };
-
-  const searchPantry = (e) => {
-    e.preventDefault();
-    const clean = pantryDraft.trim();
-    try {
-      localStorage.setItem(PANTRY_KEY, clean);
-    } catch { /* storage may be unavailable — the search still runs */ }
-    setFeed(null);
-    setPantry(clean);
-  };
-
-  const clearPantry = () => {
-    setPantryDraft('');
-    setPantry('');
-    try {
-      localStorage.removeItem(PANTRY_KEY);
-    } catch { /* nothing to clean up */ }
+    setFeed(null); // skeletons while the new answer loads
+    setFeedIsFallback(false);
   };
 
   // fresh reviews across all recipes (each carries its recipe)
@@ -133,9 +123,7 @@ export default function Home() {
 
   const dailyCountry = daily?.origin ? countryOf(daily.origin) : null;
   // the daily dish is featured in the hero, so keep it out of the feed grid
-  const feedItems = needsPantry
-    ? []
-    : feed ? feed.filter((r) => r.id !== daily?.id) : feed;
+  const feedItems = feed ? feed.filter((r) => r.id !== daily?.id) : feed;
 
   /* The rank replaces the old "Lvl 3" pill: a level was a number nobody could
      place, while a rank has a name and a colour that also show up on recipes,
@@ -149,10 +137,10 @@ export default function Home() {
     [rankColors],
   );
 
+  /* Only reached when even the random shelf came back empty — i.e. the
+     catalogue itself is empty. */
   const emptyMessage = () => {
-    if (isFridge) return pantry.trim() ? t('home.fridge.empty') : t('home.fridge.prompt');
     if (isAllergyFree && !hasAllergies) return t('home.allergyEmpty');
-    if (current.key === 'recommended') return t('home.recommendedEmpty');
     return t('home.feedEmpty');
   };
 
@@ -280,33 +268,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* the fridge chip needs an answer from you before it can answer back */}
-        {isFridge && (
-          <form className="home-pantry" onSubmit={searchPantry}>
-            <label className="home-pantry__label" htmlFor="home-pantry-input">
-              {t('home.fridge.label')}
-            </label>
-            <div className="home-pantry__row">
-              <input
-                id="home-pantry-input"
-                type="text"
-                value={pantryDraft}
-                onChange={(e) => setPantryDraft(e.target.value)}
-                placeholder={t('home.fridge.placeholder')}
-              />
-              <button type="submit" className="home-btn home-btn--primary">
-                {t('home.fridge.search')}
-              </button>
-              {pantry && (
-                <button type="button" className="home-pantry__clear" onClick={clearPantry}>
-                  {t('home.fridge.clear')}
-                </button>
-              )}
-            </div>
-            <p className="home-pantry__hint">{t('home.fridge.hint')}</p>
-          </form>
-        )}
-
         {/* nothing to filter by yet — offer the fix rather than an empty grid */}
         {isAllergyFree && !hasAllergies && (
           <div className="home-nudge">
@@ -321,7 +282,9 @@ export default function Home() {
         <section className="home-section">
           <div className="home-section__head">
             <h2 className="home-section__title">{t('home.feedTitle')}</h2>
-            <p className="home-section__sub">{t(`home.subs.${current.key}`)}</p>
+            <p className="home-section__sub">
+              {feedIsFallback ? t('home.fallbackSub') : t(`home.subs.${current.key}`)}
+            </p>
           </div>
 
           {feedItems === null ? (
@@ -345,19 +308,6 @@ export default function Home() {
                   <RecipeCard recipe={r} />
                   {/* Why this card is here — only when the card itself does
                       not already say it. */}
-                  {isFridge && r.match_percent != null && (
-                    <p className="home-match">
-                      <b>{t('home.fridge.match', { percent: r.match_percent })}</b>
-                      {r.missing?.length > 0 && (
-                        <span>
-                          {t('home.fridge.missing', { list: r.missing.slice(0, 3).join(', ') })}
-                          {r.need_count - r.have_count > r.missing.length
-                            ? ` ${t('home.fridge.missingMore')}`
-                            : ''}
-                        </span>
-                      )}
-                    </p>
-                  )}
                   {r.allergen_conflicts?.length > 0 && (
                     <p className="home-warn">
                       ⚠️ {t('home.allergyWarn', { list: r.allergen_conflicts.join(', ') })}

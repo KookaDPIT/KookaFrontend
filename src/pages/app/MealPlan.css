@@ -43,20 +43,43 @@
   font: 700 13px var(--font-important);
 }
 .meal-plan__hint { margin: 9px 0 20px; color: var(--k-muted); font-size: 14px; line-height: 1.45; }
-.meal-plan__ingredient-form { display: flex; gap: 9px; align-items: end; }
-.meal-plan__schedule-form { display: grid; gap: 10px; }
+
+/* ---- add to the list: name on one line, amount + unit + button on the next.
+   Cramming five controls onto one line made every one of them too narrow to
+   read at anything under a wide laptop. ---- */
+/* `minmax(0, 1fr)`, not the implicit `auto`: the amount row's min-content
+   (box + unit + button) is wider than a phone card, and an `auto` column grows
+   to it — the inputs spilled out through the card's right edge. */
+.meal-plan__ingredient-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+.meal-plan__amount { display: flex; gap: 9px; }
+/* `.meal-plan` in front on purpose: the shared `.meal-plan input, .meal-plan
+   select` rule below sets `width: 100%`, and a single-class selector loses to
+   it — the amount box and the unit dropdown were both stretching to the full
+   line and pushing the Add button off the end. Sized with flex-basis so the
+   declaration order stops mattering. */
+.meal-plan .meal-plan__qty-input { flex: 0 0 92px; width: auto; }
+.meal-plan .meal-plan__unit-input { flex: 0 0 84px; width: auto; }
+.meal-plan__amount .meal-plan__primary { flex: 1; min-width: 0; }
+
+.meal-plan__schedule-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .meal-plan__search-wrap { position: relative; flex: 1; }
-.meal-plan input {
+.meal-plan input,
+.meal-plan select {
   width: 100%; box-sizing: border-box; padding: 12px 13px; border: 1px solid var(--k-input-border);
   border-radius: 11px; background: var(--k-input-bg); color: var(--k-text); font: 15px var(--font-body);
+  /* An <input>'s min-content width comes from its default `size="20"` — about
+     180px — and a flex item will not shrink below that while `min-width` is
+     `auto`. The quantity box ignored its 84px basis and squeezed the Add
+     button down to a clipped "Adaug". */
+  min-width: 0;
 }
-.meal-plan__quantity { display: flex; flex-direction: column; gap: 4px; color: var(--k-muted); font-size: 11px; }
-.meal-plan__quantity input { width: 70px; }
 .meal-plan__primary {
   padding: 12px 16px; border: 0; border-radius: 11px; background: var(--k-accent); color: #fff;
   font: 700 13px var(--font-important); cursor: pointer; white-space: nowrap;
 }
 .meal-plan__primary:hover { background: var(--k-accent-hover); }
+.meal-plan__primary:disabled { opacity: .6; cursor: default; }
+.meal-plan__primary--sm { padding: 9px 12px; font-size: 12px; }
 .meal-plan__suggestions {
   position: absolute; z-index: 2; top: calc(100% + 5px); left: 0; right: 0; padding: 5px;
   background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 11px; box-shadow: 0 8px 20px rgba(0,0,0,.12);
@@ -65,32 +88,62 @@
   display: block; width: 100%; padding: 8px 9px; border: 0; border-radius: 7px; background: transparent;
   color: var(--k-text); text-align: left; cursor: pointer;
 }
+.meal-plan__suggestions button small { color: var(--k-muted-2); }
 .meal-plan__suggestions button:hover { background: var(--k-accent-soft); }
-.meal-plan__shopping-list { list-style: none; margin: 25px 0 0; padding: 0; }
+
+/* ---- the list ---- */
+.meal-plan__shopping-list { list-style: none; margin: 22px 0 0; padding: 0; }
 .meal-plan__shopping-list li {
-  display: flex; justify-content: space-between; gap: 10px; padding: 13px 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0;
   border-top: 1px solid var(--k-border); color: var(--k-text); font-size: 16px;
 }
-.meal-plan__shopping-list b { color: var(--k-accent); }
-.meal-plan__shopping-list button { border: 0; background: none; color: var(--k-muted-2); cursor: pointer; }
-.meal-plan__shopping-list button:hover { color: var(--k-accent); }
+/* ticked lines stay in place rather than vanishing — you re-read the list in
+   the shop and want to see what you already have in the trolley */
+.meal-plan__shopping-list li.is-done .meal-plan__item-text {
+  color: var(--k-muted-2); text-decoration: line-through;
+}
+.meal-plan__tick { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+.meal-plan__tick input {
+  width: 19px; height: 19px; flex: 0 0 auto; padding: 0; accent-color: var(--k-accent); cursor: pointer;
+}
+.meal-plan__item-text { min-width: 0; overflow-wrap: anywhere; }
+.meal-plan__item-text b { color: var(--k-accent); }
+.meal-plan__item-actions { display: flex; gap: 10px; flex: 0 0 auto; }
+.meal-plan__linkbtn {
+  border: 0; background: none; color: var(--k-muted-2); font: 600 13px var(--font-important); cursor: pointer;
+}
+.meal-plan__linkbtn:hover { color: var(--k-accent); }
+.meal-plan__clear { margin-top: 14px; }
+.meal-plan__edit { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; width: 100%; }
+.meal-plan__edit > input:first-child { flex: 1 1 140px; width: auto; min-width: 0; }
 .meal-plan__empty { margin: 28px 0 8px; color: var(--k-muted-2); text-align: center; }
+
+/* ---- calendar ---- */
 .meal-plan__recipe-input { min-width: 0; }
 .meal-plan__schedule-actions { display: flex; align-items: center; gap: 9px; }
-.meal-plan__date-input { max-width: 170px; }
-.meal-plan__week-controls { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 13px; color: var(--k-muted); font: 700 13px var(--font-important); }
-.meal-plan__week-controls button { border: 0; background: var(--k-accent-soft); color: var(--k-accent); border-radius: 8px; width: 32px; height: 30px; font-size: 22px; cursor: pointer; }
+.meal-plan__date-input { flex: 1 1 150px; }
+.meal-plan__slot-input { flex: 0 0 120px; }
+.meal-plan__week-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 24px 0 13px; color: var(--k-muted); font: 700 13px var(--font-important); }
+.meal-plan__week-controls strong { text-align: center; }
+.meal-plan__week-controls button { border: 0; background: var(--k-accent-soft); color: var(--k-accent); border-radius: 8px; width: 32px; height: 30px; flex: 0 0 auto; font-size: 22px; cursor: pointer; }
+.meal-plan__today { display: block; margin: -6px 0 10px; }
 .meal-plan__week { display: grid; grid-template-columns: repeat(7, minmax(80px, 1fr)); gap: 7px; overflow-x: auto; }
 .meal-plan__day {
-  min-height: 180px; padding: 10px 7px; border: 1px solid var(--k-border); border-radius: 12px;
+  min-height: 160px; padding: 10px 7px; border: 1px solid var(--k-border); border-radius: 12px;
   background: var(--k-input-bg); color: var(--k-muted); cursor: pointer; text-align: center;
 }
 .meal-plan__day.is-selected { border-color: var(--k-accent); box-shadow: inset 0 0 0 1px var(--k-accent); }
-.meal-plan__day > span:first-child { display: block; font: 700 11px var(--font-important); text-transform: uppercase; }
-.meal-plan__day > b { display: block; margin: 5px 0 13px; color: var(--k-text); font: 700 26px var(--font-title); }
+/* today is a fact about the calendar, not a selection — a dot, not a frame */
+.meal-plan__day.is-today .meal-plan__day-name::after {
+  content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 4px;
+  border-radius: 50%; background: var(--k-accent); vertical-align: middle;
+}
+.meal-plan__day-name { display: block; font: 700 11px var(--font-important); text-transform: uppercase; }
+.meal-plan__day > b { display: block; margin: 4px 0 0; color: var(--k-text); font: 700 26px var(--font-title); }
+.meal-plan__day-month { display: block; margin-bottom: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--k-muted-2); }
 .meal-plan__day small { display: block; color: var(--k-muted-2); font-size: 11px; line-height: 1.3; }
 .meal-plan__day-count {
-  display: inline-block; margin-top: 8px; padding: 5px 7px; border-radius: 999px;
+  display: inline-block; margin-top: 4px; padding: 5px 7px; border-radius: 999px;
   background: var(--k-accent-soft); color: var(--k-accent); font: 700 10px var(--font-important);
 }
 .meal-plan__selected-day {
@@ -98,46 +151,123 @@
   border-radius: 15px; background: var(--k-input-bg);
 }
 .meal-plan__selected-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.meal-plan__selected-heading h3 { margin: 0; color: var(--k-text); font: 700 25px/1 var(--font-title); }
+.meal-plan__selected-heading h3 { margin: 0; color: var(--k-text); font: 700 25px/1.1 var(--font-title); }
 .meal-plan__selected-heading span {
-  display: grid; place-items: center; min-width: 25px; height: 25px; border-radius: 50%;
+  display: grid; place-items: center; min-width: 25px; height: 25px; flex: 0 0 auto; border-radius: 50%;
   background: var(--k-accent); color: #fff; font: 700 12px var(--font-important);
 }
 .meal-plan__selected-list {
-  max-height: 174px; margin-top: 14px; padding-right: 7px; overflow-y: auto;
+  max-height: 230px; margin-top: 14px; padding-right: 7px; overflow-y: auto;
   scrollbar-color: var(--k-accent) transparent;
 }
 .meal-plan__selected-meal {
   display: flex; align-items: center; gap: 10px; padding: 11px 0;
   border-top: 1px solid var(--k-border); color: var(--k-text); font-size: 15px;
 }
-.meal-plan__selected-meal strong { flex: 1; font-weight: 400; }
+.meal-plan__meal-slot {
+  flex: 0 0 auto; padding: 3px 8px; border-radius: 999px; background: var(--k-accent-soft);
+  color: var(--k-accent); font: 700 10px var(--font-important); text-transform: uppercase; letter-spacing: .4px;
+}
+.meal-plan__selected-meal strong { flex: 1; min-width: 0; font-weight: 400; overflow-wrap: anywhere; }
 .meal-plan__recipe-link {
-  flex: 1; padding: 0; border: 0; background: transparent; color: var(--k-accent);
+  flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--k-accent);
   font: 400 15px var(--font-body); text-align: left; text-decoration: underline;
-  text-decoration-color: rgba(255, 107, 53, .35); cursor: pointer;
+  text-decoration-color: rgba(255, 107, 53, .35); cursor: pointer; overflow-wrap: anywhere;
 }
 .meal-plan__recipe-link:hover { text-decoration-color: currentColor; }
-.meal-plan__selected-meal button {
-  border: 0; background: transparent; color: var(--k-muted-2); font-size: 21px; line-height: 1; cursor: pointer;
-}
-.meal-plan__selected-meal button:hover { color: var(--k-accent); }
-.meal-plan__selected-meal .meal-plan__recipe-link {
-  color: var(--k-accent);
-  font: 400 15px var(--font-body);
-}
-.meal-plan__meal-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--k-accent); }
 
 [data-theme="dark"] .meal-plan { --k-bg: #2a2016; --k-surface: #3a3228; --k-input-bg: #2a2016; --k-border: #4a4238; --k-input-border: #5b5145; --k-text: #f5f5f0; --k-muted: #c9bea7; --k-muted-2: #a89968; }
 
 @media (max-width: 900px) {
   .meal-plan { padding: 30px 20px 48px; }
-  .meal-plan__grid { grid-template-columns: 1fr; }
+  /* `minmax(0, 1fr)`, not `1fr`: a grid item's automatic minimum is its
+     min-content width, and the seven-day strip inside the calendar card is
+     wider than a phone — with plain `1fr` the card refused to shrink and the
+     whole page scrolled sideways. */
+  .meal-plan__grid { grid-template-columns: minmax(0, 1fr); }
+  .meal-plan__card { min-width: 0; }
 }
-@media (max-width: 560px) {
-  .meal-plan__card { padding: 20px 16px; }
-  .meal-plan__ingredient-form { flex-wrap: wrap; }
-  .meal-plan__search-wrap { min-width: 100%; }
+
+/* ==========================================================================
+   PHONE (≤640px) — additive only; tablets and desktops are unchanged.
+   The week stops being a 7-column grid you have to swipe sideways: at 360px
+   seven 104px columns meant four of the days were off-screen, and the day you
+   were trying to plan was usually one of them. It becomes a row of pills you
+   pick from, with the day's meals underneath.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .meal-plan { padding: 22px 14px 28px; }
+  .meal-plan__header { margin-bottom: 20px; }
+  .meal-plan h1 { font-size: clamp(32px, 10vw, 42px); }
+  .meal-plan__header > p:last-child { margin-top: 8px; font-size: 15px; }
+  .meal-plan__grid { gap: 14px; }
+  .meal-plan__card { padding: 18px 15px; border-radius: 18px; }
+  .meal-plan h2 { font-size: 26px; }
+  .meal-plan__hint { margin-bottom: 16px; font-size: 13.5px; }
+
+  /* every control gets a 44px-tall tap target */
+  .meal-plan input,
+  .meal-plan select { padding: 12px; min-height: 44px; }
+  .meal-plan__primary { min-height: 44px; }
+  .meal-plan .meal-plan__qty-input { flex: 0 0 84px; }
+  .meal-plan .meal-plan__unit-input { flex: 0 0 76px; }
+
+  /* the actions go under the name so neither is squeezed to a few pixels */
+  .meal-plan__shopping-list li { flex-wrap: wrap; row-gap: 4px; }
+  .meal-plan__tick { flex: 1 1 100%; }
+  .meal-plan__item-actions { margin-left: 29px; }
+  .meal-plan__linkbtn { padding: 4px 0; min-height: 32px; }
+  .meal-plan__edit > input:first-child { flex: 1 1 100%; }
+
   .meal-plan__schedule-actions { flex-wrap: wrap; }
-  .meal-plan__week { grid-template-columns: repeat(7, 104px); }
+  .meal-plan__date-input { flex: 1 1 140px; }
+  .meal-plan__slot-input { flex: 1 1 110px; }
+  .meal-plan__schedule-actions .meal-plan__primary { flex: 1 1 100%; }
+
+  /* ---- the week as a swipeable strip of day pills ---- */
+  .meal-plan__week-controls { margin: 18px 0 10px; }
+  /* 36px arrows: a 30px target is under everyone's minimum */
+  .meal-plan__week-controls button { width: 38px; height: 36px; }
+  .meal-plan__week {
+    display: flex;
+    min-width: 0;
+    gap: 8px;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding: 2px 15px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .meal-plan__week::-webkit-scrollbar { display: none; }
+  .meal-plan__day {
+    flex: 0 0 auto;
+    width: 62px;
+    min-height: 0;
+    padding: 9px 6px 10px;
+    scroll-snap-align: start;
+  }
+  .meal-plan__day > b { margin: 2px 0 0; font-size: 22px; }
+  .meal-plan__day-month { margin-bottom: 6px; }
+  /* on a pill there is no room for "nothing planned" — an empty pill says it */
+  .meal-plan__day small { display: none; }
+  .meal-plan__day-count { margin-top: 0; padding: 3px 7px; font-size: 10px; }
+  .meal-plan__day-count-word { display: none; }
+
+  .meal-plan__selected-day { margin-top: 14px; padding: 14px; }
+  .meal-plan__selected-heading h3 { font-size: 20px; }
+  .meal-plan__selected-list { max-height: none; }
+  /* slot pill on its own line, then the dish and its two actions */
+  .meal-plan__selected-meal { flex-wrap: wrap; row-gap: 6px; }
+  .meal-plan__meal-slot { order: -1; flex: 1 1 100%; max-width: max-content; }
+  .meal-plan__recipe-link,
+  .meal-plan__selected-meal strong { flex: 1 1 auto; }
+}
+
+@media (max-width: 400px) {
+  .meal-plan { padding: 18px 12px 24px; }
+  .meal-plan__card { padding: 16px 13px; }
+  .meal-plan__week { margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px; }
+  .meal-plan__day { width: 58px; }
 }

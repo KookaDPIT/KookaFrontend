@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '../../user';
@@ -6,8 +6,9 @@ import {
   ROLES, SUSPENSIONS, getModerationQueue, hideRecipe, restoreRecipe, deleteRecipe,
   getForumQueue, hideForumPost, restoreForumPost, deleteForumPost,
   listUsers, setUserRole, suspendUser, unsuspendUser,
-  deactivateUser, activateUser,
+  deactivateUser, activateUser, analyzeRecipe, runAnalyzeAll,
 } from '../../services/admin';
+import { getReportQueue, actOnReport } from '../../services/reports';
 import RoleBadge from '../../components/RoleBadge';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
@@ -87,6 +88,17 @@ export default function Admin() {
   const forumKey = JSON.stringify([forumFilter, forumQuery]);
   const postsLoading = postsFor !== forumKey;
 
+  /* "Re-analyse everything" — a loop of small batches, so the operator can see
+     it moving and stop it. `sweep` is null when idle. */
+  const [sweep, setSweep] = useState(null); // { scope, updated, flagged, remaining, total }
+  const sweepCancel = useRef(false);
+
+  // reports pane
+  const [reportFilter, setReportFilter] = useState('open');
+  const [reports, setReports] = useState([]);
+  const [reportsFor, setReportsFor] = useState(null);
+  const reportsLoading = reportsFor !== reportFilter;
+
   // confirmation for the destructive actions
   const [confirm, setConfirm] = useState(null); // { kind, id, label }
   // who we are about to suspend, and for how long
@@ -100,6 +112,32 @@ export default function Admin() {
   /* Stable identity, so the load effects below can list it as a dependency
      honestly instead of quietly omitting it. */
   const fail = useCallback((err) => flash(errorText(err, t)), [flash, t]);
+
+  const startSweep = async (scope) => {
+    if (sweep) return;
+    sweepCancel.current = false;
+    setSweep({ scope, updated: 0, flagged: 0, remaining: null, total: null });
+    try {
+      const res = await runAnalyzeAll({
+        scope,
+        onProgress: (p) => setSweep((s) => (s ? { ...s, ...p } : s)),
+        shouldStop: () => sweepCancel.current,
+      });
+      if (res.stopped === 'unavailable') {
+        flash(t('admin.analyzeAllStopped', { count: res.updated }));
+      } else if (res.stopped === 'cancelled') {
+        flash(t('admin.analyzeAllCancelled', { count: res.updated }));
+      } else {
+        flash(t('admin.analyzeAllDone', { count: res.updated, flagged: res.flagged }));
+      }
+      // the queue on screen is now out of date — refetch whichever filter is up
+      setRecipesFor(null);
+    } catch (err) {
+      fail(err);
+    } finally {
+      setSweep(null);
+    }
+  };
 
   // a non-staff account has nothing to do here
   useEffect(() => {
@@ -118,6 +156,19 @@ export default function Admin() {
       .catch((err) => { if (alive) fail(err); });
     return () => { alive = false; };
   }, [isStaff, pane, recipeFilter, recipesFor, fail]);
+
+  useEffect(() => {
+    if (!isStaff || pane !== 'reports' || reportsFor === reportFilter) return undefined;
+    let alive = true;
+    getReportQueue(reportFilter)
+      .then((data) => {
+        if (!alive) return;
+        setReports(data || []);
+        setReportsFor(reportFilter);
+      })
+      .catch((err) => { if (alive) fail(err); });
+    return () => { alive = false; };
+  }, [isStaff, pane, reportFilter, reportsFor, fail]);
 
   /* debounce the search so typing does not fire a request per keystroke */
   useEffect(() => {
@@ -203,7 +254,7 @@ export default function Admin() {
       </header>
 
       <div className="adm-panes" role="tablist">
-        {['dashboard', 'users', 'recipes', 'forum', 'lessons'].map((k) => (
+        {['dashboard', 'reports', 'users', 'recipes', 'forum', 'lessons'].map((k) => (
           <button
             key={k}
             type="button"
@@ -352,6 +403,116 @@ export default function Admin() {
       )}
 
       {/* ===================== RECIPES ===================== */}
+      {/* ===== REPORTS =====
+          What people flagged, newest first. Every row carries enough of the
+          reported thing to decide without leaving the page, and links through
+          for when it is not enough. */}
+      {pane === 'reports' && (
+        <section className="adm-section">
+          <div className="adm-filters">
+            {['open', 'resolved', 'dismissed'].map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`adm-chipbtn ${reportFilter === f ? 'is-active' : ''}`}
+                onClick={() => setReportFilter(f)}
+              >
+                {t(`admin.reportStatus.${f}`)}
+              </button>
+            ))}
+          </div>
+
+          {reportsLoading && <p className="adm-empty">{t('common.loading')}</p>}
+          {!reportsLoading && reports.length === 0 && (
+            <p className="adm-empty">{t('admin.reportsEmpty')}</p>
+          )}
+
+          <ul className="adm-list">
+            {reports.map((rep) => (
+              <li key={rep.id} className="adm-row adm-row--report">
+                <div className="adm-report__head">
+                  <span className="adm-report__reason">{t(`report.reasons.${rep.reason}`)}</span>
+                  <span className="adm-report__meta">
+                    {t('admin.reportedBy', { who: rep.reporter?.username || '—' })}
+                    {rep.created_at ? ` · ${fmtDate(rep.created_at)}` : ''}
+                  </span>
+                </div>
+
+                {rep.target ? (
+                  <button
+                    type="button"
+                    className="adm-who"
+                    onClick={() => navigate(
+                      rep.target.kind === 'recipe'
+                        ? `/recipe/${rep.target.id}`
+                        : `/forum/${rep.target.post_id || rep.target.id}`,
+                    )}
+                  >
+                    <span className="adm-thumb">
+                      {rep.target.image_url
+                        ? <img src={rep.target.image_url} alt="" />
+                        : rep.target.kind === 'recipe' ? '🍲' : '💬'}
+                    </span>
+                    <span className="adm-who__text">
+                      <b>{rep.target.title}</b>
+                      <small>
+                        {t(`admin.targetKind.${rep.target.kind}`)}
+                        {rep.target.author?.username ? ` · @${rep.target.author.username}` : ''}
+                        {rep.target.moderation_status === 'hidden'
+                          ? ` · ${t('admin.status.hidden')}`
+                          : ''}
+                      </small>
+                    </span>
+                  </button>
+                ) : (
+                  /* the recipe or post was deleted between the report and now;
+                     the row stays so the report can still be closed */
+                  <p className="adm-reason">{t('admin.reportGone')}</p>
+                )}
+
+                {rep.target?.excerpt && <p className="adm-reason">{rep.target.excerpt}</p>}
+                {rep.details && <p className="adm-report__details">“{rep.details}”</p>}
+
+                {rep.status === 'open' && (
+                  <div className="adm-tools">
+                    <button
+                      type="button"
+                      className="adm-btn adm-btn--go"
+                      disabled={busyId === `rep${rep.id}`}
+                      onClick={async () => {
+                        setBusyId(`rep${rep.id}`);
+                        try {
+                          await actOnReport(rep.id, 'resolve');
+                          setReports((l) => l.filter((x) => x.id !== rep.id));
+                          flash(t('admin.reportResolved'));
+                        } catch (err) { fail(err); } finally { setBusyId(null); }
+                      }}
+                    >
+                      {t('admin.reportResolve')}
+                    </button>
+                    <button
+                      type="button"
+                      className="adm-btn"
+                      disabled={busyId === `rep${rep.id}`}
+                      onClick={async () => {
+                        setBusyId(`rep${rep.id}`);
+                        try {
+                          await actOnReport(rep.id, 'dismiss');
+                          setReports((l) => l.filter((x) => x.id !== rep.id));
+                          flash(t('admin.reportDismissed'));
+                        } catch (err) { fail(err); } finally { setBusyId(null); }
+                      }}
+                    >
+                      {t('admin.reportDismiss')}
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {pane === 'recipes' && (
         <section className="adm-section">
           <div className="adm-filters">
@@ -365,6 +526,45 @@ export default function Admin() {
                 {t(`admin.status.${f}`)}
               </button>
             ))}
+          </div>
+
+          {/* The per-recipe button is on each row; this does the same pass over
+              the whole catalogue. "Only the ones missing data" is the default
+              because it is what you want after the analyser has been down, and
+              it does not spend tokens re-doing recipes that are already fine. */}
+          <div className="adm-sweep">
+            {sweep ? (
+              <>
+                <span className="adm-sweep__status">
+                  <span className="adm-sweep__spinner" aria-hidden="true" />
+                  {/* Until the first batch answers there is no count to show —
+                      "0 done, … to go" reads like a stuck progress bar. */}
+                  {sweep.remaining === null
+                    ? t('admin.analyzeAllStarting')
+                    : t('admin.analyzeAllRunning', {
+                      done: sweep.updated + sweep.flagged,
+                      left: sweep.remaining,
+                    })}
+                </span>
+                <button
+                  type="button"
+                  className="adm-btn"
+                  onClick={() => { sweepCancel.current = true; }}
+                >
+                  {t('admin.analyzeAllStop')}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="adm-sweep__label">{t('admin.analyzeAllLabel')}</span>
+                <button type="button" className="adm-btn adm-btn--go" onClick={() => startSweep('missing')}>
+                  {t('admin.analyzeAllMissing')}
+                </button>
+                <button type="button" className="adm-btn" onClick={() => startSweep('all')}>
+                  {t('admin.analyzeAllEvery')}
+                </button>
+              </>
+            )}
           </div>
 
           {recipesLoading && <p className="adm-empty">{t('common.loading')}</p>}
@@ -418,6 +618,38 @@ export default function Admin() {
                       {t('admin.restore')}
                     </button>
                   )}
+                  {/* The AI pass that fills in nutrition and allergens runs
+                      once, at publication. Anything older than those fields —
+                      or saved while Groq was down — kept zeroes, and both the
+                      allergen filter and the warning on the recipe page read
+                      exactly those fields. */}
+                  <button
+                    type="button"
+                    className="adm-btn"
+                    disabled={busyId === r.id}
+                    onClick={async () => {
+                      setBusyId(r.id);
+                      try {
+                        const res = await analyzeRecipe(r.id);
+                        setRecipes((list) => list.map((x) => (
+                          x.id === r.id ? { ...x, ...res.recipe } : x
+                        )));
+                        flash(res.flagged
+                          ? t('admin.analyzeFlagged')
+                          : t('admin.analyzeDone', {
+                            kcal: res.recipe?.calories ?? 0,
+                            count: res.recipe?.allergen_contains?.length ?? 0,
+                          }));
+                      } catch (err) {
+                        fail(err);
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                    title={t('admin.analyzeHint')}
+                  >
+                    {busyId === r.id ? t('admin.analyzing') : t('admin.analyze')}
+                  </button>
                   <button
                     type="button"
                     className="adm-btn adm-btn--danger"
