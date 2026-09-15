@@ -99,6 +99,7 @@ export default function Recipe() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reported, setReported] = useState(false);
   const [toast, setToast] = useState('');
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -346,15 +347,27 @@ export default function Recipe() {
             </div>
           </div>
 
-          <div
-            className="recipe__photo ph"
-            aria-hidden="true"
+          <button
+            type="button"
+            className={`recipe__photo ph${recipe.image_url ? ' is-clickable' : ''}`}
+            aria-label={recipe.image_url ? `${recipe.title} photo` : undefined}
+            onClick={() => recipe.image_url && setPhotoOpen(true)}
             style={recipe.image_url ? { backgroundImage: `url(${recipe.image_url})` } : undefined}
           >
             {!recipe.image_url && 'recipe photo'}
-          </div>
+            {recipe.image_url && <span className="recipe__photo-hint">View photo</span>}
+          </button>
         </div>
       </header>
+
+      <Modal
+        open={photoOpen}
+        onClose={() => setPhotoOpen(false)}
+        title={recipe.title}
+        className="recipe__photo-modal"
+      >
+        <img className="recipe__photo-full" src={recipe.image_url} alt={recipe.title} />
+      </Modal>
 
       {recipe.nutrition?.length > 0 && (
         <section className="recipe__dash">
