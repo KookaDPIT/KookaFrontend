@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listRecipes, getDailyDish } from '../../services/recipes';
@@ -7,9 +7,11 @@ import { getPassport } from '../../services/users';
 import { useUser } from '../../user';
 import { countryOf } from '../../data/countries';
 import { RANK_COLORS } from '../../lib/ranks';
+import { addRecipeToShopping } from '../../services/planner';
 import RecipeCard from '../../components/RecipeCard';
 import PassportGlobe from '../../components/PassportGlobe';
 import Stars from '../../components/Stars';
+import Toast from '../../components/Toast';
 import './Home.css';
 
 function Skeleton({ className = '', style }) {
@@ -36,6 +38,21 @@ export default function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [user] = useUser();
+  const heroRef = useRef(null);
+  const [heroRestHeight, setHeroRestHeight] = useState(null);
+  const [dailyIntro, setDailyIntro] = useState(() => {
+    if (typeof window === 'undefined') return false;
+
+    const navigation = performance.getEntriesByType('navigation')[0];
+    const isReload = navigation?.type === 'reload';
+    const hasSeenIntro = sessionStorage.getItem('kooka-home-daily-intro') === 'seen';
+
+    if (!hasSeenIntro || isReload) {
+      sessionStorage.setItem('kooka-home-daily-intro', 'seen');
+      return true;
+    }
+    return false;
+  });
 
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState(0);
@@ -48,6 +65,75 @@ export default function Home() {
   const [reviews, setReviews] = useState([]);
   const [passport, setPassport] = useState([]);
   const [showGlobe, setShowGlobe] = useState(false);
+  const [shoppingBusy, setShoppingBusy] = useState(false);
+  const [shoppingAdded, setShoppingAdded] = useState(false);
+  const [shoppingCount, setShoppingCount] = useState(0);
+  const [toast, setToast] = useState('');
+
+  useLayoutEffect(() => {
+    if (!dailyIntro || !heroRef.current) return;
+    setHeroRestHeight(heroRef.current.scrollHeight);
+  }, [daily, dailyIntro]);
+
+  useEffect(() => {
+    if (!dailyIntro) return undefined;
+
+    let touchStartY = null;
+    let wheelDistance = 0;
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      setDailyIntro(false);
+      window.requestAnimationFrame(() => {
+        const hero = heroRef.current;
+        if (!hero) return;
+
+        const previousHeight = hero.style.height;
+        hero.style.height = 'auto';
+        const naturalHeight = hero.scrollHeight;
+        hero.style.height = previousHeight;
+        setHeroRestHeight(naturalHeight);
+      });
+    };
+    const onWheel = (event) => {
+      if (window.scrollY <= 2 && event.deltaY > 0) {
+        event.preventDefault();
+        wheelDistance += event.deltaY;
+        if (wheelDistance >= 120) release();
+      } else if (event.deltaY < 0) {
+        wheelDistance = 0;
+      }
+    };
+    const onTouchStart = (event) => {
+      touchStartY = event.touches[0]?.clientY ?? null;
+    };
+    const onTouchMove = (event) => {
+      const currentY = event.touches[0]?.clientY;
+      if (touchStartY !== null && currentY !== undefined) {
+        const distance = touchStartY - currentY;
+        if (distance > 0) event.preventDefault();
+        if (distance > 72) release();
+      }
+    };
+    const onKeyDown = (event) => {
+      if (['ArrowDown', 'PageDown', ' '].includes(event.key)) {
+        event.preventDefault();
+        release();
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [dailyIntro]);
 
   const current = FILTERS[activeFilter];
   const isAllergyFree = current.key === 'allergyFree';
@@ -121,6 +207,24 @@ export default function Home() {
     if (search.trim()) navigate(`/search?q=${encodeURIComponent(search.trim())}`);
   };
 
+  const addDailyToShopping = async () => {
+    if (!daily?.id || shoppingBusy || shoppingAdded) return;
+    setShoppingBusy(true);
+    try {
+      const result = await addRecipeToShopping(daily.id);
+      const added = Number(result?.added) || 0;
+      setShoppingCount(added);
+      setShoppingAdded(true);
+      setToast(t('mealPlan.ingredientsAdded', { count: added }));
+      window.setTimeout(() => setToast(''), 2600);
+    } catch {
+      setToast(t('common.error'));
+      window.setTimeout(() => setToast(''), 2600);
+    } finally {
+      setShoppingBusy(false);
+    }
+  };
+
   const dailyCountry = daily?.origin ? countryOf(daily.origin) : null;
   // the daily dish is featured in the hero, so keep it out of the feed grid
   const feedItems = feed ? feed.filter((r) => r.id !== daily?.id) : feed;
@@ -145,9 +249,12 @@ export default function Home() {
   };
 
   return (
-    <div className="home">
+    <div
+      className={`home ${dailyIntro ? 'home--intro' : 'home--released'}`}
+      style={heroRestHeight ? { '--home-rest-height': `${heroRestHeight}px` } : undefined}
+    >
       {/* ===== HERO — daily global dish ================================= */}
-      <header className="home-hero">
+      <header className="home-hero" ref={heroRef}>
         <div
           className="home-hero__photo"
           aria-hidden="true"
@@ -225,6 +332,7 @@ export default function Home() {
             ) : (
               <>
                 <h1 className="home-daily__h1">{daily.title}</h1>
+                {daily.description && <p className="home-daily__tease">{daily.description}</p>}
                 <p className="home-daily__meta">
                   {[daily.meta?.time, daily.meta?.kcal, dailyCountry?.name].filter(Boolean).join(' · ')}
                 </p>
@@ -243,10 +351,22 @@ export default function Home() {
                   >
                     {t('home.seeRecipe')}
                   </button>
+                  <button
+                    type="button"
+                    className={`home-btn home-btn--shopping${shoppingAdded ? ' is-added' : ''}`}
+                    onClick={addDailyToShopping}
+                    disabled={shoppingBusy || shoppingAdded}
+                  >
+                    <span aria-hidden="true">{shoppingAdded ? '✓' : '🛒'}</span>
+                    {shoppingAdded
+                      ? t('mealPlan.ingredientsAdded', { count: shoppingCount })
+                      : t('mealPlan.toShopping')}
+                  </button>
                 </div>
               </>
             )}
           </div>
+          {dailyIntro && <span className="home-hero__scroll-cue" aria-hidden="true" />}
         </div>
       </header>
 
@@ -376,6 +496,7 @@ export default function Home() {
       </div>
 
       <PassportGlobe open={showGlobe} onClose={() => setShowGlobe(false)} countries={passport} />
+      <Toast message={toast} />
     </div>
   );
 }
