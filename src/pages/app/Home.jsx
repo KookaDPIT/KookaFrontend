@@ -4,11 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { listRecipes, getDailyDish } from '../../services/recipes';
 import { recentReviews } from '../../services/reviews';
 import { getPassport } from '../../services/users';
-import { useUser } from '../../user';
+import { getMyStreaks } from '../../services/streaks';
+import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import { countryOf } from '../../data/countries';
 import { RANK_COLORS } from '../../lib/ranks';
 import { addRecipeToShopping } from '../../services/planner';
 import RecipeCard from '../../components/RecipeCard';
+import StreakBar from '../../components/StreakBar';
+import BookmarkPanel from '../../components/BookmarkPanel';
 import PassportGlobe from '../../components/PassportGlobe';
 import Stars from '../../components/Stars';
 import Toast from '../../components/Toast';
@@ -138,11 +141,27 @@ export default function Home() {
   const current = FILTERS[activeFilter];
   const isAllergyFree = current.key === 'allergyFree';
   const hasAllergies = (user?.allergies || []).length > 0;
+  /* Someone who answered "I have no allergies" has an empty list on purpose.
+     Telling them they have not told us about any allergies is both wrong and
+     the thing they explicitly asked us to stop doing, so the nudge is only for
+     the cooks who put the question off. */
+  const needsAllergyAnswer = isAllergyFree && !hasAllergies && !allergiesHaveBeenAnswered();
 
   // daily dish (once)
   useEffect(() => {
     getDailyDish().then(setDaily).catch(() => setDaily(null));
   }, []);
+
+  /* The four streaks. Its own call rather than part of /me: it reads three
+     event tables, and /me is fetched on every page load. A failure leaves the
+     bar out entirely — a streak you cannot trust is worse than no streak. */
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [streaks, setStreaks] = useState(null);
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    getMyStreaks().then(setStreaks).catch(() => setStreaks(null));
+  }, [userId]);
 
   /* A chip that finds nothing falls back to a random shelf rather than an
      empty page. On a young catalogue "recommended for you" legitimately has
@@ -244,7 +263,8 @@ export default function Home() {
   /* Only reached when even the random shelf came back empty — i.e. the
      catalogue itself is empty. */
   const emptyMessage = () => {
-    if (isAllergyFree && !hasAllergies) return t('home.allergyEmpty');
+    if (needsAllergyAnswer) return t('home.allergyEmpty');
+    if (isAllergyFree && !hasAllergies) return t('home.allergyNone');
     return t('home.feedEmpty');
   };
 
@@ -295,6 +315,19 @@ export default function Home() {
                 }
               >
                 {rank?.tier_label || 'Copper I'}
+              </button>
+              {/* Saved-for-later, next to the rank and the + — the three
+                  things that are about you rather than about the feed. */}
+              <button
+                type="button"
+                className="home-bookmarks"
+                onClick={() => setBookmarksOpen(true)}
+                aria-label={t('bookmarks.title')}
+                title={t('bookmarks.title')}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 3.5h12a1.5 1.5 0 0 1 1.5 1.5v15.2a.8.8 0 0 1-1.22.68L12 16.9l-6.28 3.98A.8.8 0 0 1 4.5 20.2V5A1.5 1.5 0 0 1 6 3.5z" />
+                </svg>
               </button>
               <button
                 type="button"
@@ -372,6 +405,9 @@ export default function Home() {
 
       {/* ===== BODY SHEET ============================================== */}
       <div className="home-sheet">
+        {/* how the habits are holding up, before what to cook next */}
+        <StreakBar streaks={streaks} />
+
         {/* filter chips */}
         <div className="home-filters" role="tablist" aria-label={t('home.feedTitle')}>
           {FILTERS.map((f, i) => (
@@ -389,7 +425,7 @@ export default function Home() {
         </div>
 
         {/* nothing to filter by yet — offer the fix rather than an empty grid */}
-        {isAllergyFree && !hasAllergies && (
+        {needsAllergyAnswer && (
           <div className="home-nudge">
             <p>{t('home.allergyEmpty')}</p>
             <button type="button" className="home-btn home-btn--primary" onClick={() => navigate('/settings?section=allergies')}>
@@ -494,6 +530,8 @@ export default function Home() {
           </article>
         </section>
       </div>
+
+      <BookmarkPanel open={bookmarksOpen} onClose={() => setBookmarksOpen(false)} />
 
       <PassportGlobe open={showGlobe} onClose={() => setShowGlobe(false)} countries={passport} />
       <Toast message={toast} />

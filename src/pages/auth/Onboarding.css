@@ -96,10 +96,12 @@
 
 .onb__chip.is-on .onb__chip-tick { opacity: 1; transform: none; }
 
+/* "No allergies" is an answer, so it is styled like the allergen chips — a
+   pickable card with a tick — rather than like the way out of the page. */
 .onb__none {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   margin-top: 12px;
   padding: 13px 15px;
@@ -111,11 +113,37 @@
   transition: border-color 0.16s ease, background 0.16s ease;
 }
 
+.onb__none-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.onb__none-tick {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #7d9a5a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
 .onb__none.is-on {
   border-style: solid;
   border-color: #7d9a5a;
   background: rgba(125, 154, 90, 0.09);
 }
+
+.onb__none.is-on .onb__none-tick { opacity: 1; transform: scale(1); }
 
 .onb__none b {
   font-family: var(--font-important), sans-serif;
@@ -132,16 +160,33 @@
   margin-top: 24px;
 }
 
+/* Deliberately unlike the save button and unlike the "no allergies" card:
+   a quiet, centred text link on its own row. It used to sit next to Save as
+   an equal-looking pill, which made "I have none" and "not now" read as the
+   same kind of choice when only one of them answers the question. */
 .onb__skip {
-  padding: 13px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 6px 8px;
   border: none;
-  border-radius: 999px;
   background: transparent;
   font-family: var(--font-important), sans-serif;
   font-weight: 600;
   font-size: 14px;
   color: #8a7a5c;
+  text-align: center;
   cursor: pointer;
+}
+
+.onb__skip small {
+  font-family: var(--font-body), sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #a0906f;
 }
 
 .onb__skip:hover { color: #2a2016; }
@@ -201,6 +246,7 @@
 
 [data-theme="dark"] .onb__none { border-color: rgba(255, 255, 255, 0.16); }
 [data-theme="dark"] .onb__skip { color: rgba(245, 245, 240, 0.6); }
+[data-theme="dark"] .onb__skip small { color: rgba(245, 245, 240, 0.45); }
 [data-theme="dark"] .onb__skip:hover { color: #f5f5f0; }
 
 @media (max-width: 520px) {

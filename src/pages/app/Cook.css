@@ -96,6 +96,10 @@
 .cook__progress span.on { background: #ff6b35; }
 
 .cook__step-no {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
   font-family: var(--font-important), sans-serif;
   font-weight: 700;
   font-size: 12px;
@@ -103,6 +107,22 @@
   color: #ff9f70;
   margin-bottom: 10px;
 }
+
+/* Switch the step text to the other language. It rides on the step label
+   rather than on its own row: while cooking, vertical space in front of the
+   instruction is the most expensive space on the screen. */
+.cook__translate-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  letter-spacing: 0.3px;
+  color: var(--k-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cook__translate-btn:hover { color: #ff9f70; }
 
 .cook__step {
   margin: 0 0 30px;
@@ -488,6 +508,45 @@
   font-size: 1.05rem;
   margin: 0;
 }
+
+/* ---- what the dish paid ------------------------------------------------- */
+.cook__reward {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 107, 53, 0.08);
+}
+
+.cook__reward-total {
+  display: block;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  color: #ff6b35;
+}
+
+.cook__reward-lines {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--k-muted);
+}
+
+.cook__reward-rankup {
+  margin: 10px 0 0;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #c9a632;
+}
+
+[data-theme="dark"] .cook__reward { background: rgba(255, 138, 90, 0.12); }
+[data-theme="dark"] .cook__reward-total { color: #ff8a5a; }
 
 /* cook-photo picker (verification only — never uploaded) */
 .cook__photo-pick {

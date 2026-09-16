@@ -1,0 +1,22 @@
+/* The struck-metal medal. Everything but the sheen lives in the SVG; this file
+   only handles how the medal sits and how a locked one recedes. */
+.tmedal {
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 0;
+  filter: drop-shadow(0 3px 6px rgba(74, 47, 20, 0.22));
+}
+
+.tmedal svg { width: 100%; height: 100%; display: block; }
+
+/* A locked medal is dimmed, not hidden: the shape is the promise. */
+.tmedal.is-locked { filter: drop-shadow(0 2px 4px rgba(74, 47, 20, 0.12)); opacity: 0.72; }
+.tmedal.is-secret { opacity: 0.9; }
+
+.tmedal__q {
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 34px;
+}
+
+[data-theme="dark"] .tmedal { filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5)); }

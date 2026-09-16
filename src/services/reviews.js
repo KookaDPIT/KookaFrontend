@@ -24,13 +24,16 @@ export async function deleteReview(reviewId) {
 /* Ask the AI to confirm the cook photo before unlocking reviews.
    The photo is sent straight to the backend for the AI check and is NOT stored
    anywhere (no ImageKit) — pass the raw File. */
-export async function verifyCook(recipeId, file) {
+export async function verifyCook(recipeId, file, sessionId = 0) {
   const form = new FormData();
   form.append('file', file);
   const { data } = await api.post(`/recipes/${recipeId}/cook/verify`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    // The cook-along session this photo belongs to. It closes the session
+    // (or counts the rejection), which is what several trophies read.
+    params: sessionId ? { session_id: sessionId } : undefined,
   });
-  return data; // { verified, reason, can_review }
+  return data; // { verified, reason, can_review, cook_xp, rank, … }
 }
 
 /* Recent reviews across all recipes (with recipe info) for the Home page. */

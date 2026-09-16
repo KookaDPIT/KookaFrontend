@@ -15,6 +15,9 @@ import Toast from '../../components/Toast';
 import ImageUpload from '../../components/ImageUpload';
 import RoleBadge from '../../components/RoleBadge';
 import WorldGlobe from '../../components/WorldGlobe';
+import TrophyCase from '../../components/TrophyCase';
+import TrophyMedal from '../../components/TrophyMedal';
+import { getMyTrophies, getUserTrophies } from '../../services/trophies';
 import './Profile.css';
 
 /* ==========================================================================
@@ -50,17 +53,7 @@ function timeAgo(iso) {
 }
 
 /* Earned from the numbers the profile already carries, so a badge means the
-   same thing on every profile and nobody sees somebody else's shelf. Each one
-   is a threshold on a real counter: cooked dishes, stamped countries,
-   followers. `need` drives the "next badge" bar in the rail. */
-const BADGES = [
-  { key: 'firstDish', icon: '🍳', of: 'recipes', need: 1 },
-  { key: 'tenDishes', icon: '🔪', of: 'recipes', need: 10 },
-  { key: 'fiftyDishes', icon: '🔥', of: 'recipes', need: 50 },
-  { key: 'firstStamp', icon: '🛂', of: 'countries', need: 1 },
-  { key: 'globetrotter', icon: '🌍', of: 'countries', need: 10 },
-  { key: 'followed', icon: '👫', of: 'followers', need: 10 },
-];
+   same thing on every profile and nobody sees somebody else's shelf. */
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -73,6 +66,10 @@ export default function Profile() {
   const targetId = id ? Number(id) : me?.id;
 
   const [tab, setTab] = useState('activity');
+  /* The trophy case, fetched when its tab is opened rather than with the page:
+     it evaluates sixty-odd conditions over the whole history, and most visits
+     never look at it. */
+  const [trophies, setTrophies] = useState(null);
   const [other, setOther] = useState(null);        // fetched user for /profile/:id
   const [following, setFollowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -370,6 +367,28 @@ export default function Profile() {
      any future self-only pane from doing the same. */
   const activeTab = TABS.includes(tab) ? tab : TABS[0];
 
+  /* Loaded with the page rather than with the tab: the rail's "next trophy"
+     card is visible on every tab, and it reads this same list. Re-runs when the
+     profile underneath changes — walking from your own shelf to someone else's
+     must not leave your trophies under their name. */
+  useEffect(() => {
+    if (!targetId) return undefined;
+    let alive = true;
+    const load = async () => {
+      await Promise.resolve();
+      if (!alive) return;
+      setTrophies(null);
+      try {
+        const data = isSelf ? await getMyTrophies() : await getUserTrophies(targetId);
+        if (alive) setTrophies(data);
+      } catch {
+        if (alive) setTrophies({ trophies: [], totals: {}, earned: 0, total: 0 });
+      }
+    };
+    load();
+    return () => { alive = false; };
+  }, [targetId, isSelf]);
+
   // the content in state belongs to the profile we were on until it reloads
   const contentReady = contentFor === targetId;
   const isStaff = me?.role === 'admin' || me?.role === 'moderator';
@@ -387,16 +406,22 @@ export default function Profile() {
     followers: p.followers,
   };
 
-  /* Whose shelf this is: the counters above, not a constant. */
-  const badgeList = BADGES.map((b) => ({
-    ...b,
-    have: stats[b.of] ?? 0,
-    got: (stats[b.of] ?? 0) >= b.need,
-  }));
-  // the closest one still out of reach — what the rail's progress bar tracks
-  const nextBadge = badgeList
-    .filter((b) => !b.got)
-    .sort((a, b) => a.need - a.have - (b.need - b.have))[0] || null;
+  /* The nearest trophy still out of reach — what the rail's bar tracks.
+
+     It reads the same list the trophy case does, rather than a second set of
+     thresholds defined here. Two badge systems on one page was the old shape
+     and it meant the rail could promise something the case never awarded.
+
+     Only trophies that report progress qualify: "cook on a Saturday" has no
+     halfway point, so putting it on a progress bar would be a lie. Hidden ones
+     are skipped too — the rail would give the name away. */
+  const nextBadge = (trophies?.trophies || [])
+    .filter((x) => !x.earned && x.progress && !x.hidden && x.tier !== 'platinum')
+    .sort((a, b) => {
+      const left = a.progress.target - a.progress.current;
+      const right = b.progress.target - b.progress.current;
+      return left - right;
+    })[0] || null;
 
   const recipeList = (liveRecipes || []).map((r) => ({
     id: r.id,
@@ -749,21 +774,7 @@ export default function Profile() {
             </div>
           )}
 
-          {activeTab === 'badges' && (
-            <div className="pf-badges">
-              {badgeList.map((b) => (
-                <div className={`pf-badge ${b.got ? '' : 'is-locked'}`} key={b.key}>
-                  <span className="pf-badge__icon" aria-hidden="true">{b.icon}</span>
-                  <b>{t(`profile.badgeNames.${b.key}`, { count: b.need })}</b>
-                  {!b.got && (
-                    <small className="pf-badge__need">
-                      {Math.min(b.have, b.need)} / {b.need}
-                    </small>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          {activeTab === 'badges' && <TrophyCase data={trophies} loading={!trophies} />}
         </main>
 
         {/* rail */}
@@ -780,15 +791,18 @@ export default function Profile() {
             <section className="pf-card pf-card--next">
               <h3 className="pf-card__title">{t('profile.nextBadge')}</h3>
               <div className="pf-next">
-                <span className="pf-next__icon" aria-hidden="true">{nextBadge.icon}</span>
+                <TrophyMedal tier={nextBadge.tier} size={38} />
                 <div className="pf-next__body">
-                  <b>{t(`profile.badgeNames.${nextBadge.key}`, { count: nextBadge.need })}</b>
+                  <b>{t(`trophies.${nextBadge.id}.name`, nextBadge.name)}</b>
                   <div className="pf-next__bar">
-                    <i style={{ width: `${Math.min(100, (nextBadge.have / nextBadge.need) * 100)}%` }} />
+                    <i
+                      style={{
+                        width: `${Math.min(100, (nextBadge.progress.current / nextBadge.progress.target) * 100)}%`,
+                      }}
+                    />
                   </div>
                   <small>
-                    {Math.min(nextBadge.have, nextBadge.need)} / {nextBadge.need}{' '}
-                    {t(`profile.stats.${nextBadge.of}`).toLowerCase()}
+                    {nextBadge.progress.current} / {nextBadge.progress.target}
                   </small>
                 </div>
               </div>

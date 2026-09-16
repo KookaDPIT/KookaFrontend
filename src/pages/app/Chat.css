@@ -7,8 +7,18 @@
    ========================================================================== */
 
 .chat {
-  flex: 1;
+  /* `flex: 0 0 auto` + `min-height: 0`, not `flex: 1`.
+     As a growing flex item with `min-height: auto`, the page was floored at its
+     own min-content height: the welcome screen's five task cards made .chat
+     1043px tall inside an 812px viewport, so the composer sat below the fold
+     and the thread never scrolled inside .chat-scroll — on a phone the input
+     box was simply unreachable. Taking the height from the declaration instead
+     of from the content pins the composer and moves the scrolling inside the
+     thread, where it belongs. Desktop is unchanged (verified at 1440x900).
+     Once the height is definite, .chat-main must be allowed to shrink too. */
+  flex: 0 0 auto;
   min-width: 0;
+  min-height: 0;
   display: flex;
   height: 100svh;
   background: #faf4e6;
@@ -149,6 +159,7 @@
 .chat-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

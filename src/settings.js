@@ -25,6 +25,11 @@ export const DEFAULT_SETTINGS = {
   theme: 'system', // system | light | dark
   language: 'en', // en | ro — mirrors i18n, persisted server-side
   twoFactor: false,
+  /* Did this cook actually answer the allergy question, or have they just
+     never been asked? An empty `allergies` list cannot tell the two apart, and
+     the difference matters: somebody who said "I have none" should never be
+     nagged about it again, while somebody who tapped "not now" should. */
+  allergensAnswered: false,
 };
 
 /* The subset of settings the backend stores as an opaque JSON blob (there are
@@ -37,6 +42,8 @@ export const CLIENT_PREF_KEYS = [
   'publicPassport',
   'notif',
   'twoFactor',
+  // travels with the account, so the answer follows you to a new browser
+  'allergensAnswered',
 ];
 
 function read() {
@@ -110,6 +117,15 @@ export function settingsBlob(s) {
    (the boot-time theme apply, before any component mounts). */
 export function readSettings() {
   return read();
+}
+
+/* Merge a patch into the store from outside React (useSettings' `update` is
+   the same thing for components). Returns the new settings. */
+export function updateSettings(patch) {
+  const base = read();
+  const next = typeof patch === 'function' ? patch(base) : { ...base, ...patch };
+  write(next);
+  return next;
 }
 
 export function applyTheme(theme) {

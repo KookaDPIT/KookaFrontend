@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from './api';
 import i18n from './i18n';
-import { hydrateFromUser, applyTheme } from './settings';
+import { hydrateFromUser, applyTheme, readSettings, settingsBlob, updateSettings } from './settings';
+import { clearBookmarks, loadBookmarks } from './bookmarks';
 
 /* ==========================================================================
    Shared current-user store. Backed by localStorage ('kooka_user') and kept
@@ -68,18 +69,39 @@ export function isLoggedIn() {
 
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
+  // the saved list belongs to the account, not to the browser
+  clearBookmarks();
+  // the answer belongs to the account, not to the browser — leaving it behind
+  // made the next person to sign in here look like they had already answered
+  try { localStorage.removeItem(ALLERGY_ANSWERED_KEY); } catch { /* no storage */ }
+  updateSettings({ allergensAnswered: false });
   write(null);
 }
 
+/* Record that the allergy question has been answered — including the answer
+   "none", which is what separates a cook with nothing to avoid from one who
+   has simply never been asked.
+
+   It lives in the account's settings blob so it survives a new browser, with
+   the old localStorage key kept as an offline fallback. The PATCH is
+   fire-and-forget: the local store already reflects it, and a failed sync only
+   costs one more prompt. */
 export function markAllergiesAnswered() {
   try {
     localStorage.setItem(ALLERGY_ANSWERED_KEY, 'true');
   } catch {
     /* the account data remains authoritative when storage is unavailable */
   }
+  const next = updateSettings({ allergensAnswered: true });
+  if (isLoggedIn()) {
+    api.patch('/me', { settings: settingsBlob(next) }).catch(() => {
+      /* best effort — the local flag still silences the prompt on this device */
+    });
+  }
 }
 
 export function allergiesHaveBeenAnswered() {
+  if (readSettings().allergensAnswered) return true;
   try {
     return localStorage.getItem(ALLERGY_ANSWERED_KEY) === 'true';
   } catch {
@@ -96,6 +118,11 @@ export async function refreshUser() {
     // keep the shared settings store, theme and language in sync with the
     // authoritative backend account so Profile + Settings reflect it everywhere.
     hydrateFromUser(data);
+    // The saved list is per account. Passing the id means this only costs a
+    // request when the account actually changed — refreshUser() runs on every
+    // useUser() mount, and an unconditional refetch made one page load a dozen
+    // calls to /me/bookmarks.
+    loadBookmarks({ owner: data?.id ?? null });
     if (data?.theme) applyTheme(data.theme);
     if (data?.language && !i18n.language?.startsWith(data.language)) {
       i18n.changeLanguage(data.language);

@@ -1,0 +1,149 @@
+/* ==========================================================================
+   TROPHY CASE — platinum on top, then bronze / silver / gold / hidden.
+   ========================================================================== */
+.tcase { display: flex; flex-direction: column; gap: 26px; }
+
+.tcase__state { padding: 32px 6px; color: #94805c; font-size: 14.5px; }
+
+/* ---- platinum banner ----
+   Its own block rather than a row in a grid: the condition is every other
+   trophy, so it is the summary of the page, not an item on it. */
+.tcase__plat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(79, 163, 200, 0.12), rgba(79, 163, 200, 0.04));
+  box-shadow: 0 2px 14px rgba(74, 47, 20, 0.07);
+}
+
+.tcase__plat-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tcase__plat-text b {
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 21px;
+  color: #2a2016;
+}
+.tcase__plat-text span { font-size: 13.5px; color: #94805c; }
+.tcase__plat-count {
+  margin-top: 4px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  color: #4fa3c8 !important;
+}
+
+/* ---- a metal group ---- */
+.tcase__group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #a8916a;
+}
+
+.tcase__group-count {
+  margin-left: auto;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #b3a082;
+}
+
+.tcase__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tcase__item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fffdf9;
+  box-shadow: 0 2px 10px rgba(74, 47, 20, 0.05);
+}
+
+/* Earned ones carry a warm ground so the shelf reads at a glance — you should
+   be able to see how you are doing without reading a single name. */
+.tcase__item.is-earned { background: #fff6ec; box-shadow: 0 4px 14px rgba(74, 47, 20, 0.09); }
+.tcase__item.is-secret { background: rgba(120, 80, 30, 0.05); box-shadow: none; }
+
+.tcase__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.tcase__name {
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #2a2016;
+  overflow-wrap: anywhere;
+}
+
+.tcase__desc { font-size: 12.5px; line-height: 1.35; color: #94805c; }
+.tcase__when { margin-top: 3px; font-size: 11.5px; color: #b3a082; }
+
+/* ---- progress ----
+   The count sits on the bar rather than beside it: at two columns there is no
+   room beside it, and "3 / 7" is more useful than an unlabelled sliver. */
+.tcase__bar {
+  position: relative;
+  display: block;
+  height: 14px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: rgba(120, 80, 30, 0.12);
+  overflow: hidden;
+}
+
+.tcase__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: #ff6b35;
+  opacity: 0.55;
+}
+
+.tcase__bar em {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-family: var(--font-important), sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 14px;
+  color: #6b5d43;
+}
+
+/* ---- dark ---- */
+[data-theme="dark"] .tcase__item { background: #241b14; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+[data-theme="dark"] .tcase__item.is-earned { background: #2e2318; }
+[data-theme="dark"] .tcase__item.is-secret { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .tcase__name,
+[data-theme="dark"] .tcase__plat-text b { color: #f5e9d0; }
+[data-theme="dark"] .tcase__desc,
+[data-theme="dark"] .tcase__plat-text span { color: #b8a888; }
+[data-theme="dark"] .tcase__group-head,
+[data-theme="dark"] .tcase__when,
+[data-theme="dark"] .tcase__group-count,
+[data-theme="dark"] .tcase__state { color: #a89988; }
+[data-theme="dark"] .tcase__bar { background: rgba(255, 255, 255, 0.1); }
+[data-theme="dark"] .tcase__bar em { color: #e8d9bd; }
+
+/* ---- phone (≤640px) — additive; tablets and desktops are unchanged ---- */
+@media (max-width: 640px) {
+  .tcase { gap: 20px; }
+  .tcase__list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .tcase__plat { flex-direction: column; text-align: center; gap: 12px; padding: 16px; }
+  .tcase__item { padding: 11px 12px; gap: 11px; }
+}

@@ -812,6 +812,35 @@
 }
 
 .home-create-plus:hover { background: #f2591f; }
+
+/* Saved list. Quieter than the + on purpose: creating a recipe is the action
+   the header is selling, opening a list you already made is a shortcut. */
+.home-bookmarks {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff8ef;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
+}
+
+.home-bookmarks svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+
+.home-bookmarks:hover { background: rgba(255, 255, 255, 0.26); }
+.home-bookmarks:active { transform: scale(0.94); }
 .home-create-plus:active { transform: scale(0.94); }
 
 /* ==========================================================================
@@ -1085,21 +1114,28 @@
    fridge wants your ingredients, the allergen filter wants your allergies.
    Both ask inline rather than showing an empty grid.
    ========================================================================== */
+/* Centred, not `space-between`. With one short sentence and one button the
+   split layout pushed the text to the left edge and the button to the right,
+   which read as two unrelated things at opposite ends of a wide card rather
+   than as one message. */
 .home-nudge {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
-  margin: 0 0 22px;
-  padding: 15px 18px;
+  margin: 0 auto 22px;
+  padding: 18px;
+  max-width: 560px;
   border-radius: 18px;
   background: #fffaf1;
   box-shadow: 0 6px 20px rgba(120, 80, 30, 0.08);
+  text-align: center;
 }
 
 .home-nudge p {
   margin: 0;
+  max-width: 44ch;
   font-size: 14px;
   color: #6b5d43;
 }
@@ -1217,7 +1253,7 @@
   }
 
   /* fridge form: the input takes its own row, the buttons share the next */
-          .home-nudge {
+  .home-nudge {
     margin-bottom: 18px;
     padding: 14px;
   }

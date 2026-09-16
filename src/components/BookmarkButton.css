@@ -1,0 +1,71 @@
+/* ==========================================================================
+   BOOKMARK BUTTON — the notched ribbon, drawn as one path.
+
+   Two states, and they differ in fill rather than in shape: an outline that
+   fills in reads as "done" without the icon jumping to a different silhouette.
+   ========================================================================== */
+.bmk {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(24, 14, 8, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.12s ease, color 0.16s ease;
+}
+
+.bmk svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  transition: fill 0.16s ease;
+}
+
+.bmk:hover { background: rgba(24, 14, 8, 0.72); }
+.bmk:active { transform: scale(0.92); }
+
+.bmk.is-on { color: #ff8a5a; }
+.bmk.is-on svg { fill: currentColor; }
+
+/* ---- sizes ----
+   `md` rides on a card photo; `lg` sits in a page's action row next to real
+   buttons and has to match their touch target. */
+.bmk--md { width: 34px; height: 34px; }
+.bmk--md svg { width: 18px; height: 18px; }
+
+.bmk--lg { width: 46px; height: 46px; }
+.bmk--lg svg { width: 22px; height: 22px; }
+
+/* On a light surface the dark pill would be a blob — this variant is for
+   buttons that sit on the page rather than on a photo. */
+.bmk--plain {
+  background: rgba(120, 80, 30, 0.1);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: #8a7550;
+}
+.bmk--plain:hover { background: rgba(120, 80, 30, 0.18); }
+.bmk--plain.is-on { color: #ff6b35; }
+
+[data-theme="dark"] .bmk--plain {
+  background: rgba(255, 255, 255, 0.09);
+  color: #d8c6a4;
+}
+[data-theme="dark"] .bmk--plain:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* Phones: 34px is under the 44px touch target, but the button sits in a photo
+   corner where a 44px pill would cover the flag. Grow the hit area instead of
+   the pill, with a transparent ring. */
+@media (max-width: 640px) {
+  .bmk--md {
+    width: 36px;
+    height: 36px;
+    /* the extra 4px on each side is clickable but invisible */
+    box-shadow: 0 0 0 4px transparent;
+  }
+}

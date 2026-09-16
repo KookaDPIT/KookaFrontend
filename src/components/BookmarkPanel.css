@@ -1,0 +1,26 @@
+/* The saved-recipes sheet, opened from the Home header. */
+.bmkp__sub {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--k-muted, #94805c);
+}
+
+.bmkp__state {
+  margin: 28px 0;
+  text-align: center;
+  color: var(--k-muted, #94805c);
+  font-size: 14.5px;
+}
+
+/* Two columns, because a one-column list of photo cards turns a list of six
+   into a lot of scrolling inside a modal. */
+.bmkp__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .bmkp__grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .bmkp__sub { margin-bottom: 12px; }
+}

@@ -5,10 +5,12 @@ import { getRecipe, moderateRecipe } from '../../services/recipes';
 import ModerationBar from '../../components/ModerationBar';
 import Modal from '../../components/Modal';
 import { countryOf } from '../../data/countries';
+import { languageName } from '../../lib/languages';
 import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import Reviews from '../../components/Reviews';
 import ReportDialog from '../../components/ReportDialog';
 import Toast from '../../components/Toast';
+import BookmarkButton from '../../components/BookmarkButton';
 import { IconBack, IconClock } from '../../components/Icons';
 import { RankPill } from '../../components/RankBadge';
 import './Recipe.css';
@@ -82,7 +84,7 @@ function normalized(value) {
 export default function Recipe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [user] = useUser();
   /* One state object rather than two: a load ends as loading / ok / error, and
      keeping them together means the effect never has to reset anything
@@ -96,6 +98,8 @@ export default function Recipe() {
   const [calendarDate, setCalendarDate] = useState(new Date().toISOString().slice(0, 10));
   const [calendarAdded, setCalendarAdded] = useState(false);
   const [cookWarning, setCookWarning] = useState(null);
+  /* Off by default: the English version is shown only when asked for. */
+  const [englishOverride, setEnglishOverride] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reported, setReported] = useState(false);
   const [toast, setToast] = useState('');
@@ -128,7 +132,25 @@ export default function Recipe() {
   }
 
   const country = recipe.origin ? countryOf(recipe.origin) : null;
-  const method = (recipe.steps || []).map((s) => (typeof s === 'string' ? s : s.text));
+
+  /* A recipe written in another language is STORED in English — that is what
+     search, the nutrition pass and the AI all read. But it should be READ in
+     the words its author used, so the page shows the original and keeps the
+     English version one tap away.
+
+     `recipe.original` is absent for recipes written in English and for the
+     ones published before we kept the original, and then there is nothing to
+     switch between: no banner, no button. */
+  const original = recipe.original;
+  // The language's name in the reader's own language: "Romanian" in EN,
+  // "Română" in RO. The backend only ever sends the English label.
+  const originalLang = original
+    ? languageName(original.language, i18n.language, original.language_name)
+    : '';
+  const showEnglish = englishOverride || !original;
+  const shown = showEnglish ? recipe : { ...recipe, ...original };
+
+  const method = (shown.steps || []).map((s) => (typeof s === 'string' ? s : s.text));
   const allergens = recipe.allergens || { contains: [], free: [] };
   const author = recipe.author;
   const isAuthor = user && author && user.id === author.id;
@@ -237,18 +259,35 @@ export default function Recipe() {
             <span className="recipe__eyebrow">
               {country ? `${country.flag} ${country.name}` : 'Recipe'}
             </span>
-            <h1 className="recipe__title">{recipe.title}</h1>
-            {recipe.description && <p className="recipe__tagline">{recipe.description}</p>}
+            <h1 className="recipe__title">{shown.title}</h1>
+            {shown.description && <p className="recipe__tagline">{shown.description}</p>}
 
-            {/* The site is English-only, so a recipe written in another language
-                is stored translated. Say so, rather than pretending it was
-                written this way. */}
-            {recipe.source_language && recipe.source_language !== 'en' && (
+            {/* Which version you are reading, and how to get the other one.
+                Without the original stored there is nothing to offer, so older
+                recipes keep the plain "translated from X" note. */}
+            {original ? (
               <p className="recipe__translated">
-                {t('recipe.translatedFrom', {
-                  lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
-                })}
+                {showEnglish
+                  ? t('recipe.readingEnglish', { lang: originalLang })
+                  : t('recipe.readingOriginal', { lang: originalLang })}
+                <button
+                  type="button"
+                  className="recipe__translate-btn"
+                  onClick={() => setEnglishOverride((on) => !on)}
+                >
+                  {showEnglish
+                    ? t('recipe.showOriginal', { lang: originalLang })
+                    : t('recipe.showEnglish')}
+                </button>
               </p>
+            ) : (
+              recipe.source_language && recipe.source_language !== 'en' && (
+                <p className="recipe__translated">
+                  {t('recipe.translatedFrom', {
+                    lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
+                  })}
+                </p>
+              )
             )}
 
             <ul className="recipe__meta">
@@ -314,6 +353,10 @@ export default function Recipe() {
               >
                 {t('recipe.cook')}
               </button>
+              {/* Next to "cook it" and "put it in the calendar", because it is
+                  the third answer to the same question: now, on a date, or
+                  some day. */}
+              <BookmarkButton recipeId={recipe.id} size="lg" />
               {isAuthor && (
                 <button
                   type="button"
@@ -413,7 +456,7 @@ export default function Recipe() {
         <section className="recipe__col recipe__col--ingredients">
           <h2 className="recipe__col-title">{t('recipe.ingredients')}</h2>
           <ul className="recipe__ingredients">
-            {recipe.ingredients?.map((ing, i) => (
+            {shown.ingredients?.map((ing, i) => (
               <li key={i}>{ing}</li>
             ))}
           </ul>

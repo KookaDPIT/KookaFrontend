@@ -336,6 +336,14 @@
   position: relative;
   aspect-ratio: 16 / 9;
   background: repeating-linear-gradient(-45deg, #ece3d0 0 12px, #e4d9c1 12px 24px);
+  /* The photo arrives as an inline `background-image`, so the sizing has to be
+     declared here — and after the shorthand above, which would otherwise reset
+     it. Without these three the picture was drawn at its natural pixel size
+     from the top-left corner and tiled, which is what made the recipe tiles
+     look like a wall of cropped thumbnails. */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .pf-recipe__times {
   position: absolute;
@@ -372,33 +380,6 @@
 .pf-stamp__flag { font-size: 34px; line-height: 1; margin-bottom: 4px; }
 .pf-stamp b { font-family: var(--font-important), sans-serif; font-size: 14px; color: #2a2016; }
 .pf-stamp small { font-size: 12px; color: #94805c; }
-
-/* badges */
-.pf-badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.pf-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 22px 12px;
-  border-radius: 16px;
-  background: #fffdf9;
-  box-shadow: 0 2px 10px rgba(74, 47, 20, 0.05);
-}
-.pf-badge__icon {
-  width: 56px; height: 56px;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 107, 53, 0.12);
-  font-size: 28px;
-}
-.pf-badge b { font-family: var(--font-important), sans-serif; font-size: 14px; color: #2a2016; }
-.pf-badge.is-locked { background: #f3ead6; box-shadow: none; }
-.pf-badge.is-locked .pf-badge__icon { background: rgba(120, 80, 30, 0.1); filter: grayscale(1); opacity: 0.5; }
-.pf-badge.is-locked b { color: #a8916a; }
-/* how far off it is — only on the ones still locked */
-.pf-badge b { text-align: center; }
-.pf-badge__need { font-size: 12px; color: #a8916a; }
 
 /* ===== RAIL ===== */
 .pf-rail { display: flex; flex-direction: column; gap: 16px; }
@@ -504,7 +485,6 @@
   .pf-cover--identity { height: 300px; }
   .pf-passport { grid-template-columns: repeat(3, 1fr); }
   .pf-recipes { grid-template-columns: 1fr; }
-  .pf-badges { grid-template-columns: repeat(2, 1fr); }
   .pf-card { min-width: 100%; }
 }
 
@@ -519,7 +499,6 @@
 [data-theme="dark"] .pf-activity__text b,
 [data-theme="dark"] .pf-recipe h3,
 [data-theme="dark"] .pf-stamp b,
-[data-theme="dark"] .pf-badge b,
 [data-theme="dark"] .pf-card__title,
 [data-theme="dark"] .pf-menu button { color: #f5f5f0; }
 [data-theme="dark"] .pf-handle,
@@ -533,7 +512,6 @@
 [data-theme="dark"] .pf-stat,
 [data-theme="dark"] .pf-recipe,
 [data-theme="dark"] .pf-stamp,
-[data-theme="dark"] .pf-badge,
 [data-theme="dark"] .pf-card,
 [data-theme="dark"] .pf-menu,
 [data-theme="dark"] .pf-tab.is-active { background: #3a3228; }
@@ -546,9 +524,6 @@
 [data-theme="dark"] .pf-activity__icon,
 [data-theme="dark"] .pf-flag { background: #493b2d; }
 [data-theme="dark"] .pf-recipe__photo { background: repeating-linear-gradient(-45deg, #493b2d 0 12px, #3d3024 12px 24px); }
-[data-theme="dark"] .pf-badge.is-locked { background: #332a21; }
-[data-theme="dark"] .pf-badge.is-locked b,
-[data-theme="dark"] .pf-badge__need,
 [data-theme="dark"] .pf-flag--more { color: #a89968; }
 
 /* ===== profile media + states (avatar photo, cover photo, globe, private) ===== */
@@ -965,11 +940,6 @@
   .pf-stamp { padding: 14px 8px; min-width: 0; }
   .pf-stamp b,
   .pf-stamp small { max-width: 100%; text-align: center; overflow-wrap: anywhere; }
-
-  /* --- badges ----------------------------------------------------------- */
-  .pf-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .pf-badge { padding: 18px 10px; }
-  .pf-badge b { text-align: center; overflow-wrap: anywhere; }
 
   /* --- rail cards: stacked one under another. The ≤1040 rule turns the rail
          into a wrapping row of flex:1 cards and the ≤620 rule pins them to

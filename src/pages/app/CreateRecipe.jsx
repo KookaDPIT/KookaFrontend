@@ -8,6 +8,7 @@ import ImageUpload from '../../components/ImageUpload';
 import Toast from '../../components/Toast';
 import { IconBack } from '../../components/Icons';
 import { RECIPE_RANKS } from '../../lib/ranks';
+import { COURSES } from '../../lib/courses';
 import './CreateRecipe.css';
 
 export default function CreateRecipe() {
@@ -25,6 +26,11 @@ export default function CreateRecipe() {
   // Rank is what readers actually see on the card, and it gates access —
   // difficulty stays underneath for older clients.
   const [rank, setRank] = useState('copper');
+  /* Empty means "let the analyser decide" — the AI classifies the dish in the
+     same pass that estimates nutrition, and it is usually right. Asking is
+     still worth it: the author knows whether their cake is a dessert or a
+     bake sale entry, and the filter is only as good as the tag. */
+  const [course, setCourse] = useState('');
   const [images, setImages] = useState([]);
   const [ingredients, setIngredients] = useState(['']);
   const [steps, setSteps] = useState([{ text: '', timer: '' }]);
@@ -47,6 +53,7 @@ export default function CreateRecipe() {
         setDuration(r.duration_min || 0);
         setDifficulty(r.difficulty || 'easy');
         setRank(r.rank || 'copper');
+        setCourse(r.course || '');
         setImages(r.images?.length ? r.images : (r.image_url ? [r.image_url] : []));
         setIngredients(r.ingredients?.length ? r.ingredients : ['']);
         setSteps(
@@ -92,6 +99,7 @@ export default function CreateRecipe() {
       duration_min: Number(duration) || 0,
       difficulty,
       rank,
+      course,
       ingredients: cleanIngredients,
       steps: cleanSteps,
       image_url: images[0] || '',
@@ -183,8 +191,22 @@ export default function CreateRecipe() {
               ))}
             </select>
           </label>
+          <label className="create__field create__field--sm">
+            <span className="create__label">{t('create.course')}</span>
+            <select
+              className="create__input"
+              value={course}
+              onChange={(e) => setCourse(e.target.value)}
+            >
+              <option value="">{t('create.courseAuto')}</option>
+              {COURSES.map((c) => (
+                <option key={c.id} value={c.id}>{t(`courses.${c.id}`, c.name)}</option>
+              ))}
+            </select>
+          </label>
         </div>
         <span className="create__hint">{t('create.rankHint')}</span>
+        <span className="create__hint">{t('create.courseHint')}</span>
 
         {/* photos */}
         <div className="create__field">

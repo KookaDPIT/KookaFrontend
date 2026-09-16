@@ -254,3 +254,98 @@
 
   .search-page__recipes { gap: 10px; }
 }
+
+/* ==========================================================================
+   FILTERS — what kind of dish, and how heavy.
+
+   Two rows rather than one: courses are checkboxes (a dessert OR a snack is a
+   reasonable ask), the calorie band is a single choice, and mixing the two
+   selection models in one strip makes neither readable.
+   ========================================================================== */
+.sfilters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.sfilters__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.sfilters__label {
+  flex-shrink: 0;
+  min-width: 86px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #a8916a;
+}
+
+.sfilters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sfilters__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid #e7d8b6;
+  border-radius: 999px;
+  background: #fffdf9;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #6b5d43;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.sfilters__chip:hover { border-color: #d7c096; }
+
+.sfilters__chip.is-on {
+  border-color: transparent;
+  background: #ff6b35;
+  color: #fff;
+}
+
+.sfilters__clear {
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #a8916a;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sfilters__clear:hover { color: #2a2016; }
+
+[data-theme="dark"] .sfilters__chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d8c6a4;
+}
+[data-theme="dark"] .sfilters__chip.is-on { background: #ff6b35; color: #fff; border-color: transparent; }
+[data-theme="dark"] .sfilters__label,
+[data-theme="dark"] .sfilters__clear { color: #a89988; }
+
+/* ---- phone (≤640px) — additive; tablets and desktops are unchanged ----
+   The label above the chips instead of beside them: at 360px a 86px label
+   leaves the chips a column barely wider than one of them. */
+@media (max-width: 640px) {
+  .sfilters { gap: 14px; margin-bottom: 18px; }
+  .sfilters__row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .sfilters__label { min-width: 0; }
+  .sfilters__chip { min-height: 38px; padding: 8px 12px; }
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { geoOrthographic, geoPath } from 'd3-geo';
+import { geoArea, geoOrthographic, geoPath } from 'd3-geo';
 import world from '../data/countries.geo.json';
 import './WorldGlobe.css';
 
@@ -12,6 +12,16 @@ import './WorldGlobe.css';
 
    Auto-rotates; drag to spin manually. */
 const SIZE = 360;
+
+/* d3-geo reads polygons as spherical, so a ring wound the wrong way is not a
+   small country — it is everything except that country. Bermuda shipped that
+   way in this geojson and painted the whole globe in land colour, hiding every
+   feature drawn before it alphabetically: Argentina, Austria, Australia,
+   Belgium, Bulgaria and the rest of the A–B block simply were not there.
+   The data is fixed, but one bad ring should never be able to erase the map
+   again, so anything claiming more than half the sphere is dropped here. */
+const HEMISPHERE = 2 * Math.PI;
+const LAND = world.features.filter((f) => geoArea(f) <= HEMISPHERE);
 
 /* The stamp ramp: the brand orange at one dish, a deep burnt version at the
    top of your own range. It stays recognisably orange at both ends — going
@@ -79,7 +89,7 @@ export default function WorldGlobe({ visited = [], size = SIZE }) {
     return {
       spherePath: path({ type: 'Sphere' }),
       // some geojson territories share id "-99" (no ISO code), so key by index.
-      features: world.features.map((f, i) => {
+      features: LAND.map((f, i) => {
         const count = counts.get(f.id) || 0;
         return {
           key: `${f.id}-${i}`,

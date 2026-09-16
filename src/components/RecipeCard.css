@@ -40,6 +40,15 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
+/* Top-right corner of the photo: the flag owns the left, the rank pill sits
+   along the bottom, so this is the only corner that is free on every card. */
+.rcard__bmk {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
 .rcard__body {
   padding: 12px 14px 14px;
   display: flex;
@@ -182,4 +191,27 @@
 
 [data-theme="dark"] .rcard:hover {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.38);
+}
+
+/* The course tag — what kind of dish this is. Small and above the title: it is
+   context for the name, not a headline of its own. */
+.rcard__course {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-bottom: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(120, 80, 30, 0.09);
+  font-family: var(--font-important), sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  color: #8a7550;
+}
+
+[data-theme="dark"] .rcard__course {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9b48c;
 }

@@ -780,6 +780,7 @@
   margin: 10px 0 0;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -787,6 +788,22 @@
   font-size: 12.5px;
   color: rgba(255, 255, 255, 0.82);
 }
+
+/* The switch to the other language sits inside the badge that says which one
+   you are reading — the statement and the way to change it in one place. */
+.recipe__translate-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #ffb489;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.recipe__translate-btn:hover { color: #fff; }
 
 /* ==========================================================================
    PHONE (≤640px) — additive only; tablets and desktops are unchanged

@@ -4,8 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { getRecipe } from '../../services/recipes';
 import { askWhileCooking } from '../../services/ai';
 import { verifyCook } from '../../services/reviews';
+import { reportCookEvent, startCookSession } from '../../services/cooking';
 import { refreshUser } from '../../user';
 import { armTimer, endCook, startCook, updateCook, useCookSession } from '../../cook';
+import { RECIPE_RANKS } from '../../lib/ranks';
+import { languageName } from '../../lib/languages';
 import Modal from '../../components/Modal';
 import CookTimer from '../../components/CookTimer';
 import { KookaAvatar, IconSparkle, IconSend, IconHome, IconBack } from '../../components/Icons';
@@ -48,7 +51,7 @@ const nextId = () => `c${cid++}`;
 export default function Cook() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [recipe, setRecipe] = useState(undefined);
 
   const session = useCookSession();
@@ -72,18 +75,66 @@ export default function Cook() {
   const [cookPreview, setCookPreview] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
+  // Off by default — the translation is opt-in, same as on the recipe page.
+  const [englishOverride, setEnglishOverride] = useState(false);
   const fileRef = useRef(null);
+
+  /* The attempt being recorded on the backend. Every trophy that asks HOW a
+     dish went — how fast, how much help, timers skipped, gave up and came back
+     — reads that row; none of it survives in the finished state. Held in a ref
+     because nothing on screen depends on it and a re-render per event would be
+     pure waste. `askedSteps` keeps `ai_steps` counting distinct steps rather
+     than questions, which is what "Yes Chef" actually asks. */
+  const sessionRef = useRef(null);
+  const askedSteps = useRef(new Set());
+  const leftAppRef = useRef(false);
 
   useEffect(() => {
     getRecipe(id)
       .then((r) => {
         setRecipe(r);
         startCook(r);
+        const list = r?.steps || [];
+        startCookSession(r.id, {
+          stepsTotal: list.length,
+          timersAvailable: list.filter((step) => step?.timer).length,
+        }).then((sessionId) => { sessionRef.current = sessionId; });
       })
       .catch(() => setRecipe(null));
   }, [id]);
 
-  const steps = recipe?.steps || [];
+  /* "Locked In Cookin'" is the one trophy you lose by leaving, so leaving has
+     to be observed. `visibilitychange` covers switching tab, switching app and
+     locking the phone; it is reported once per session, because the trophy is
+     about whether you left at all, not how often. */
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState !== 'hidden' || leftAppRef.current) return;
+      leftAppRef.current = true;
+      reportCookEvent(sessionRef.current, { left_app: true });
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
+
+  /* Cook in the language the recipe was written in; English on request.
+
+     Only the TEXT comes from the original — timers, labels and the step count
+     stay on the canonical steps, which is also what the AI assistant reads
+     (it is given the step index, not the words). The backend guarantees the
+     two lists line up: a translation whose length does not match is rejected
+     outright (services/ai.translate_recipe). */
+  const original = recipe?.original;
+  const englishSteps = recipe?.steps || [];
+  const steps =
+    !englishOverride && original?.steps?.length === englishSteps.length
+      ? englishSteps.map((s, i) => ({
+        ...s,
+        text: (typeof original.steps[i] === 'string'
+          ? original.steps[i]
+          : original.steps[i]?.text) || s.text,
+      }))
+      : englishSteps;
   const step = steps[stepIndex] || { text: '' };
   const isLast = steps.length === 0 || stepIndex === steps.length - 1;
   const timedSteps = steps
@@ -96,6 +147,24 @@ export default function Cook() {
   useEffect(() => {
     armTimer(step.timer, step.label, stepIndex);
   }, [step.timer, step.label, stepIndex]);
+
+  /* Which steps' timers actually got started.
+
+     Observed off the session rather than wired through CookTimer: the timer
+     button lives in that component, and it is also reachable from the floating
+     dock while you are on another page, so a callback there would miss half
+     the presses. Counted once per step — "Chaotic Neutral" asks whether you
+     used the timers a recipe offered, not how often you paused them. */
+  const timerSteps = useRef(new Set());
+  const timer = session?.timer;
+  const timerRunning = Boolean(timer?.running);
+  const timerStep = timer?.stepIndex ?? stepIndex;
+  useEffect(() => {
+    if (!timerRunning) return;
+    if (timerSteps.current.has(timerStep)) return;
+    timerSteps.current.add(timerStep);
+    reportCookEvent(sessionRef.current, { timer_started: true });
+  }, [timerRunning, timerStep]);
 
   const pickFile = (f) => {
     if (!f) return;
@@ -110,7 +179,7 @@ export default function Cook() {
     setVerifying(true);
     setVerifyResult(null);
     try {
-      const res = await verifyCook(id, cookFile);
+      const res = await verifyCook(id, cookFile, sessionRef.current);
       setVerifyResult(res);
       if (res.verified) {
         // the pan is off the stove — clear the session so the dock goes away
@@ -162,6 +231,14 @@ export default function Cook() {
 
   const askKooka = async (clean) => {
     if (!clean || busy) return;
+    // Asking for help is half a dozen trophies, in both directions: some want
+    // you to ask a lot, "No Hand-Holding" and "One and Done" want you never to.
+    const firstOnThisStep = !askedSteps.current.has(stepIndex);
+    askedSteps.current.add(stepIndex);
+    reportCookEvent(sessionRef.current, {
+      ai_asks: 1,
+      ai_step: firstOnThisStep ? stepIndex : null,
+    });
     const user = { id: nextId(), role: 'user', text: clean };
     const typing = { id: nextId(), role: 'ai', typing: true };
     // The history sent along is the thread as it stands *before* this question;
@@ -217,7 +294,20 @@ export default function Cook() {
           ))}
         </div>
 
-        <div className="cook__step-no">{t('cook.stepLabel', { n: stepIndex + 1 })}</div>
+        <div className="cook__step-no">
+          {t('cook.stepLabel', { n: stepIndex + 1 })}
+          {original && (
+            <button
+              type="button"
+              className="cook__translate-btn"
+              onClick={() => setEnglishOverride((on) => !on)}
+            >
+              {englishOverride
+                ? t('recipe.showOriginal', { lang: languageName(original.language, i18n.language, original.language_name) })
+                : t('recipe.showEnglish')}
+            </button>
+          )}
+        </div>
         <p className="cook__step">{step.text}</p>
 
         <div className="cook__timerrow">
@@ -339,6 +429,7 @@ export default function Cook() {
               type="button"
               className="kbtn kbtn--danger"
               onClick={() => {
+                reportCookEvent(sessionRef.current, { gave_up: true });
                 endCook();
                 setForfeitOpen(false);
                 navigate('/home');
@@ -359,6 +450,40 @@ export default function Cook() {
         {verifyResult?.verified ? (
           <div className="cook__verified">
             <p className="cook__verified-msg">✅ {t('cook.verified')}</p>
+
+            {/* What the dish was actually worth. It used to be a flat 20 XP
+                that nobody saw; now it follows the recipe's rank, so the
+                breakdown is the only way to know why a Chef dish paid more
+                than the omelette — and why a repeat paid less. */}
+            {verifyResult.xp_gained > 0 && (
+              <div className="cook__reward">
+                <b className="cook__reward-total">+{verifyResult.xp_gained} XP</b>
+                <ul className="cook__reward-lines">
+                  <li>
+                    {t(
+                      verifyResult.times_cooked > 1 ? 'cook.rewardRepeat' : 'cook.rewardCook',
+                      {
+                        xp: verifyResult.cook_xp,
+                        rank: RECIPE_RANKS.find((r) => r.id === verifyResult.cook_rank)?.name
+                          || verifyResult.cook_rank,
+                      },
+                    )}
+                  </li>
+                  {verifyResult.challenge_completed && (
+                    <li>{t('cook.rewardChallenge', { xp: verifyResult.challenge_completed.xp })}</li>
+                  )}
+                  {verifyResult.mastered?.length > 0 && (
+                    <li>{t('cook.rewardMastery', { list: verifyResult.mastered.join(', ') })}</li>
+                  )}
+                </ul>
+                {verifyResult.rank_up && (
+                  <p className="cook__reward-rankup">
+                    {t('cook.rankUp', { rank: verifyResult.rank?.tier_label })}
+                  </p>
+                )}
+              </div>
+            )}
+
             <button
               type="button"
               className="cook__btn cook__btn--primary"

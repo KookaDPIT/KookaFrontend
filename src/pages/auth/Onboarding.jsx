@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAllergenCatalog, updateProfile } from '../../services/users';
-import { refreshUser } from '../../user';
+import { markAllergiesAnswered, refreshUser } from '../../user';
 import { ALLERGENS } from '../../lib/allergens';
 import kookaLogo from '../../assets/kooka-logo-clean.png';
 import './Onboarding.css';
@@ -25,6 +25,12 @@ export default function Onboarding() {
 
   const [catalog, setCatalog] = useState(ALLERGENS);
   const [picked, setPicked] = useState([]);
+  /* "I have none" is a separate piece of state from an empty `picked`.
+     They used to be the same thing, which is why the card looked selected
+     before anyone had touched it — and why somebody who tapped "not now" was
+     later nagged about having no allergies exactly like somebody who had
+     answered "none". */
+  const [noneChosen, setNoneChosen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -37,8 +43,20 @@ export default function Onboarding() {
     return () => { alive = false; };
   }, []);
 
-  const toggle = (id) =>
+  const toggle = (id) => {
+    setNoneChosen(false);
     setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+  };
+
+  const chooseNone = () => {
+    setNoneChosen(true);
+    setPicked([]);
+  };
+
+  /* Both a list of allergens and an explicit "none" count as an answer; an
+     untouched form does not, and the save button stays out of reach until one
+     of the two happens. */
+  const answered = noneChosen || picked.length > 0;
 
   const save = async () => {
     setSaving(true);
@@ -46,15 +64,15 @@ export default function Onboarding() {
       await updateProfile({ allergies: picked });
       await refreshUser();
     } catch {
-      /* Not worth blocking the door over — Settings offers the same form, and
-         an empty allergy list is the same as never having answered. */
+      /* Not worth blocking the door over — Settings offers the same form. */
     } finally {
+      // Local either way: the answer is what silences the reminders, and it
+      // should not depend on the network call having gone through.
+      markAllergiesAnswered();
       setSaving(false);
       navigate('/home', { replace: true });
     }
   };
-
-  const noneChosen = picked.length === 0;
 
   return (
     <div className="onb">
@@ -83,28 +101,39 @@ export default function Onboarding() {
         </div>
 
         {/* Saying "nothing" is an answer too, and it deserves to look like one
-            rather than being the state you get by not choosing. */}
+            rather than being the state you get by not choosing. It carries the
+            same tick as the allergen chips so it reads as a choice, not as a
+            second way out of the page. */}
         <button
           type="button"
           className={`onb__none ${noneChosen ? 'is-on' : ''}`}
-          onClick={() => setPicked([])}
+          aria-pressed={noneChosen}
+          onClick={chooseNone}
         >
-          <b>{t('onboarding.noneTitle')}</b>
-          <small>{t('onboarding.noneHint')}</small>
+          <span className="onb__none-text">
+            <b>{t('onboarding.noneTitle')}</b>
+            <small>{t('onboarding.noneHint')}</small>
+          </span>
+          <span className="onb__none-tick" aria-hidden="true">✓</span>
         </button>
 
         <div className="onb__actions">
-          <button
-            type="button"
-            className="onb__skip"
-            onClick={() => navigate('/home', { replace: true })}
-          >
-            {t('onboarding.skip')}
-          </button>
-          <button type="button" className="onb__save" onClick={save} disabled={saving}>
+          <button type="button" className="onb__save" onClick={save} disabled={saving || !answered}>
             {saving ? t('onboarding.saving') : t('onboarding.save')}
           </button>
         </div>
+
+        {/* Leaving without answering is deliberately the quiet option: a plain
+            text link under the actions, not a button beside the save. It is
+            also the one that keeps the reminders coming. */}
+        <button
+          type="button"
+          className="onb__skip"
+          onClick={() => navigate('/home', { replace: true })}
+        >
+          {t('onboarding.skip')}
+          <small>{t('onboarding.skipHint')}</small>
+        </button>
 
         <p className="onb__later">{t('onboarding.later')}</p>
       </div>
