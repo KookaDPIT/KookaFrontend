@@ -453,10 +453,6 @@ export default function Recipe() {
               >
                 {t('recipe.cook')}
               </button>
-              {/* Next to "cook it" and "put it in the calendar", because it is
-                  the third answer to the same question: now, on a date, or
-                  some day. */}
-              <BookmarkButton recipeId={recipe.id} size="lg" />
               {isAuthor && (
                 <button
                   type="button"
@@ -466,13 +462,20 @@ export default function Recipe() {
                   ✎ {t('recipe.edit')}
                 </button>
               )}
-              <button
-                type="button"
-                className="recipe__shopping recipe__calendar-button"
-                onClick={() => setCalendarOpen((open) => !open)}
-              >
-                {calendarAdded ? `✓ ${t('recipe.calendarAdded')}` : `📅 ${t('recipe.addToCalendar')}`}
-              </button>
+              {/* "On a date" and "some day" are the same question answered at
+                  two lengths, so they share a line: the calendar takes the
+                  room it needs for its label, the ribbon takes a square at the
+                  end of it. */}
+              <div className="recipe__when">
+                <button
+                  type="button"
+                  className="recipe__shopping recipe__calendar-button"
+                  onClick={() => setCalendarOpen((open) => !open)}
+                >
+                  {calendarAdded ? `✓ ${t('recipe.calendarAdded')}` : `📅 ${t('recipe.addToCalendar')}`}
+                </button>
+                <BookmarkButton recipeId={recipe.id} size="lg" className="recipe__bmk" />
+              </div>
               {calendarOpen && (
                 <div className="recipe__calendar-popover">
                   <label htmlFor="recipe-calendar-date">{t('recipe.addToCalendar')}</label>
@@ -586,6 +589,17 @@ export default function Recipe() {
           >
             {ingredientsAdded ? `✓ ${t('recipe.ingredientsAdded')}` : `🛒 ${t('recipe.addIngredients')}`}
           </button>
+          {/* The other way to take the list with you. The browser's print
+              dialog is also its "save as PDF", so one button covers both the
+              person who wants paper on the counter and the one who wants a
+              file on their phone. */}
+          <button
+            type="button"
+            className="recipe__shopping recipe__shopping--body recipe__print-btn"
+            onClick={() => window.print()}
+          >
+            🖨 {t('recipe.printIngredients')}
+          </button>
         </section>
 
         <section className="recipe__col recipe__col--method">
@@ -698,6 +712,45 @@ export default function Recipe() {
         targetId={recipe.id}
         onDone={(msg) => { setReported(true); flash(msg); }}
       />
+
+      {/* ---- the printed sheet ----
+          Not a second rendering of the page with things hidden: what you want
+          on the counter is the shopping half of the recipe, laid out for
+          paper, in Kooka's own type and colours rather than in whatever the
+          browser reaches for. Everything else is hidden for print (see
+          Recipe.css), so this is the only thing that reaches the page. */}
+      <div className="recipe__print" aria-hidden="true">
+        <header className="recipe__print-head">
+          <p className="recipe__print-brand">Kooka</p>
+          {[country?.name, recipe.meta?.servings, recipe.meta?.time]
+            .filter(Boolean).length > 0 && (
+            <p className="recipe__print-eyebrow">
+              {[country?.name, recipe.meta?.servings, recipe.meta?.time]
+                .filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <h1 className="recipe__print-title">{shown.title}</h1>
+        </header>
+
+        <h2 className="recipe__print-label">{t('recipe.ingredients')}</h2>
+        {/* Two columns only once there is enough to fill them. Five lines
+            split down the middle of an A4 reads as a mistake. */}
+        <ul className={`recipe__print-list ${(shown.ingredients?.length || 0) > 8 ? 'is-wide' : ''}`}>
+          {shown.ingredients?.map((ing, i) => (
+            <li key={i}>{ing}</li>
+          ))}
+        </ul>
+
+        {allergens.contains?.length > 0 && (
+          <p className="recipe__print-aller">
+            <b>{t('recipe.contains')}</b> {allergens.contains.join(' · ')}
+          </p>
+        )}
+
+        <p className="recipe__print-foot">
+          {typeof window !== 'undefined' ? window.location.href : ''}
+        </p>
+      </div>
 
       <Toast message={toast} />
     </div>
