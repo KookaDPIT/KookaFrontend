@@ -2,11 +2,22 @@
    COOK — dark step-by-step cook-along + inline AI panel
    ========================================================================== */
 .cook {
-  flex: 1;
+  /* NOT `flex: 1`. The page area is a flex COLUMN, so flex sizing owns the
+     height — a `flex: 1` item takes the container's height and ignores its own
+     `height: 100svh`, while the container in turn stretches to fit the
+     content. The two chased each other: the footer with "next step" ended up
+     below the fold and the whole page scrolled to reach it. Fixed at its own
+     declared height, the frame is exactly one screen and the step text is what
+     scrolls. */
+  flex: 0 0 auto;
   min-width: 0;
   display: grid;
   grid-template-columns: 1fr 0fr;
-  grid-template-rows: 1fr auto;
+  /* `minmax(0, 1fr)`, not `1fr`: a bare `1fr` track has an AUTO minimum, so a
+     long step made the first row taller than the screen, pushed the footer —
+     "next step" — below the fold, and the whole page scrolled. The phone and
+     tablet blocks below already had this; the desktop one did not. */
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100svh;
   min-height: 0;
   overflow: hidden;
@@ -21,6 +32,11 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* The step text is the part that gives way when there is not enough room.
+     The footer never does: reaching for "next step" should never mean
+     hunting for it. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px 30px 26px;
   background: radial-gradient(120% 130% at 20% 0%, #3a2519 0%, #211510 100%);
   color: #fff8ef;
