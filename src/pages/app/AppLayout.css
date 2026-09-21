@@ -487,3 +487,16 @@ body:has(.cdock) .app-more__panel {
 @media (min-width: 560px) and (max-width: 900px) {
   .app-more__panel { left: auto; right: 16px; width: 288px; }
 }
+
+/* ==========================================================================
+   SAVED LIST — the one rail entry that opens a panel instead of navigating.
+
+   It borrows `.app-nav__link` for its looks, so only the bits a <button> does
+   not inherit from an <a> are here.
+   ========================================================================== */
+.app-nav__link--panel {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.app-nav__link--panel svg { fill: none; }

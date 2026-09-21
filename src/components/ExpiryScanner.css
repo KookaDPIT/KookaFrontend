@@ -1,0 +1,91 @@
+/* ==========================================================================
+   EXPIRY SCANNER — inside the shared Modal, so only its own parts are here.
+   ========================================================================== */
+.ocr__sub {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--k-faint, #8a7a63);
+}
+
+/* the real input is driven by the big button below it */
+.ocr__file { display: none; }
+
+.ocr__shoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  border: 1.5px dashed #d9c6a4;
+  border-radius: 14px;
+  background: #fffaf1;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #6b563a;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ocr__shoot:hover:not(:disabled) { border-color: #c9ad7f; background: #fff5e6; }
+.ocr__shoot:disabled { opacity: 0.6; cursor: progress; }
+
+.ocr__error,
+.ocr__miss {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ocr__error { color: #c0392b; }
+.ocr__miss { color: var(--k-faint, #8a7a63); }
+
+.ocr__label {
+  display: block;
+  margin: 18px 0 6px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a7a63;
+}
+
+.ocr__date {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #e3d4b8;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: inherit;
+}
+
+/* What the OCR actually saw, verbatim. A low-confidence read is the one worth
+   double-checking: packages print a production date too, and it looks the
+   same. */
+.ocr__read {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--k-faint, #8a7a63);
+}
+.ocr__read--low { color: #a8762a; }
+
+.ocr__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+[data-theme="dark"] .ocr__shoot {
+  border-color: #4a4034;
+  background: #2b2620;
+  color: #e8dcc8;
+}
+[data-theme="dark"] .ocr__shoot:hover:not(:disabled) { background: #332d25; }
+[data-theme="dark"] .ocr__date {
+  border-color: #4a4034;
+  background: #2b2620;
+  color: #e8dcc8;
+}

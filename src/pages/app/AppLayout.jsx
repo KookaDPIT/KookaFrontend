@@ -5,12 +5,19 @@ import { useTranslation } from 'react-i18next';
 import { useSettings, applyTheme } from '../../settings';
 import { useUser, refreshUser } from '../../user';
 import { updateProfile } from '../../services/users';
+import BookmarkPanel from '../../components/BookmarkPanel';
 import CookDock from '../../components/CookDock';
 import SiteFooter from '../../components/SiteFooter';
 import kookaIcon from '../../assets/kooka-icon.png';
 import './AppLayout.css';
 
 const ICONS = {
+  bookmarks: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 3.5h12a1.5 1.5 0 0 1 1.5 1.5v15.2a.8.8 0 0 1-1.22.68L12 16.9l-6.28 3.98A.8.8 0 0 1 4.5 20.2V5A1.5 1.5 0 0 1 6 3.5z" />
+    </svg>
+  ),
   home: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -185,6 +192,14 @@ const NAV = [
 
 const ADMIN_ITEM = { to: '/admin', key: 'admin', icon: ICONS.admin };
 
+/* The saved list is a rail entry like any other, except it opens a panel
+   instead of going somewhere (`panel: true`). It is measured with the
+   destinations and it collapses with them — and because it is appended last,
+   it is the first thing to move behind "More" when the rail runs short. A
+   place you already keep things is the one that can afford to be one tap
+   deeper; the places you navigate to cannot. */
+const BOOKMARKS_ITEM = { key: 'bookmarks', icon: ICONS.bookmarks, panel: true };
+
 export default function AppLayout() {
   const { t, i18n } = useTranslation();
   const [settings, updateSettings] = useSettings();
@@ -267,7 +282,7 @@ export default function AppLayout() {
      also settles the circularity an earlier arrangement had, where the
      switches moved between the rail and the drawer: the thing being measured
      no longer depends on the outcome of the measurement. */
-  const items = isStaff ? [...NAV, ADMIN_ITEM] : NAV;
+  const items = [...NAV, ...(isStaff ? [ADMIN_ITEM] : []), BOOKMARKS_ITEM];
   const capacity = useNavCapacity(listRef, items.length);
 
   /* Controls, kept apart from the destinations above them in the panel. The
@@ -297,6 +312,11 @@ export default function AppLayout() {
   const hidden = items.slice(slots);
 
   const [moreOpen, setMoreOpen] = useState(false);
+  /* The saved list used to live on Home only, which made it a place you
+     visited rather than a thing you had. It is the same panel — it just opens
+     from the rail now, so a recipe you saved is one tap away from the forum,
+     the planner or the middle of a chat. */
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const moreRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -340,7 +360,19 @@ export default function AppLayout() {
         </div>
 
         <nav className="app-nav__links" ref={listRef}>
-          {shown.map((item) => (
+          {shown.map((item) => (item.panel ? (
+            <button
+              key={item.key}
+              type="button"
+              className="app-nav__link app-nav__link--panel"
+              onClick={() => setBookmarksOpen(true)}
+              aria-haspopup="dialog"
+              title={t('bookmarks.title')}
+            >
+              <span className="app-nav__icon">{item.icon}</span>
+              <span className="app-nav__label">{t(`nav.${item.key}`)}</span>
+            </button>
+          ) : (
             <NavLink
               key={item.key}
               to={item.to}
@@ -351,7 +383,7 @@ export default function AppLayout() {
               <span className="app-nav__icon">{item.icon}</span>
               <span className="app-nav__label">{t(`nav.${item.key}`)}</span>
             </NavLink>
-          ))}
+          )))}
 
           <div className="app-more" ref={moreRef}>
               <button
@@ -378,7 +410,21 @@ export default function AppLayout() {
                       when every one of them had a place. */}
                   {hidden.length > 0 && (
                     <div className="app-more__group">
-                      {hidden.map((item) => (
+                      {hidden.map((item) => (item.panel ? (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className="app-more__item"
+                          role="menuitem"
+                          onClick={() => { setBookmarksOpen(true); setMoreOpen(false); }}
+                        >
+                          <span className="app-more__icon">{item.icon}</span>
+                          <span>
+                            <b>{t(`nav.${item.key}`)}</b>
+                            <small>{t(`nav.${item.key}Hint`)}</small>
+                          </span>
+                        </button>
+                      ) : (
                         <NavLink
                           key={item.key}
                           to={item.to}
@@ -391,7 +437,7 @@ export default function AppLayout() {
                             <small>{t(`nav.${item.key}Hint`)}</small>
                           </span>
                         </NavLink>
-                      ))}
+                      )))}
                     </div>
                   )}
 
@@ -428,6 +474,8 @@ export default function AppLayout() {
         <Outlet />
         {showFooter && <SiteFooter />}
       </main>
+
+      <BookmarkPanel open={bookmarksOpen} onClose={() => setBookmarksOpen(false)} />
 
       {/* the pan you left on the stove — hidden on the cook-along itself */}
       <CookDock />

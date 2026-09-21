@@ -38,6 +38,21 @@ export async function moderateRecipe(id, action) {
   return data;
 }
 
+/* Translate a recipe into `lang`, on demand.
+
+   Nothing is translated automatically: a recipe is stored in English and read
+   in the language its author wrote it in, and turning every page view into a
+   model call to produce a third version nobody asked for would be slow and
+   expensive. This runs when somebody presses the button, and the backend
+   keeps the result so the second reader pays nothing.
+
+   Rejects with 503 when the model is unreachable — the caller should say so
+   rather than silently showing the untranslated text. */
+export async function translateRecipe(id, lang) {
+  const { data } = await api.post(`/recipes/${id}/translate`, null, { params: { lang } });
+  return data; // { language, cached, translated, title, description, ingredients, steps }
+}
+
 export async function getDailyDish() {
   const { data } = await api.get('/daily-dish');
   return data.daily; // null when the catalogue is empty

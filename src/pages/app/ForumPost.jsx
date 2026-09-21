@@ -46,6 +46,8 @@ export default function ForumPost() {
   const [report, setReport] = useState(null);
   const [reported, setReported] = useState(() => new Set());
   const [toast, setToast] = useState('');
+  /* The photo opened at full size, or '' for none. */
+  const [lightbox, setLightbox] = useState('');
 
   const flash = (msg) => {
     setToast(msg);
@@ -210,6 +212,25 @@ export default function ForumPost() {
 
           {post.body && <div className="fp-body">{post.body}</div>}
 
+          {/* Full width, in the order they were uploaded. Clicking one opens it
+              at its own size — the thumbnails are cropped to a common height so
+              the strip stays a strip, and a burnt edge is worth a closer look. */}
+          {post.images?.length > 0 && (
+            <div className={`fp-gallery ${post.images.length === 1 ? 'is-single' : ''}`}>
+              {post.images.map((url, i) => (
+                <button
+                  key={url}
+                  type="button"
+                  className="fp-gallery__item"
+                  onClick={() => setLightbox(url)}
+                  aria-label={t('forum.openPhoto', { n: i + 1 })}
+                >
+                  <img src={url} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="fp-actions">
             <div className="fp-vote">
               <button
@@ -361,6 +382,12 @@ export default function ForumPost() {
           flash(msg);
         }}
       />
+
+      {/* A photo at its own size, on a plain backdrop. Same Modal as the rest
+          of the page, so Escape and the outside click already work. */}
+      <Modal open={Boolean(lightbox)} onClose={() => setLightbox('')} title={t('forum.photo')}>
+        {lightbox && <img className="fp-lightbox__img" src={lightbox} alt="" />}
+      </Modal>
 
       <Toast message={toast} />
     </div>

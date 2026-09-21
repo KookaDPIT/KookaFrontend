@@ -385,3 +385,58 @@
 @media (max-width: 640px) {
   .fp-comment__report { min-width: 32px; min-height: 32px; }
 }
+
+/* ==========================================================================
+   PHOTOS
+
+   A strip under the text, not beside it: the words are the post and the
+   pictures are the evidence. Thumbnails share a height so the row stays a row
+   whatever mix of portrait and landscape somebody uploaded.
+   ========================================================================== */
+.fp-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 16px 0 4px;
+}
+
+/* One photo gets the whole width — cropping a single picture into a thumbnail
+   the size of three is the one case where the grid actively loses. */
+.fp-gallery.is-single { grid-template-columns: 1fr; }
+
+.fp-gallery__item {
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: zoom-in;
+  line-height: 0;
+  box-shadow: 0 2px 8px rgba(74, 47, 20, 0.14);
+  transition: transform 0.14s ease, box-shadow 0.18s ease;
+}
+.fp-gallery__item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(74, 47, 20, 0.22);
+}
+
+.fp-gallery__item img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+.fp-gallery.is-single .fp-gallery__item img { height: auto; max-height: 460px; object-fit: contain; }
+
+.fp-lightbox__img {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .fp-gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+  .fp-gallery__item img { height: 118px; }
+}

@@ -51,7 +51,21 @@ function compact(n) {
 /* One homescreen tile. `lead` gets the 2x2 slot and shows an excerpt. */
 function Tile({ post, lead, onOpen, onVote, t }) {
   return (
-    <article className={`fo-tile fo-tile--${post.tag} ${lead ? 'is-lead' : ''}`}>
+    <article
+      className={`fo-tile fo-tile--${post.tag} ${lead ? 'is-lead' : ''} ${
+        post.images?.length ? 'has-photo' : ''}`}
+    >
+      {/* The first photo becomes the face of the tile, under the same scrim
+          that keeps the title readable. The tag colour stays as the ground
+          beneath it, so a mosaic of photo and no-photo tiles still reads as
+          one wall. */}
+      {post.images?.[0] && (
+        <span
+          className="fo-tile__cover"
+          style={{ backgroundImage: `url(${post.images[0]})` }}
+          aria-hidden="true"
+        />
+      )}
       <button
         type="button"
         className="fo-tile__open"
@@ -63,6 +77,15 @@ function Tile({ post, lead, onOpen, onVote, t }) {
             <i aria-hidden="true">{TAG_EMOJI[post.tag] || '💬'}</i>
             {t(`forum.tags.${post.tag}`)}
           </span>
+          {post.images?.length > 1 && (
+            <span className="fo-tile__photos" title={t('forum.photoCount', { count: post.images.length })}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6h16v12H4z" />
+                <path d="M4 15l4-4 3 3 4-4 5 5" />
+              </svg>
+              {post.images.length}
+            </span>
+          )}
           <span className="fo-tile__id">#{post.id}</span>
         </span>
 

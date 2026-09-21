@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { countryOf } from '../data/countries';
+import Flag from './Flag';
 import { courseEmoji } from '../lib/courses';
 import BookmarkButton from './BookmarkButton';
 import Stars from './Stars';
@@ -21,9 +22,7 @@ export default function RecipeCard({ recipe }) {
       >
         {!recipe.image_url && <span className="rcard__placeholder">🍳</span>}
         {country && (
-          <span className="rcard__flag" title={country.name}>
-            {country.flag}
-          </span>
+          <Flag code={country.c2} title={country.name} className="rcard__flag" />
         )}
         {/* Save for later, without leaving whatever list you are scrolling.
             The card is a <Link>, so the button stops the click itself. */}

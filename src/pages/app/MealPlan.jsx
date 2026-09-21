@@ -5,6 +5,7 @@ import {
   listShopping, addShoppingItem, updateShoppingItem, deleteShoppingItem,
   clearShopping, listMeals, addMeal, deleteMeal, mealToShopping, MEAL_SLOTS,
 } from '../../services/planner';
+import ExpiryScanner from '../../components/ExpiryScanner';
 import { search as searchAll } from '../../services/search';
 import Toast from '../../components/Toast';
 import './MealPlan.css';
@@ -41,6 +42,37 @@ function startOfWeek(date) {
    "a bunch" — but the common ones should be one tap. */
 const UNITS = ['', 'g', 'kg', 'ml', 'l', 'tbsp', 'tsp', 'pcs'];
 
+/* Whole days from today to an ISO date. Both ends are pinned to local
+   midnight, so "tomorrow" is tomorrow whatever time it is now — comparing
+   timestamps would call 23:00 today "0 days" and 01:00 tomorrow "1 day". */
+function daysUntil(iso) {
+  const target = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target - today) / 86400000);
+}
+
+/* "3 days" is what you need in front of the fridge; the date itself is what
+   you need when it is still weeks away. */
+function expiryLabel(iso, t) {
+  const days = daysUntil(iso);
+  if (days === null) return iso;
+  if (days < 0) return t('ocr.expired');
+  if (days === 0) return t('ocr.expiresToday');
+  if (days <= 7) return t('ocr.expiresIn', { count: days });
+  return iso;
+}
+
+function expiryTone(iso) {
+  const days = daysUntil(iso);
+  if (days === null) return '';
+  if (days < 0) return 'is-gone';
+  if (days <= 2) return 'is-urgent';
+  if (days <= 7) return 'is-soon';
+  return '';
+}
+
 export default function MealPlan() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -59,6 +91,9 @@ export default function MealPlan() {
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({ name: '', quantity: '', unit: '' });
   const editNameRef = useRef(null);
+  /* The item whose expiry date is being scanned, or null. One scanner for the
+     whole list rather than one per row — only one camera, only one date. */
+  const [scanning, setScanning] = useState(null);
 
   // calendar
   const [weekOffset, setWeekOffset] = useState(0);
@@ -184,6 +219,21 @@ export default function MealPlan() {
     } catch {
       flash(t('common.error'));
       reloadShopping();
+    }
+  };
+
+  /* The date read off the packaging (or typed by hand when the print was
+     unreadable). Stored on the line, so once you have carried it home the list
+     also tells you what has to be cooked first. Empty clears it. */
+  const saveExpiry = async (value) => {
+    const item = scanning;
+    if (!item) return;
+    try {
+      const saved = await updateShoppingItem(item.id, { expires_at: value });
+      setShopping((list) => list.map((i) => (i.id === item.id ? saved : i)));
+      flash(value ? t('ocr.saved', { date: value }) : t('ocr.cleared'));
+    } catch {
+      flash(t('common.error'));
     }
   };
 
@@ -403,6 +453,28 @@ export default function MealPlan() {
                         </span>
                       </label>
                       <span className="meal-plan__item-actions">
+                        {/* The date on the package, read by the camera. Shown
+                            as a chip once it is known, so the line answers
+                            "what goes off first" at a glance. */}
+                        {item.expires_at ? (
+                          <button
+                            type="button"
+                            className={`meal-plan__expiry ${expiryTone(item.expires_at)}`}
+                            onClick={() => setScanning(item)}
+                            title={t('ocr.changeDate')}
+                          >
+                            {expiryLabel(item.expires_at, t)}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="meal-plan__linkbtn meal-plan__scan"
+                            onClick={() => setScanning(item)}
+                            title={t('ocr.title')}
+                          >
+                            <span aria-hidden="true">📷</span> {t('ocr.scan')}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="meal-plan__linkbtn"
@@ -586,6 +658,17 @@ export default function MealPlan() {
           </section>
         </section>
       </div>
+
+      {/* Keyed by the line it belongs to: the scanner seeds its editable date
+          from `initial` on mount, so without a fresh instance per item it
+          would keep showing whatever the first one had. */}
+      <ExpiryScanner
+        key={scanning?.id || 'none'}
+        open={Boolean(scanning)}
+        onClose={() => setScanning(null)}
+        onPick={saveExpiry}
+        initial={scanning?.expires_at || ''}
+      />
 
       <Toast message={toast} />
     </div>

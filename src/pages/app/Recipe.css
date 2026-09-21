@@ -64,6 +64,10 @@
   color: #ff9f70;
 }
 
+/* Slightly larger than the 12px eyebrow text around it — at 12px a flag is a
+   smudge, and the country is the point of the line. */
+.recipe__eyebrow-flag { font-size: 15px; }
+
 .recipe__title {
   margin: 8px 0 6px;
   font-family: var(--font-title), cursive;

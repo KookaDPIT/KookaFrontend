@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getForumMeta, createPost, getPost, updatePost } from '../../services/forum';
 import { languageName, languageEndonym, hasDistinctEndonym } from '../../lib/languages';
 import LanguagePicker from '../../components/LanguagePicker';
+import ImageUpload from '../../components/ImageUpload';
 import Modal from '../../components/Modal';
 import './CreateForumPost.css';
 
@@ -30,6 +31,7 @@ export default function CreateForumPost() {
     tag: 'question',
     title: '',
     body: '',
+    images: [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +51,11 @@ export default function CreateForumPost() {
       .then((p) => {
         if (!alive) return;
         setForm({
-          language: p.language, tag: p.tag, title: p.title, body: p.body || '',
+          language: p.language,
+          tag: p.tag,
+          title: p.title,
+          body: p.body || '',
+          images: p.images || [],
         });
       })
       .catch(() => { if (alive) setError(t('forum.notFoundTitle')); });
@@ -189,6 +195,22 @@ export default function CreateForumPost() {
             onChange={(e) => set('body', e.target.value)}
             placeholder={t('forum.bodyPh')}
             rows={8}
+          />
+        </div>
+
+        {/* ---- photos ----
+            Half the forum is "does this look right?" and "here's what mine
+            came out like", and until now the only answer was a paragraph
+            describing a picture. */}
+        <div className="cfp-field">
+          <label htmlFor="cfp-images">{t('forum.imagesLabel')}</label>
+          <p className="cfp-hint">{t('forum.imagesHint')}</p>
+          <ImageUpload
+            multiple
+            folder="/forum"
+            value={form.images}
+            onChange={(urls) => set('images', urls.slice(0, 6))}
+            label={t('forum.addPhotos')}
           />
         </div>
 

@@ -7,6 +7,7 @@ import { getPassport } from '../../services/users';
 import { getMyStreaks } from '../../services/streaks';
 import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import { countryOf } from '../../data/countries';
+import Flag from '../../components/Flag';
 import { RANK_COLORS } from '../../lib/ranks';
 import { addRecipeToShopping } from '../../services/planner';
 import RecipeCard from '../../components/RecipeCard';
@@ -345,7 +346,9 @@ export default function Home() {
           <div className="home-daily">
             <span className="home-daily__badge">
               {t('home.dailyDish')}
-              {dailyCountry && <span className="home-daily__flag">{dailyCountry.flag}</span>}
+              {dailyCountry && (
+                <Flag code={dailyCountry.c2} title={dailyCountry.name} className="home-daily__flag" />
+              )}
             </span>
 
             {daily === undefined ? (
@@ -486,9 +489,12 @@ export default function Home() {
                 <span className="home-passport__empty">🌍</span>
               ) : (
                 passport.slice(0, 6).map((c) => (
-                  <span className="home-passport__flag" key={c.country} title={countryOf(c.country).name}>
-                    {countryOf(c.country).flag}
-                  </span>
+                  <Flag
+                    key={c.country}
+                    code={countryOf(c.country).c2}
+                    title={countryOf(c.country).name}
+                    className="home-passport__flag"
+                  />
                 ))
               )}
             </div>

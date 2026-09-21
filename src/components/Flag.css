@@ -1,0 +1,21 @@
+/* The flag sits on a text line, so it is sized in `em` and aligned to the
+   letters around it rather than to the baseline of the box. The border is the
+   difference between a flag and a coloured rectangle: white flags (Japan) and
+   flags with a white edge would otherwise dissolve into a light card. */
+.flag {
+  display: inline-block;
+  width: 1.35em;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  vertical-align: -0.18em;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 12%);
+  background: rgb(0 0 0 / 4%);
+}
+
+.flag--none {
+  width: auto;
+  box-shadow: none;
+  background: none;
+}

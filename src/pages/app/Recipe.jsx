@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getRecipe, moderateRecipe } from '../../services/recipes';
+import { getRecipe, moderateRecipe, translateRecipe } from '../../services/recipes';
+import { addMeal, addRecipeToShopping, MEAL_SLOTS } from '../../services/planner';
 import ModerationBar from '../../components/ModerationBar';
 import Modal from '../../components/Modal';
 import { countryOf } from '../../data/countries';
+import Flag from '../../components/Flag';
 import { languageName } from '../../lib/languages';
 import { allergiesHaveBeenAnswered, useUser } from '../../user';
 import Reviews from '../../components/Reviews';
@@ -96,10 +98,19 @@ export default function Recipe() {
   const [ingredientsAdded, setIngredientsAdded] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date().toISOString().slice(0, 10));
+  const [calendarSlot, setCalendarSlot] = useState('dinner');
   const [calendarAdded, setCalendarAdded] = useState(false);
+  /* Which write is in flight, so a double tap cannot post the same dish twice
+     — the whole point of the fix is that these now hit the network. */
+  const [busy, setBusy] = useState('');
   const [cookWarning, setCookWarning] = useState(null);
   /* Off by default: the English version is shown only when asked for. */
   const [englishOverride, setEnglishOverride] = useState(false);
+  /* The third version: this recipe in the language the reader has set. It does
+     not exist until somebody asks for it — see `translateForMe`. */
+  const [translation, setTranslation] = useState(null);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reported, setReported] = useState(false);
   const [toast, setToast] = useState('');
@@ -148,7 +159,49 @@ export default function Recipe() {
     ? languageName(original.language, i18n.language, original.language_name)
     : '';
   const showEnglish = englishOverride || !original;
-  const shown = showEnglish ? recipe : { ...recipe, ...original };
+
+  /* Three versions can be on screen, in order of how directly they answer
+     "what does this say": the reader's own language when they asked for it,
+     the author's words, and the stored English.
+
+     The translation wins when it is showing, because asking for it is the most
+     explicit thing anybody does on this page. */
+  const shown = showTranslation && translation
+    ? { ...recipe, ...translation }
+    : showEnglish ? recipe : { ...recipe, ...original };
+
+  /* The language the interface is in, which is the one to offer. A recipe
+     already readable in it — written in it, or stored English while the
+     interface is English — has nothing to offer. */
+  const uiLang = (i18n.language || 'en').slice(0, 2);
+  const readingLang = showTranslation && translation
+    ? translation.language
+    : showEnglish ? 'en' : (original?.language || 'en');
+  const canTranslate = readingLang !== uiLang;
+  const uiLangName = languageName(uiLang, i18n.language);
+
+  /* One call per recipe per language: the backend keeps what it produced, and
+     once it is in state, flipping the button back and forth is free. */
+  const translateForMe = async () => {
+    if (translation && translation.language === uiLang) {
+      setShowTranslation(true);
+      setEnglishOverride(false);
+      return;
+    }
+    setTranslating(true);
+    try {
+      const data = await translateRecipe(recipe.id, uiLang);
+      setTranslation(data);
+      setShowTranslation(true);
+      setEnglishOverride(false);
+    } catch {
+      // 503 from the backend when the model is down. Saying nothing would look
+      // like the button does nothing at all.
+      flash(t('recipe.translateFailed'));
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const method = (shown.steps || []).map((s) => (typeof s === 'string' ? s : s.text));
   const allergens = recipe.allergens || { contains: [], free: [] };
@@ -195,34 +248,43 @@ export default function Recipe() {
     window.setTimeout(() => setToast(''), 2600);
   };
 
-  const addIngredientsToShoppingList = () => {
-    let shopping = [];
+  /* Both of these used to write to localStorage under their own private keys.
+     The planner stopped reading those keys when the list and the calendar
+     moved onto the account — so the buttons went on saying "added" while the
+     meal plan page, which asks the backend, stayed empty. Same call the
+     planner's own buttons make, so what you add here is on your phone too. */
+  const addIngredientsToShoppingList = async () => {
+    if (busy) return;
+    setBusy('shopping');
     try {
-      shopping = JSON.parse(localStorage.getItem('kooka_shopping_list')) || [];
-    } catch { /* unavailable storage leaves the in-memory list empty */ }
-    const next = [...shopping];
-    (recipe.ingredients || []).forEach((ingredient) => {
-      const name = ingredient.trim();
-      const existing = next.find((item) => item.name.toLowerCase() === name.toLowerCase() && item.quantity == null);
-      if (!existing) next.push({ id: `${name}-${Date.now()}-${next.length}`, name, quantity: null });
-    });
-    localStorage.setItem('kooka_shopping_list', JSON.stringify(next));
-    setIngredientsAdded(true);
+      const res = await addRecipeToShopping(recipe.id);
+      setIngredientsAdded(true);
+      flash(t('mealPlan.ingredientsAdded', { count: res.added ?? 0 }));
+    } catch {
+      flash(t('common.error'));
+    } finally {
+      setBusy('');
+    }
   };
 
-  const addRecipeToCalendar = () => {
-    if (!calendarDate) return;
-    let meals = {};
+  const addRecipeToCalendar = async () => {
+    if (!calendarDate || busy) return;
+    setBusy('calendar');
     try {
-      meals = JSON.parse(localStorage.getItem('kooka_meal_plan')) || {};
-    } catch { /* unavailable storage leaves the calendar in memory only */ }
-    const next = {
-      ...meals,
-      [calendarDate]: [...(meals[calendarDate] || []), { id: recipe.id, title: recipe.title }],
-    };
-    localStorage.setItem('kooka_meal_plan', JSON.stringify(next));
-    setCalendarAdded(true);
-    setCalendarOpen(false);
+      await addMeal({
+        date: calendarDate,
+        recipeId: recipe.id,
+        title: recipe.title,
+        slot: calendarSlot,
+      });
+      setCalendarAdded(true);
+      setCalendarOpen(false);
+      flash(t('recipe.calendarSaved', { date: calendarDate }));
+    } catch {
+      flash(t('common.error'));
+    } finally {
+      setBusy('');
+    }
   };
 
   /* A moderator who lands on a recipe should be able to act on it here rather
@@ -257,7 +319,11 @@ export default function Recipe() {
         <div className="recipe__hero-inner">
           <div className="recipe__hero-text">
             <span className="recipe__eyebrow">
-              {country ? `${country.flag} ${country.name}` : 'Recipe'}
+              {country ? (
+                <>
+                  <Flag code={country.c2} className="recipe__eyebrow-flag" /> {country.name}
+                </>
+              ) : 'Recipe'}
             </span>
             <h1 className="recipe__title">{shown.title}</h1>
             {shown.description && <p className="recipe__tagline">{shown.description}</p>}
@@ -265,29 +331,63 @@ export default function Recipe() {
             {/* Which version you are reading, and how to get the other one.
                 Without the original stored there is nothing to offer, so older
                 recipes keep the plain "translated from X" note. */}
-            {original ? (
-              <p className="recipe__translated">
-                {showEnglish
-                  ? t('recipe.readingEnglish', { lang: originalLang })
-                  : t('recipe.readingOriginal', { lang: originalLang })}
+            {/* The line only exists when it has something to say: a version to
+                switch to, or a translation to offer. An English recipe read in
+                English gets no banner at all, exactly as before. */}
+            {(original || canTranslate || (showTranslation && translation)) && (
+            <p className="recipe__translated">
+              {showTranslation && translation
+                ? t('recipe.readingTranslated', { lang: uiLangName })
+                : original
+                  ? (showEnglish
+                    ? t('recipe.readingEnglish', { lang: originalLang })
+                    : t('recipe.readingOriginal', { lang: originalLang }))
+                  : recipe.source_language && recipe.source_language !== 'en'
+                    ? t('recipe.translatedFrom', {
+                      lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
+                    })
+                    : t('recipe.readingEnglishOnly')}
+
+              {/* The author's words vs. the stored English — only offered when
+                  we actually kept both. */}
+              {original && (
                 <button
                   type="button"
                   className="recipe__translate-btn"
-                  onClick={() => setEnglishOverride((on) => !on)}
+                  onClick={() => {
+                    setShowTranslation(false);
+                    setEnglishOverride((on) => !on);
+                  }}
                 >
                   {showEnglish
                     ? t('recipe.showOriginal', { lang: originalLang })
                     : t('recipe.showEnglish')}
                 </button>
-              </p>
-            ) : (
-              recipe.source_language && recipe.source_language !== 'en' && (
-                <p className="recipe__translated">
-                  {t('recipe.translatedFrom', {
-                    lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
-                  })}
-                </p>
-              )
+              )}
+
+              {/* …and the reader's own language, which costs a model call, so
+                  it happens on a press and never on its own. */}
+              {showTranslation && translation ? (
+                <button
+                  type="button"
+                  className="recipe__translate-btn"
+                  onClick={() => setShowTranslation(false)}
+                >
+                  {t('recipe.stopTranslation')}
+                </button>
+              ) : canTranslate && (
+                <button
+                  type="button"
+                  className="recipe__translate-btn recipe__translate-btn--do"
+                  onClick={translateForMe}
+                  disabled={translating}
+                >
+                  {translating
+                    ? `${t('recipe.translating')}…`
+                    : t('recipe.translateTo', { lang: uiLangName })}
+                </button>
+              )}
+            </p>
             )}
 
             <ul className="recipe__meta">
@@ -382,8 +482,26 @@ export default function Recipe() {
                     value={calendarDate}
                     onChange={(event) => setCalendarDate(event.target.value)}
                   />
-                  <button type="button" className="recipe__calendar-confirm" onClick={addRecipeToCalendar}>
-                    {t('mealPlan.schedule')}
+                  {/* The calendar has four slots per day; without this every
+                      dish landed on dinner, including the ones you meant for
+                      breakfast. */}
+                  <label htmlFor="recipe-calendar-slot">{t('mealPlan.slot')}</label>
+                  <select
+                    id="recipe-calendar-slot"
+                    value={calendarSlot}
+                    onChange={(event) => setCalendarSlot(event.target.value)}
+                  >
+                    {MEAL_SLOTS.map((slot) => (
+                      <option key={slot} value={slot}>{t(`mealPlan.slots.${slot}`)}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="recipe__calendar-confirm"
+                    onClick={addRecipeToCalendar}
+                    disabled={busy === 'calendar'}
+                  >
+                    {busy === 'calendar' ? `${t('common.saving')}…` : t('mealPlan.schedule')}
                   </button>
                 </div>
               )}
@@ -464,6 +582,7 @@ export default function Recipe() {
             type="button"
             className="recipe__shopping recipe__shopping--body"
             onClick={addIngredientsToShoppingList}
+            disabled={busy === 'shopping'}
           >
             {ingredientsAdded ? `✓ ${t('recipe.ingredientsAdded')}` : `🛒 ${t('recipe.addIngredients')}`}
           </button>

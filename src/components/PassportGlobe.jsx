@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 import WorldGlobe from './WorldGlobe';
 import { countryOf } from '../data/countries';
+import Flag from './Flag';
 import './PassportGlobe.css';
 
 /* Rotating globe that highlights the countries a cook has stamped.
@@ -31,7 +32,7 @@ export default function PassportGlobe({ open, onClose, countries = [] }) {
             const info = countryOf(c.country);
             return (
               <li className="pglobe__stamp" key={c.country}>
-                <span className="pglobe__flag">{info.flag}</span>
+                <Flag code={info.c2} className="pglobe__flag" />
                 <span className="pglobe__name">{info.name}</span>
                 <span className="pglobe__count">{t('passport.recipes', { count: c.count })}</span>
               </li>

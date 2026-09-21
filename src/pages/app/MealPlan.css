@@ -271,3 +271,43 @@
   .meal-plan__week { margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px; }
   .meal-plan__day { width: 58px; }
 }
+
+/* ==========================================================================
+   EXPIRY — the date read off the packaging by the camera.
+
+   A chip rather than a line of text: it is a status, and its colour is the
+   whole message when you are standing in front of an open fridge.
+   ========================================================================== */
+.meal-plan__scan { white-space: nowrap; }
+
+.meal-plan__expiry {
+  padding: 3px 9px;
+  border: 1px solid #e3d4b8;
+  border-radius: 999px;
+  background: #fffaf1;
+  font-family: var(--font-important), sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b563a;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.meal-plan__expiry:hover { border-color: #c9ad7f; }
+
+.meal-plan__expiry.is-soon { border-color: #efb341; background: #fff6e0; color: #8a6414; }
+.meal-plan__expiry.is-urgent { border-color: #e5533a; background: #ffeee9; color: #a8341e; }
+.meal-plan__expiry.is-gone {
+  border-color: #b9b2a6;
+  background: #f1eee8;
+  color: #6f6659;
+  text-decoration: line-through;
+}
+
+[data-theme="dark"] .meal-plan__expiry {
+  border-color: #4a4034;
+  background: #2b2620;
+  color: #e8dcc8;
+}
+[data-theme="dark"] .meal-plan__expiry.is-soon { border-color: #8a6414; background: #3a3018; color: #f0cc7a; }
+[data-theme="dark"] .meal-plan__expiry.is-urgent { border-color: #a8341e; background: #3a211b; color: #f3a08c; }
+[data-theme="dark"] .meal-plan__expiry.is-gone { border-color: #4a4034; background: #2b2620; color: #9b9184; }

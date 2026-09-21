@@ -320,6 +320,55 @@
   font: inherit;
 }
 
+/* The photo sits between the tag gradient and the text, dimmed by its own
+   scrim. Without the scrim a pale dish photo swallows a white title whole. */
+.fo-tile__cover {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.85;
+}
+.fo-tile__cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(28, 18, 8, 0.55) 0%,
+    rgba(28, 18, 8, 0.28) 38%,
+    rgba(28, 18, 8, 0.78) 100%
+  );
+}
+/* Everything else on the tile stacks above the photo. The foot and the vote
+   pill are already positioned, so they only need the layer. */
+.fo-tile.has-photo .fo-tile__open { position: relative; z-index: 1; }
+.fo-tile.has-photo .fo-tile__foot,
+.fo-tile.has-photo .fo-tile__vote { z-index: 1; }
+
+/* "there are more where that came from" — only on tiles with a second photo */
+.fo-tile__photos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.38);
+  font-family: var(--font-important), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+.fo-tile__photos svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
 .fo-tile__top {
   display: flex;
   align-items: center;

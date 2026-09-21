@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { COUNTRY_OPTIONS, countryOf } from '../data/countries';
+import Flag from './Flag';
 import './CountryPicker.css';
 
 /* Searchable country dropdown. value/onChange use ISO alpha-3 codes. */
@@ -39,7 +40,7 @@ export default function CountryPicker({ value, onChange, placeholder }) {
       <button type="button" className="cpick__control" onClick={() => setOpen((v) => !v)}>
         {selected ? (
           <span className="cpick__value">
-            <span className="cpick__flag">{selected.flag}</span>
+            <Flag code={selected.c2} className="cpick__flag" />
             {selected.name}
           </span>
         ) : (
@@ -65,7 +66,7 @@ export default function CountryPicker({ value, onChange, placeholder }) {
                   className={`cpick__opt ${value === c.c3 ? 'is-sel' : ''}`}
                   onClick={() => pick(c)}
                 >
-                  <span className="cpick__flag">{c.flag}</span>
+                  <Flag code={c.c2} className="cpick__flag" />
                   {c.name}
                 </button>
               </li>
