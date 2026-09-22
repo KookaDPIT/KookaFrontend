@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { scanExpiry } from '../services/ocr';
+import { cameraSupported } from '../lib/camera';
+import CameraCapture from './CameraCapture';
 import Modal from './Modal';
 import './ExpiryScanner.css';
 
@@ -15,8 +17,10 @@ import './ExpiryScanner.css';
    error either: the field is simply empty and you can type the date yourself,
    which is still faster than closing the app to go find a pen.
 
-   `capture="environment"` makes a phone open the back camera directly. On a
-   laptop the same input is an ordinary file picker, which is what you want.
+   The camera opens inside the app (see CameraCapture): a live viewfinder is
+   the difference between framing four characters of low-contrast print and
+   guessing. Where there is no camera to open — a desktop without one, an
+   insecure origin, a refused permission — the file picker is still there.
    ========================================================================== */
 export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
   const { t } = useTranslation();
@@ -25,6 +29,8 @@ export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
   const [error, setError] = useState('');
   const [date, setDate] = useState(initial);
   const [read, setRead] = useState(null); // { matched, confidence } from the scan
+  const [camOpen, setCamOpen] = useState(false);
+  const hasCamera = cameraSupported();
 
   const reset = () => {
     setBusy(false);
@@ -40,7 +46,10 @@ export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
   };
 
   const handleFile = async (files) => {
-    const file = files?.[0];
+    await readFile(files?.[0]);
+  };
+
+  const readFile = async (file) => {
     if (!file) return;
     setError('');
     setBusy(true);
@@ -72,7 +81,6 @@ export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
         ref={fileRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="ocr__file"
         onChange={(e) => handleFile(e.target.files)}
       />
@@ -80,12 +88,26 @@ export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
       <button
         type="button"
         className="ocr__shoot"
-        onClick={() => fileRef.current?.click()}
+        onClick={() => (hasCamera ? setCamOpen(true) : fileRef.current?.click())}
         disabled={busy}
       >
         <span aria-hidden="true">📷</span>
         {busy ? `${t('ocr.reading')}…` : t('ocr.takePhoto')}
       </button>
+
+      {/* The other way in, for a photo already on the device — and the only
+          way in when the camera is unavailable, where it is the main button
+          above rather than this one. */}
+      {hasCamera && (
+        <button
+          type="button"
+          className="ocr__pick"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
+        >
+          {t('camera.chooseFile')}
+        </button>
+      )}
 
       {error && <p className="ocr__error">{error}</p>}
 
@@ -118,6 +140,14 @@ export default function ExpiryScanner({ open, onClose, onPick, initial = '' }) {
           {t('common.save')}
         </button>
       </div>
+      <CameraCapture
+        open={camOpen}
+        onClose={() => setCamOpen(false)}
+        onCapture={readFile}
+        facing="environment"
+        title={t('ocr.title')}
+        hint={t('ocr.frameHint')}
+      />
     </Modal>
   );
 }

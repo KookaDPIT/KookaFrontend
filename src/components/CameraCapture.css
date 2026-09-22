@@ -1,0 +1,227 @@
+/* ==========================================================================
+   CAMERA — a full-screen sheet, because framing a photo wants the screen.
+
+   Dark on purpose, in both themes: a viewfinder surrounded by cream is a
+   viewfinder you cannot judge exposure in, and every camera interface people
+   already know is black.
+   ========================================================================== */
+.cam {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.cam__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 8, 5, 0.72);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.cam__sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(860px, 100%);
+  overflow: hidden;
+  border-radius: 20px;
+  background: #1b120c;
+  color: #fff8ef;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.cam__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.cam__head h2 {
+  margin: 0;
+  font-family: var(--font-title), cursive;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.cam__x {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff8ef;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cam__x:hover { background: rgba(255, 255, 255, 0.18); }
+
+/* ---- the viewfinder ---- */
+.cam__stage {
+  position: relative;
+  /* `flex: 0 1 auto`, not `flex: 1`: the sheet is a column with no height of
+     its own, so a growing item takes its height from its content — and the
+     content here is a video with no intrinsic box yet, which collapsed the
+     viewfinder to a letterbox strip. Letting the aspect ratio set the height
+     (and only shrinking it when the screen is short) gives a real window. */
+  /* Allowed to shrink (`0 1 auto`) so a short window takes it out of the
+     viewfinder rather than pushing the shutter off the bottom of the sheet. */
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  /* A stated height rather than an aspect ratio: the <video> inside is sized
+     to its box, so the box cannot be sized from the video — that circle is
+     what collapsed the viewfinder to a strip. This is simply "most of the
+     screen, and never more than a window's worth". */
+  height: min(62vh, 520px);
+  display: grid;
+  place-items: center;
+  background: #000;
+  overflow: hidden;
+}
+
+.cam__video,
+.cam__shot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Front camera: mirrored on screen so moving left moves left. The captured
+   frame is never mirrored — see the note in CameraCapture.jsx. */
+.cam__video.is-mirrored { transform: scaleX(-1); }
+
+.cam__state {
+  position: absolute;
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 248, 239, 0.72);
+}
+
+.cam__state--block { display: grid; gap: 6px; }
+.cam__state-sub { margin: 0; font-size: 13px; color: rgba(255, 248, 239, 0.52); }
+
+/* Framing help, over the picture rather than above it — you read it while
+   you aim, not before. */
+.cam__hint {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: rgba(12, 8, 5, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  color: rgba(255, 248, 239, 0.88);
+}
+
+/* ---- the controls ---- */
+.cam__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+}
+
+/* equal-width flanks so the shutter sits dead centre whatever is beside it */
+.cam__slot { flex: 1; display: flex; }
+.cam__slot:last-child { justify-content: flex-end; }
+
+.cam__shutter {
+  flex: 0 0 auto;
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+}
+.cam__shutter span {
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+.cam__shutter:hover:not(:disabled) span { background: #ffd9c7; }
+.cam__shutter:active:not(:disabled) { transform: scale(0.94); }
+.cam__shutter:disabled { opacity: 0.35; cursor: default; }
+
+.cam__flip {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff8ef;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cam__flip:hover { background: rgba(255, 255, 255, 0.2); }
+
+.cam__ghost,
+.cam__use {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.cam__ghost {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: transparent;
+  color: #fff8ef;
+}
+.cam__ghost:hover { background: rgba(255, 255, 255, 0.1); }
+
+.cam__use {
+  border: none;
+  background: #ff6b35;
+  color: #fff;
+}
+.cam__use:hover { background: #f2591f; }
+
+/* ==========================================================================
+   PHONE (≤640px) — the sheet becomes the screen
+   ========================================================================== */
+@media (max-width: 640px) {
+  .cam { padding: 0; }
+
+  .cam__sheet {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .cam__stage { flex: 1 1 auto; height: auto; min-height: 0; }
+  .cam__head h2 { font-size: 23px; }
+}

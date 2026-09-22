@@ -128,9 +128,26 @@ const resources = {
         remove: 'Remove from saved',
       },
 
+      camera: {
+        title: 'Take a photo',
+        take: 'Take a photo',
+        chooseFile: 'Choose a photo instead',
+        shoot: 'Take the photo',
+        retake: 'Retake',
+        use: 'Use this photo',
+        flip: 'Switch camera',
+        starting: 'Opening the camera',
+        denied: 'The camera is blocked for this site.',
+        unsupported: 'No camera available here.',
+        busy: 'The camera is in use by another app.',
+        failed: 'That shot did not come through. Try again.',
+        fallbackHint: 'You can still pick a photo from your device.',
+      },
+
       ocr: {
         title: 'Scan the expiry date',
         sub: 'Photograph the printed date on the packaging and we will read it for you. The photo is not saved.',
+        frameHint: 'Fill the frame with the date and hold steady',
         takePhoto: 'Take a photo',
         scan: 'Scan date',
         changeDate: 'Change the expiry date',
@@ -1185,9 +1202,26 @@ const resources = {
         remove: 'Scoate din salvate',
       },
 
+      camera: {
+        title: 'Fă o poză',
+        take: 'Fă o poză',
+        chooseFile: 'Alege o poză de pe dispozitiv',
+        shoot: 'Fotografiază',
+        retake: 'Mai încearcă',
+        use: 'Folosește poza',
+        flip: 'Schimbă camera',
+        starting: 'Se deschide camera',
+        denied: 'Camera e blocată pentru acest site.',
+        unsupported: 'Nu e nicio cameră disponibilă aici.',
+        busy: 'Camera e folosită de altă aplicație.',
+        failed: 'Poza n-a ieșit. Mai încearcă o dată.',
+        fallbackHint: 'Poți alege în continuare o poză de pe dispozitiv.',
+      },
+
       ocr: {
         title: 'Scanează data expirării',
         sub: 'Fotografiază data tipărită pe ambalaj și o citim noi. Poza nu se salvează.',
+        frameHint: 'Umple cadrul cu data și ține telefonul nemișcat',
         takePhoto: 'Fă o poză',
         scan: 'Scanează data',
         changeDate: 'Schimbă data expirării',

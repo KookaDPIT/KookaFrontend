@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { uploadImage } from '../services/upload';
+import { cameraSupported } from '../lib/camera';
+import CameraCapture from './CameraCapture';
 import ImageCropper from './ImageCropper';
 import './ImageUpload.css';
 
@@ -28,6 +30,8 @@ export default function ImageUpload({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(null); // File awaiting the crop step
+  const [camOpen, setCamOpen] = useState(false);
+  const hasCamera = cameraSupported();
 
   const urls = multiple ? (Array.isArray(value) ? value : []) : value ? [value] : [];
   const cropping = !!cropAspect && !multiple;
@@ -74,16 +78,22 @@ export default function ImageUpload({
     if (!url) return;
     setError('');
     setBusy(true);
+    /* A network error and a non-2xx response are the same outcome here: no
+       bytes to re-frame. Throwing to a catch four lines below would say that
+       too, but only by using an exception as a goto — so the failure is just
+       "we never got there", checked once at the end. */
+    let reframed = false;
     try {
       const res = await fetch(url, { mode: 'cors' });
-      if (!res.ok) throw new Error('fetch failed');
-      const blob = await res.blob();
-      setPending(new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }));
-    } catch {
-      setError(t('upload.repositionFailed'));
-    } finally {
-      setBusy(false);
-    }
+      if (res.ok) {
+        const blob = await res.blob();
+        setPending(new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }));
+        reframed = true;
+      }
+    } catch { /* offline, CORS, a deleted file — handled below like any miss */ }
+
+    if (!reframed) setError(t('upload.repositionFailed'));
+    setBusy(false);
   };
 
   /* the cropper hands back a JPEG blob of the framed area */
@@ -137,6 +147,22 @@ export default function ImageUpload({
           </button>
         )}
 
+        {/* Shoot it now rather than going to find it. Only when there is a
+            camera to open — on a desktop without one this would be a button
+            that can only fail, and the picker beside it already works. */}
+        {hasCamera && (multiple || urls.length === 0) && (
+          <button
+            type="button"
+            className="imgup__add imgup__add--cam"
+            onClick={() => setCamOpen(true)}
+            disabled={busy}
+            title={t('camera.title')}
+          >
+            <span aria-hidden="true">📷</span>
+            {t('camera.take')}
+          </button>
+        )}
+
         {/* Two different jobs, so two buttons: reposition re-frames the photo
             that is already there, replace picks a different file. Folding them
             into one control meant you had to re-upload just to nudge a crop. */}
@@ -172,6 +198,16 @@ export default function ImageUpload({
       />
 
       {error && <p className="imgup__error">{error}</p>}
+
+      {/* A captured photo walks the same path a picked one does — including
+          the crop step, so an avatar shot here still gets framed. */}
+      <CameraCapture
+        open={camOpen}
+        onClose={() => setCamOpen(false)}
+        onCapture={(file) => handleFiles([file])}
+        facing={cropShape === 'circle' ? 'user' : 'environment'}
+        title={label || t('camera.title')}
+      />
 
       {cropping && (
         <ImageCropper

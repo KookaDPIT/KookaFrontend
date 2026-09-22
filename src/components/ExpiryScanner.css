@@ -89,3 +89,25 @@
   background: #2b2620;
   color: #e8dcc8;
 }
+
+/* The second way in — a photo already on the device. Quiet on purpose: the
+   camera above is the one people want, this is the escape hatch. */
+.ocr__pick {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-family: var(--font-important), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #a8916a;
+  cursor: pointer;
+}
+.ocr__pick:hover { background: rgba(120, 80, 30, 0.07); color: #6b563a; }
+.ocr__pick:disabled { opacity: 0.5; cursor: default; }
+
+[data-theme="dark"] .ocr__pick { color: #a89968; }
+[data-theme="dark"] .ocr__pick:hover { background: rgba(255, 255, 255, 0.07); color: #e8dcc8; }

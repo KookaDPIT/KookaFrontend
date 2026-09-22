@@ -5,9 +5,11 @@ import {
   sendChatMessage, fileToDataUrl,
 } from '../../services/ai';
 import {
-  KookaAvatar, IconSend, IconCamera, IconPlus, IconSidebar,
+  KookaAvatar, IconSend, IconCamera, IconImage, IconPlus, IconSidebar,
   IconPot, IconSwap, IconCalendar, IconScale, IconBasket,
 } from '../../components/Icons';
+import { cameraSupported } from '../../lib/camera';
+import CameraCapture from '../../components/CameraCapture';
 import './Chat.css';
 
 /* ==========================================================================
@@ -350,6 +352,8 @@ export default function Chat() {
   const [activeId, setActiveId] = useState(null);
   const [draft, setDraft] = useState('');
   const [photo, setPhoto] = useState(null);        // { dataUrl, name }
+  const [camOpen, setCamOpen] = useState(false);
+  const hasCamera = cameraSupported();
   const [busy, setBusy] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
   /* Closed on arrival. The history panel is for going back to something you
@@ -613,12 +617,26 @@ export default function Chat() {
               ref={fileRef} type="file" accept="image/*" hidden
               onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }}
             />
+            {/* A fridge shot is the most common thing sent here, and it is
+                always a photo you have not taken yet — so the camera icon
+                opens the camera. Long-press territory on a phone; the file
+                picker stays reachable when there is no camera at all. */}
             <button
-              type="button" className="chat-composer__icon" aria-label="Add a photo"
-              onClick={() => fileRef.current?.click()}
+              type="button" className="chat-composer__icon" aria-label="Take a photo"
+              title="Take a photo"
+              onClick={() => (hasCamera ? setCamOpen(true) : fileRef.current?.click())}
             >
               <IconCamera className="chat-composer__icon-svg" />
             </button>
+            {hasCamera && (
+              <button
+                type="button" className="chat-composer__icon" aria-label="Choose a photo"
+                title="Choose a photo"
+                onClick={() => fileRef.current?.click()}
+              >
+                <IconImage className="chat-composer__icon-svg" />
+              </button>
+            )}
             <input
               ref={inputRef} type="text" value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -643,6 +661,15 @@ export default function Chat() {
           </p>
         </div>
       </div>
+
+      {/* A captured photo joins the message the same way a picked one does. */}
+      <CameraCapture
+        open={camOpen}
+        onClose={() => setCamOpen(false)}
+        onCapture={pickPhoto}
+        facing="environment"
+        title="Take a photo"
+      />
     </div>
   );
 }

@@ -154,3 +154,36 @@
 @media (max-width: 400px) {
   .imgup__grid { gap: 8px; }
 }
+
+/* The camera tile, beside the picker. Same footprint, quieter fill: picking
+   an existing photo is still the common case on a laptop, and two identical
+   dashed boxes side by side would make you read both before choosing. */
+.imgup__add--cam {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  border-style: solid;
+  border-color: var(--k-input-border);
+  background: var(--k-input-bg);
+  color: var(--k-muted);
+  line-height: 1.2;
+}
+.imgup__add--cam span { font-size: 1.15rem; }
+.imgup__add--cam:hover:not(:disabled) {
+  border-color: var(--k-accent);
+  color: var(--k-accent);
+}
+
+/* The brand `--k-*` tokens are deliberately theme-independent, so the quiet
+   fill above stays cream on a dark page and the tile reads as a light card
+   dropped onto the form. Only this variant needs the correction — the dashed
+   picker beside it is orange on orange in both themes. */
+[data-theme="dark"] .imgup__add--cam {
+  border-color: #4a4238;
+  background: rgba(255, 255, 255, 0.07);
+  color: #c9bea7;
+}
+[data-theme="dark"] .imgup__add--cam:hover:not(:disabled) {
+  border-color: var(--k-accent);
+  color: #ffb38a;
+}

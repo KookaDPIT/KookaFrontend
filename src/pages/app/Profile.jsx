@@ -10,6 +10,7 @@ import {
 } from '../../services/users';
 import { RANK_COLORS } from '../../lib/ranks';
 import { countryOf } from '../../data/countries';
+import Flag from '../../components/Flag';
 import Modal from '../../components/Modal';
 import Toast from '../../components/Toast';
 import ImageUpload from '../../components/ImageUpload';
@@ -436,7 +437,7 @@ export default function Profile() {
     .sort((a, b) => b.count - a.count)
     .map((c) => {
       const info = countryOf(c.country);
-      return { code: c.country, flag: info.flag, name: info.name, dishes: c.count };
+      return { code: c.country, c2: info.c2, name: info.name, dishes: c.count };
     });
   // counts and all: the globe uses them to deepen the busier countries
   const visitedStamps = passportList.map((c) => ({ country: c.code, count: c.dishes }));
@@ -687,7 +688,7 @@ export default function Profile() {
                       key={c.name}
                       onClick={() => openCountry(c)}
                     >
-                      <span className="pf-stamp__flag" aria-hidden="true">{c.flag}</span>
+                      <Flag code={c.c2} className="pf-stamp__flag" />
                       <b>{c.name}</b>
                       <small>{t('passport.recipes', { count: c.dishes })}</small>
                     </button>
@@ -822,7 +823,9 @@ export default function Profile() {
               <>
                 <div className="pf-flags">
                   {passportList.slice(0, 6).map((c) => (
-                    <span key={c.name} className="pf-flag" title={c.name}>{c.flag}</span>
+                    <span key={c.name} className="pf-flag" title={c.name}>
+                      <Flag code={c.c2} />
+                    </span>
                   ))}
                   {countriesTotal > 6 && (
                     <span className="pf-flag pf-flag--more">+{countriesTotal - 6}</span>
@@ -905,7 +908,7 @@ export default function Profile() {
       <Modal
         open={!!country}
         onClose={() => setCountry(null)}
-        title={country ? `${country.flag} ${country.name}` : ''}
+        title={country ? country.name : ''}
       >
         {countryRecipes === null ? (
           <p className="pf-country__empty">{t('common.loading')}</p>

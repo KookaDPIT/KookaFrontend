@@ -447,6 +447,10 @@
   background: #fbf3e3;
   font-size: 20px;
 }
+/* The stamps are drawings now, not emoji — Windows has no flag glyphs and
+   rendered the whole passport as pairs of grey letters. */
+.pf-flag .flag { width: 24px; }
+.pf-stamp__flag.flag { width: 34px; }
 .pf-flag--more {
   font-family: var(--font-important), sans-serif;
   font-weight: 700;
@@ -513,17 +517,36 @@
 [data-theme="dark"] .pf-recipe,
 [data-theme="dark"] .pf-stamp,
 [data-theme="dark"] .pf-card,
-[data-theme="dark"] .pf-menu,
-[data-theme="dark"] .pf-tab.is-active { background: #3a3228; }
-[data-theme="dark"] .pf-tab,
+[data-theme="dark"] .pf-menu { background: #3a3228; }
 [data-theme="dark"] .pf-more__btn,
 [data-theme="dark"] .pf-follow.is-following { color: #c9bea7; background: rgba(255, 255, 255, 0.1); }
 [data-theme="dark"] .pf-tabs { background: rgba(255, 255, 255, 0.09); }
-[data-theme="dark"] .pf-tab.is-active { color: #ff9a70; }
+
+/* `.pf-tab` used to be swept into the rule above, which gave EVERY tab a
+   filled pill inside a strip that is itself a filled pill — a box in a box,
+   with the selected one indistinguishable from the rest because that same
+   background also overrode `.is-active`'s. Inactive tabs are transparent
+   here, exactly as in light mode; the active one is the raised pill. */
+[data-theme="dark"] .pf-tab { color: #c9bea7; background: transparent; }
+[data-theme="dark"] .pf-tab:hover { background: rgba(255, 255, 255, 0.07); }
+[data-theme="dark"] .pf-tab.is-active {
+  background: #3a3228;
+  color: #ff9a70;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
 [data-theme="dark"] .pf-activity li { box-shadow: inset 0 -1px 0 #4a4238; }
 [data-theme="dark"] .pf-activity__icon,
 [data-theme="dark"] .pf-flag { background: #493b2d; }
-[data-theme="dark"] .pf-recipe__photo { background: repeating-linear-gradient(-45deg, #493b2d 0 12px, #3d3024 12px 24px); }
+/* Longhands, not the `background` shorthand: the shorthand resets everything
+   it does not mention, so this one was quietly wiping the `cover` / `center`
+   set on the base rule. The photo arrives as an inline `background-image`,
+   which meant that in dark mode — and only in dark mode — every recipe tile
+   drew its picture at natural pixel size from the top-left corner. That is
+   the off-centre, zoomed-in look, and it was a one-word bug. */
+[data-theme="dark"] .pf-recipe__photo {
+  background-color: #3d3024;
+  background-image: repeating-linear-gradient(-45deg, #493b2d 0 12px, #3d3024 12px 24px);
+}
 [data-theme="dark"] .pf-flag--more { color: #a89968; }
 
 /* ===== profile media + states (avatar photo, cover photo, globe, private) ===== */

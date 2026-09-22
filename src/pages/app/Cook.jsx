@@ -12,6 +12,8 @@ import { languageName } from '../../lib/languages';
 import Modal from '../../components/Modal';
 import CookTimer from '../../components/CookTimer';
 import { KookaAvatar, IconSparkle, IconSend, IconHome, IconBack } from '../../components/Icons';
+import { cameraSupported } from '../../lib/camera';
+import CameraCapture from '../../components/CameraCapture';
 import './Cook.css';
 
 /* ==========================================================================
@@ -75,6 +77,8 @@ export default function Cook() {
   const [cookPreview, setCookPreview] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
+  const [camOpen, setCamOpen] = useState(false);
+  const hasCamera = cameraSupported();
   // Off by default — the translation is opt-in, same as on the recipe page.
   const [englishOverride, setEnglishOverride] = useState(false);
   const fileRef = useRef(null);
@@ -165,6 +169,8 @@ export default function Cook() {
     timerSteps.current.add(timerStep);
     reportCookEvent(sessionRef.current, { timer_started: true });
   }, [timerRunning, timerStep]);
+
+  const openPhotoPicker = () => (hasCamera ? setCamOpen(true) : fileRef.current?.click());
 
   const pickFile = (f) => {
     if (!f) return;
@@ -504,16 +510,33 @@ export default function Cook() {
               onChange={(e) => pickFile(e.target.files?.[0])}
             />
 
+            {/* The dish is in front of you and the phone is already on the
+                counter — shooting it here beats leaving for the camera app and
+                coming back with a file to find. */}
             {cookPreview ? (
-              <button type="button" className="cook__photo-preview" onClick={() => fileRef.current?.click()}>
+              <button type="button" className="cook__photo-preview" onClick={openPhotoPicker}>
                 <img src={cookPreview} alt="" />
                 <span>{t('cook.changePhoto')}</span>
               </button>
             ) : (
-              <button type="button" className="cook__photo-pick" onClick={() => fileRef.current?.click()}>
+              <button type="button" className="cook__photo-pick" onClick={openPhotoPicker}>
                 📷 {t('cook.selectPhoto')}
               </button>
             )}
+
+            {hasCamera && (
+              <button type="button" className="cook__photo-alt" onClick={() => fileRef.current?.click()}>
+                {t('camera.chooseFile')}
+              </button>
+            )}
+
+            <CameraCapture
+              open={camOpen}
+              onClose={() => setCamOpen(false)}
+              onCapture={pickFile}
+              facing="environment"
+              title={t('cook.selectPhoto')}
+            />
 
             {verifyResult && !verifyResult.verified && (
               <p className="cook__verify-err">⚠️ {t('cook.rejected')}</p>

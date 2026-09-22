@@ -606,6 +606,34 @@
 [data-theme="dark"] .chat-composer__icon { color: #c9bea7; }
 [data-theme="dark"] .btn--ghost { color: #e3dac7; }
 
+/* ---- the calorie estimate ----
+   The card itself flips to the dark surface above, but everything inside it
+   was written in the page's ink colours — near-black numbers and warm brown
+   labels, which on a dark brown card read as grey on grey. The big kcal
+   figure is the one number people came for; it has to be the brightest thing
+   on the card. */
+[data-theme="dark"] .est__kcal b,
+[data-theme="dark"] .macro__val,
+[data-theme="dark"] .est__kc,
+[data-theme="dark"] .est__row span:first-child { color: #f5f5f0; }
+[data-theme="dark"] .est__kcal span,
+[data-theme="dark"] .macro,
+[data-theme="dark"] .est__break h4 { color: #c9bea7; }
+[data-theme="dark"] .macro__bar { background: #4a4238; }
+[data-theme="dark"] .est__row { border-top-color: #4a4238; }
+[data-theme="dark"] .est__pill {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #4a4238;
+  color: #c9bea7;
+}
+/* Scoped through `.est__kcal` on purpose: the confidence pill is a <span>
+   inside it, so the rule above would otherwise win on specificity and paint
+   the pill's text the same muted grey as "kcal, roughly". */
+[data-theme="dark"] .est__kcal .est__conf {
+  background: rgba(255, 140, 90, 0.18);
+  color: #ffb38a;
+}
+
 [data-theme="dark"] .chat-task__icon { background: #4a3122; color: #ffb38a; }
 [data-theme="dark"] .chat-task:hover { border-color: #ff8c5a; }
 [data-theme="dark"] .m-ai__who { color: #d8a879; }
