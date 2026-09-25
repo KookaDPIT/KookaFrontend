@@ -933,3 +933,15 @@
   background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 248, 239, 0.85);
 }
+
+/* "That did not work" next to the translate button. Small and inline: the
+   step text is what you came back to read, not the error. */
+.cook__translate-err {
+  margin-left: 10px;
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #ff9b7a;
+}

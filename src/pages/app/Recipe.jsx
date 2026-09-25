@@ -171,13 +171,23 @@ export default function Recipe() {
     : showEnglish ? recipe : { ...recipe, ...original };
 
   /* The language the interface is in, which is the one to offer. A recipe
-     already readable in it — written in it, or stored English while the
-     interface is English — has nothing to offer. */
+     already readable in it has nothing to offer.
+
+     `content_language` comes from the backend and is the whole point: the
+     stored text is NOT always English. When the translation pass could not
+     run at publish time the recipe was saved in the language it was written
+     in, with no `original` kept — and this page used to read that as "no
+     original, therefore English", offer a translation from English into
+     English, decide there was nothing to offer, and show no button at all.
+     That is exactly the Romanian recipe that looked untranslatable. */
   const uiLang = (i18n.language || 'en').slice(0, 2);
+  const storedLang = (recipe.content_language || (original ? 'en' : recipe.source_language) || 'en')
+    .slice(0, 2);
   const readingLang = showTranslation && translation
     ? translation.language
-    : showEnglish ? 'en' : (original?.language || 'en');
+    : showEnglish ? storedLang : (original?.language || storedLang);
   const canTranslate = readingLang !== uiLang;
+  const storedLangName = languageName(storedLang, i18n.language, recipe.source_language_name);
   const uiLangName = languageName(uiLang, i18n.language);
 
   /* One call per recipe per language: the backend keeps what it produced, and
@@ -328,12 +338,10 @@ export default function Recipe() {
             <h1 className="recipe__title">{shown.title}</h1>
             {shown.description && <p className="recipe__tagline">{shown.description}</p>}
 
-            {/* Which version you are reading, and how to get the other one.
-                Without the original stored there is nothing to offer, so older
-                recipes keep the plain "translated from X" note. */}
-            {/* The line only exists when it has something to say: a version to
-                switch to, or a translation to offer. An English recipe read in
-                English gets no banner at all, exactly as before. */}
+            {/* Which version you are reading, and how to get another one. The
+                line only exists when it has something to say: a version to
+                switch to, or a translation to offer. A recipe already in your
+                language gets no banner at all. */}
             {(original || canTranslate || (showTranslation && translation)) && (
             <p className="recipe__translated">
               {showTranslation && translation
@@ -342,10 +350,12 @@ export default function Recipe() {
                   ? (showEnglish
                     ? t('recipe.readingEnglish', { lang: originalLang })
                     : t('recipe.readingOriginal', { lang: originalLang }))
-                  : recipe.source_language && recipe.source_language !== 'en'
-                    ? t('recipe.translatedFrom', {
-                      lang: recipe.source_language_name || recipe.source_language.toUpperCase(),
-                    })
+                  : storedLang !== 'en'
+                    /* No original kept AND the text is not English: this is
+                       the author's own writing, still in their language —
+                       saying "translated from Romanian" over Romanian text
+                       was the banner claiming work that never happened. */
+                    ? t('recipe.readingOriginal', { lang: storedLangName })
                     : t('recipe.readingEnglishOnly')}
 
               {/* The author's words vs. the stored English — only offered when

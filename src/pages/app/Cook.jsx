@@ -12,6 +12,7 @@ import { languageName } from '../../lib/languages';
 import Modal from '../../components/Modal';
 import CookTimer from '../../components/CookTimer';
 import { KookaAvatar, IconSparkle, IconSend, IconHome, IconBack } from '../../components/Icons';
+import { translateRecipe } from '../../services/recipes';
 import { cameraSupported } from '../../lib/camera';
 import CameraCapture from '../../components/CameraCapture';
 import './Cook.css';
@@ -81,6 +82,13 @@ export default function Cook() {
   const hasCamera = cameraSupported();
   // Off by default — the translation is opt-in, same as on the recipe page.
   const [englishOverride, setEnglishOverride] = useState(false);
+  /* The steps in the reader's own language, fetched on request. Same endpoint
+     and same cache as the recipe page — ask for it there and it is already
+     waiting here. */
+  const [translation, setTranslation] = useState(null);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [transErr, setTransErr] = useState(false);
   const fileRef = useRef(null);
 
   /* The attempt being recorded on the backend. Every trophy that asks HOW a
@@ -130,16 +138,62 @@ export default function Cook() {
      outright (services/ai.translate_recipe). */
   const original = recipe?.original;
   const englishSteps = recipe?.steps || [];
-  const steps =
-    !englishOverride && original?.steps?.length === englishSteps.length
+
+  /* Swap only the words of each step, keeping the canonical list's timers,
+     labels and order. Any source whose length does not match is ignored
+     rather than zipped into the wrong steps. */
+  const withText = (source) => (
+    source?.length === englishSteps.length
       ? englishSteps.map((s, i) => ({
         ...s,
-        text: (typeof original.steps[i] === 'string'
-          ? original.steps[i]
-          : original.steps[i]?.text) || s.text,
+        text: (typeof source[i] === 'string' ? source[i] : source[i]?.text) || s.text,
       }))
+      : englishSteps
+  );
+
+  const steps = showTranslation && translation
+    ? withText(translation.steps)
+    : !englishOverride
+      ? withText(original?.steps)
       : englishSteps;
   const step = steps[stepIndex] || { text: '' };
+
+  /* Which language the steps are actually in right now, and whether there is
+     a better one to offer. `content_language` is the backend's answer to "is
+     the stored text really English?" — when the publish-time translation
+     could not run, it is not. */
+  const uiLang = (i18n.language || 'en').slice(0, 2);
+  const storedLang = (
+    recipe?.content_language || (original ? 'en' : recipe?.source_language) || 'en'
+  ).slice(0, 2);
+  const readingLang = showTranslation && translation
+    ? translation.language
+    : englishOverride || !original ? storedLang : (original.language || storedLang);
+  const canTranslate = !!recipe && readingLang !== uiLang;
+  const uiLangName = languageName(uiLang, i18n.language);
+
+  const translateForMe = async () => {
+    if (translation && translation.language === uiLang) {
+      setShowTranslation(true);
+      setEnglishOverride(false);
+      return;
+    }
+    setTranslating(true);
+    setTransErr(false);
+    try {
+      const data = await translateRecipe(recipe.id, uiLang);
+      setTranslation(data);
+      setShowTranslation(true);
+      setEnglishOverride(false);
+    } catch {
+      /* 503 when the model is unreachable. Mid-cook there is nothing to do
+         but leave the step as it was — and say so, because a button that
+         silently does nothing reads as a broken button. */
+      setTransErr(true);
+    } finally {
+      setTranslating(false);
+    }
+  };
   const isLast = steps.length === 0 || stepIndex === steps.length - 1;
   const timedSteps = steps
     .map((s, i) => ({ ...s, no: i + 1 }))
@@ -302,17 +356,48 @@ export default function Cook() {
 
         <div className="cook__step-no">
           {t('cook.stepLabel', { n: stepIndex + 1 })}
+
+          {/* The author's words vs. the stored English — only when we kept
+              both. */}
           {original && (
             <button
               type="button"
               className="cook__translate-btn"
-              onClick={() => setEnglishOverride((on) => !on)}
+              onClick={() => {
+                setShowTranslation(false);
+                setEnglishOverride((on) => !on);
+              }}
             >
               {englishOverride
                 ? t('recipe.showOriginal', { lang: languageName(original.language, i18n.language, original.language_name) })
                 : t('recipe.showEnglish')}
             </button>
           )}
+
+          {/* …and your own language. Hands are busy and the pan is on: a step
+              you cannot read is worse here than anywhere else in the app. */}
+          {showTranslation && translation ? (
+            <button
+              type="button"
+              className="cook__translate-btn"
+              onClick={() => setShowTranslation(false)}
+            >
+              {t('recipe.stopTranslation')}
+            </button>
+          ) : canTranslate && (
+            <button
+              type="button"
+              className="cook__translate-btn"
+              onClick={translateForMe}
+              disabled={translating}
+            >
+              {translating
+                ? `${t('recipe.translating')}…`
+                : t('recipe.translateTo', { lang: uiLangName })}
+            </button>
+          )}
+
+          {transErr && <span className="cook__translate-err">{t('recipe.translateFailed')}</span>}
         </div>
         <p className="cook__step">{step.text}</p>
 
